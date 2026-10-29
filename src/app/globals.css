@@ -1,0 +1,220 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #FAF7F2;
+    --foreground: #221813;
+    --storefront-background: #FCFAF6;
+    --storefront-surface: #F5EBDD;
+    --storefront-ink: #33262A;
+    --storefront-muted: #67575B;
+    --storefront-line: #DBD0C5;
+    --storefront-accent: #ff6f1e;
+    --color-orange: #ff6f1e;
+    --color-orange-glow: rgba(255, 111, 30, 0.4);
+    --color-accent: #ff6f1e;
+    --color-accent-glow: rgba(255, 111, 30, 0.4);
+    --color-card-bg: rgba(255, 255, 255, 0.85);
+    --color-border: rgba(0, 0, 0, 0.08);
+    --color-surface-tint: rgba(255, 111, 30, 0.08);
+    --color-muted: #67575B;
+    --color-text: #33262A;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --background: #211B19;
+    --foreground: #F2E7DC;
+    --storefront-background: #211B19;
+    --storefront-surface: #2C2421;
+    --storefront-ink: #F2E7DC;
+    --storefront-muted: #C7B7AB;
+    --storefront-line: rgba(242, 231, 220, .16);
+    --storefront-accent: #ff6f1e;
+    --color-orange: #ff6f1e;
+    --color-orange-glow: rgba(255, 111, 30, 0.4);
+    --color-accent: #ff6f1e;
+    --color-accent-glow: rgba(255, 111, 30, 0.4);
+    --color-card-bg: rgba(37, 30, 28, 0.85);
+    --color-border: rgba(255, 255, 255, 0.12);
+    --color-surface-tint: rgba(255, 111, 30, 0.15);
+    --color-muted: #C7B7AB;
+    --color-text: #F2E7DC;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--storefront-background);
+    color: var(--storefront-ink);
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--storefront-background);
+    color: var(--storefront-ink);
+    font-family: var(--font-active-body, var(--font-jakarta, sans-serif));
+  }
+
+  h1, h2, h3, h4, .font-serif, .font-heading {
+    font-family: var(--font-active-heading, var(--font-playfair, serif));
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    outline: 2px solid var(--storefront-accent, #ff6f1e);
+    outline-offset: 2px;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skiper17-scroll-region {
+    height: auto !important;
+  }
+
+  .skiper17-pin-frame {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .skiper17-card-stack {
+    display: grid;
+    height: auto !important;
+    max-width: none !important;
+    gap: 1rem;
+    overflow: visible !important;
+    border-radius: 1.5rem;
+    box-shadow: none;
+  }
+
+  .skiper17-card {
+    position: relative !important;
+    display: block !important;
+    aspect-ratio: 4 / 3;
+    border-radius: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .skiper19-background {
+    transform: translateX(13%);
+  }
+}
+
+@layer utilities {
+  .storefront-editorial {
+    min-height: 100vh;
+    background: var(--storefront-background);
+    color: var(--storefront-ink);
+  }
+
+  .admin-editorial {
+    background: var(--storefront-background);
+    color: var(--storefront-ink);
+  }
+
+  /* Apple HIG Liquid Glass & Fade masks */
+  .mask-radial-fade {
+    mask-image: radial-gradient(ellipse 95% 85% at 50% 50%, black 65%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 95% 85% at 50% 50%, black 65%, transparent 100%);
+  }
+
+  .mask-edge-fade-x {
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+
+  .mask-edge-fade-y {
+    mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
+  }
+
+  /* Apple-inspired translucent glass materials */
+  .glass-header {
+    background-color: rgba(250, 247, 242, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-modal {
+    background-color: rgba(253, 251, 247, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Touch target utility conforming to Apple HIG 44x44pt */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .product-art {
+    isolation: isolate;
+    background:
+      radial-gradient(ellipse at 26% 20%, rgba(255,255,255,.8), transparent 34%),
+      linear-gradient(145deg, #f8eee4 0%, #ecd7d2 52%, #d9dce6 100%);
+  }
+
+  .product-art-orbit {
+    position: absolute;
+    display: block;
+    border: 1px solid rgba(77,48,64,.12);
+    border-radius: 9999px;
+  }
+
+  .product-art-orbit-one {
+    width: 76%;
+    aspect-ratio: 1;
+    transform: translate(12%, -18%);
+  }
+
+  .product-art-orbit-two {
+    width: 58%;
+    aspect-ratio: 1;
+    transform: translate(-30%, 22%);
+    border-color: rgba(120,148,180,.28);
+  }
+}
+
+html.dark,
+html.dark body {
+  background: #1A1412;
+  color: #F2E7DC;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  color: #F2E7DC;
+  color-scheme: dark;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+

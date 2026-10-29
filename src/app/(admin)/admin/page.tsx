@@ -1,0 +1,287 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import {
+  ShoppingBag,
+  Clock,
+  CheckCircle2,
+  Calendar,
+  MessageCircle,
+  Plus,
+  ArrowRight,
+  Cake,
+  AlertTriangle,
+} from "lucide-react";
+import { orderService } from "@/lib/services/order-service";
+import { OrderRequest } from "@/types/bakery";
+import { formatIDR, formatDateIndonesian } from "@/lib/utils/formatters";
+import { buildWhatsAppUrl } from "@/lib/utils/whatsapp";
+
+export default function AdminDashboardPage() {
+  const [stats, setStats] = useState({ pending: 0, contacted: 0, confirmed: 0, completed: 0 });
+  const [pendingOrders, setPendingOrders] = useState<OrderRequest[]>([]);
+  const [isTomorrowOpen, setIsTomorrowOpen] = useState(true);
+
+  const loadData = () => {
+    orderService.getOrderStats().then(setStats);
+    orderService.listOrders("pending").then((orders) => {
+      setPendingOrders(orders.slice(0, 5));
+    });
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleQuickConfirm = async (orderId: string) => {
+    await orderService.updateOrderStatus(orderId, "confirmed");
+    loadData();
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Welcome Banner */}
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-butter-100 via-vanilla-100 to-white border border-caramel-200/80 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-caramel-700">
+            Selamat Datang, Mama SofizCake
+          </span>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 mt-0.5">
+            Ringkasan Dapur Hari Ini
+          </h1>
+          <p className="text-xs text-cocoa-600 mt-1">
+            Pantau permintaan pesanan baru dan atur kesiapan produksi kue.
+          </p>
+        </div>
+
+        {/* Quick Tomorrow Availability Toggle */}
+        <div className="p-3 rounded-2xl bg-white border border-caramel-200 shadow-sm flex items-center justify-between sm:justify-start gap-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-caramel-600" />
+            <span className="text-xs font-semibold text-cocoa-900">
+              Penerimaan Besok:
+            </span>
+          </div>
+          <button
+            onClick={() => setIsTomorrowOpen(!isTomorrowOpen)}
+            className={`touch-target px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+              isTomorrowOpen
+                ? "bg-emerald-600 text-white"
+                : "bg-rose-600 text-white"
+            }`}
+          >
+            {isTomorrowOpen ? "Buka (Menerima)" : "Tutup Sementara"}
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Stat Pills */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <Link
+          href="/admin/orders?tab=pending"
+          className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 hover:border-amber-400 transition-all shadow-sm"
+        >
+          <div className="flex items-center justify-between text-amber-800 mb-1">
+            <span className="text-xs font-bold">Perlu Dikonfirmasi</span>
+            <Clock className="w-4 h-4" />
+          </div>
+          <span className="font-serif text-3xl font-bold text-amber-950">
+            {stats.pending}
+          </span>
+          <span className="text-[10px] text-amber-700 block mt-0.5">
+            Permintaan pesanan baru
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/orders?tab=contacted"
+          className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 hover:border-blue-400 transition-all shadow-sm"
+        >
+          <div className="flex items-center justify-between text-blue-800 mb-1">
+            <span className="text-xs font-bold">Sedang Chat WA</span>
+            <MessageCircle className="w-4 h-4" />
+          </div>
+          <span className="font-serif text-3xl font-bold text-blue-950">
+            {stats.contacted}
+          </span>
+          <span className="text-[10px] text-blue-700 block mt-0.5">
+            Menunggu kesepakatan
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/orders?tab=confirmed"
+          className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 hover:border-emerald-400 transition-all shadow-sm"
+        >
+          <div className="flex items-center justify-between text-emerald-800 mb-1">
+            <span className="text-xs font-bold">Siap Dibuat</span>
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span className="font-serif text-3xl font-bold text-emerald-950">
+            {stats.confirmed}
+          </span>
+          <span className="text-[10px] text-emerald-700 block mt-0.5">
+            Jadwal produksi aktif
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/products"
+          className="p-4 rounded-2xl bg-white border border-caramel-200 hover:border-caramel-400 transition-all shadow-sm"
+        >
+          <div className="flex items-center justify-between text-cocoa-700 mb-1">
+            <span className="text-xs font-bold">Total Katalog</span>
+            <Cake className="w-4 h-4 text-caramel-600" />
+          </div>
+          <span className="font-serif text-3xl font-bold text-cocoa-950">
+            7
+          </span>
+          <span className="text-[10px] text-cocoa-500 block mt-0.5">
+            Produk kue terdaftar
+          </span>
+        </Link>
+      </div>
+
+      {/* Urgent Action Queue: Permintaan Pesanan Menunggu Respon */}
+      <div className="rounded-3xl bg-white border border-caramel-200/80 shadow-soft p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-caramel-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <h2 className="font-serif font-bold text-lg text-cocoa-950">
+              Antrian Pesanan Baru ({pendingOrders.length})
+            </h2>
+          </div>
+          <Link
+            href="/admin/orders"
+            className="text-xs font-semibold text-caramel-700 hover:text-caramel-900 flex items-center gap-1"
+          >
+            <span>Lihat Semua Pesanan</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {pendingOrders.length > 0 ? (
+          <div className="space-y-3">
+            {pendingOrders.map((order) => {
+              const item = order.items[0];
+              const waChatUrl = buildWhatsAppUrl(order, order.customer_whatsapp);
+
+              return (
+                <div
+                  key={order.id}
+                  className="p-4 rounded-2xl bg-vanilla-50/70 border border-caramel-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-caramel-300 transition-all"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-caramel-800 bg-butter-200/60 px-2 py-0.5 rounded-md">
+                        {order.reference_code}
+                      </span>
+                      <span className="font-bold text-sm text-cocoa-900">
+                        {order.customer_name}
+                      </span>
+                      <span className="text-xs text-cocoa-500">
+                        ({order.customer_whatsapp})
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-cocoa-700">
+                      <span className="font-semibold">{item?.product_name_snapshot}</span>
+                      {item?.variant_name_snapshot && ` • ${item.variant_name_snapshot}`}
+                      {" "}• Tanggal: <span className="font-semibold">{formatDateIndonesian(order.requested_date)}</span>
+                    </p>
+
+                    {order.cake_inscription && (
+                      <p className="text-[11px] text-cocoa-600 italic">
+                        Ucapan: “{order.cake_inscription}”
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                    <a
+                      href={waChatUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="touch-target inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] text-xs font-bold shadow-sm"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Chat WA</span>
+                    </a>
+
+                    <button
+                      onClick={() => handleQuickConfirm(order.id)}
+                      className="touch-target inline-flex items-center gap-1 px-3.5 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold shadow-sm"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Konfirmasi</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-8 text-center text-xs text-cocoa-500">
+            Tidak ada pesanan yang tertunda. Semua pesanan sudah ditinjau!
+          </div>
+        )}
+      </div>
+
+      {/* Quick Action Navigation Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link
+          href="/admin/products/new"
+          className="p-5 rounded-3xl bg-white border border-caramel-200/80 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all flex items-center gap-3.5 group"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-butter-500 flex items-center justify-center text-cocoa-900 group-hover:scale-105 transition-transform">
+            <Plus className="w-6 h-6 text-caramel-800" />
+          </div>
+          <div>
+            <h3 className="font-serif font-bold text-base text-cocoa-950">
+              Upload Foto & Tambah Kue
+            </h3>
+            <p className="text-xs text-cocoa-500 mt-0.5">
+              Pilih beberapa foto dari galeri HP
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/availability"
+          className="p-5 rounded-3xl bg-white border border-caramel-200/80 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all flex items-center gap-3.5 group"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-butter-100 border border-butter-300 flex items-center justify-center text-caramel-700 group-hover:scale-105 transition-transform">
+            <Calendar className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-serif font-bold text-base text-cocoa-950">
+              Jadwal & Kouta Harian
+            </h3>
+            <p className="text-xs text-cocoa-500 mt-0.5">
+              Tutup tanggal atau atur batas porsi
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/products"
+          className="p-5 rounded-3xl bg-white border border-caramel-200/80 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all flex items-center gap-3.5 group"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-vanilla-200 flex items-center justify-center text-cocoa-700 group-hover:scale-105 transition-transform">
+            <Cake className="w-6 h-6 text-caramel-700" />
+          </div>
+          <div>
+            <h3 className="font-serif font-bold text-base text-cocoa-950">
+              Urutan & Status Kue
+            </h3>
+            <p className="text-xs text-cocoa-500 mt-0.5">
+              Atur posisi tampil di etalase web
+            </p>
+          </div>
+        </Link>
+      </div>
+    </div>
+  );
+}

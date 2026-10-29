@@ -1,0 +1,330 @@
+import { Category, Product, BusinessSettings } from "@/types/bakery";
+import { INITIAL_SETTINGS as UNIVERSAL_SETTINGS } from "./universal-presets";
+
+export const INITIAL_SETTINGS: BusinessSettings = {
+  ...UNIVERSAL_SETTINGS,
+};
+
+export const INITIAL_CATEGORIES: Category[] = [
+  {
+    id: "cat-whole",
+    name: "Signature Whole Cakes",
+    slug: "whole-cakes",
+    description: "Kue utuh bundar premium untuk ulang tahun, selebrasi keluarga, dan pesta perayaan.",
+    display_order: 1,
+    is_active: true,
+  },
+  {
+    id: "cat-bento",
+    name: "Korean Bento Cakes",
+    slug: "bento-cakes",
+    description: "Kue mungil mini personal 10-12cm dengan dekorasi lembut bernuansa pastel.",
+    display_order: 2,
+    is_active: true,
+  },
+  {
+    id: "cat-slices",
+    name: "Dessert & Slice Boxes",
+    slug: "slice-boxes",
+    description: "Potongan kue segar berlapis krim dan saus leleh, cocok untuk camilan santai sore.",
+    display_order: 3,
+    is_active: true,
+  },
+  {
+    id: "cat-hampers",
+    name: "Special Gift Hampers",
+    slug: "hampers",
+    description: "Bingkisan manis eksklusif dalam kotak pita mewah untuk momen spesial dan hantaran.",
+    display_order: 4,
+    is_active: true,
+  },
+];
+
+export const INITIAL_PRODUCTS: Product[] = [
+  {
+    id: "prod-basque-cheesecake",
+    category_id: "cat-whole",
+    name: "Basque Burnt Cheesecake Caramel",
+    slug: "basque-burnt-cheesecake-caramel",
+    description:
+      "Cheesecake panggang khas Basque Spanyol dengan lapisan gosong karamel aromatik di luar, dan bagian tengah custard keju yang luar biasa lumer serta creamy. Dibuat menggunakan krim keju murni dan French cream tanpa gelatin.",
+    flavor_notes: ["Rich Cream Cheese", "Smoky Caramelized Crust", "Vanilla Pod"],
+    base_price: 245000,
+    is_active: true,
+    is_featured: true,
+    display_order: 1,
+    minimum_lead_time_days: 2,
+    images: [
+      {
+        id: "img-basque-1",
+        product_id: "prod-basque-cheesecake",
+        storage_path: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Basque Burnt Cheesecake Caramel lumer potongan tengah",
+        display_order: 1,
+        is_primary: true,
+      },
+      {
+        id: "img-basque-2",
+        product_id: "prod-basque-cheesecake",
+        storage_path: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Basque Burnt Cheesecake tampilan atas dengan kerak karamel keemasan",
+        display_order: 2,
+        is_primary: false,
+      },
+    ],
+    variants: [
+      {
+        id: "var-basque-16",
+        product_id: "prod-basque-cheesecake",
+        name: "Diameter 16cm (4-6 Porsi)",
+        price: 245000,
+        is_default: true,
+        display_order: 1,
+      },
+      {
+        id: "var-basque-20",
+        product_id: "prod-basque-cheesecake",
+        name: "Diameter 20cm (8-10 Porsi)",
+        price: 385000,
+        is_default: false,
+        display_order: 2,
+      },
+    ],
+  },
+  {
+    id: "prod-belgian-fudge",
+    category_id: "cat-whole",
+    name: "Belgian Dark Chocolate Ganache Cake",
+    slug: "belgian-dark-chocolate-ganache",
+    description:
+      "Tiga lapis sponge cokelat lembut yang dibasahi sirup espresso ringan, dilapisi dark chocolate ganache murni 70% asal Belgia. Rasa manisnya seimbang dengan sensasi pahit cokelat yang pekat dan elegan.",
+    flavor_notes: ["70% Belgian Dark Chocolate", "Espresso Soak", "Velvety Ganache"],
+    base_price: 265000,
+    is_active: true,
+    is_featured: true,
+    display_order: 2,
+    minimum_lead_time_days: 2,
+    images: [
+      {
+        id: "img-belgian-1",
+        product_id: "prod-belgian-fudge",
+        storage_path: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Belgian Dark Chocolate Ganache Cake utuh dengan taburan cocoa nibs",
+        display_order: 1,
+        is_primary: true,
+      },
+      {
+        id: "img-belgian-2",
+        product_id: "prod-belgian-fudge",
+        storage_path: "https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Potongan Belgian Chocolate Cake dengan lapisan ganache berkilau",
+        display_order: 2,
+        is_primary: false,
+      },
+    ],
+    variants: [
+      {
+        id: "var-belgian-16",
+        product_id: "prod-belgian-fudge",
+        name: "Diameter 16cm (4-6 Porsi)",
+        price: 265000,
+        is_default: true,
+        display_order: 1,
+      },
+      {
+        id: "var-belgian-20",
+        product_id: "prod-belgian-fudge",
+        name: "Diameter 20cm (8-10 Porsi)",
+        price: 410000,
+        is_default: false,
+        display_order: 2,
+      },
+    ],
+  },
+  {
+    id: "prod-korean-bento-strawberry",
+    category_id: "cat-bento",
+    name: "Korean Bento Strawberry Shortcake",
+    slug: "korean-bento-strawberry-shortcake",
+    description:
+      "Kue bento mungil personal diameter 10cm di dalam kotak bagasse ramah lingkungan. Sponge vanilla ringan khas Jepang, krim susu Hokkaido lembut, dan irisan buah strawberry segar pilihan. Bisa request tulisan pendek di atas kue.",
+    flavor_notes: ["Fresh Strawberries", "Hokkaido Milk Cream", "Fluffy Chiffon"],
+    base_price: 95000,
+    is_active: true,
+    is_featured: true,
+    display_order: 3,
+    minimum_lead_time_days: 1,
+    images: [
+      {
+        id: "img-bento-1",
+        product_id: "prod-korean-bento-strawberry",
+        storage_path: "https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Korean Bento Strawberry Shortcake dalam bento box",
+        display_order: 1,
+        is_primary: true,
+      },
+    ],
+    variants: [
+      {
+        id: "var-bento-10",
+        product_id: "prod-korean-bento-strawberry",
+        name: "Single Bento 10cm (1-2 Porsi)",
+        price: 95000,
+        is_default: true,
+        display_order: 1,
+      },
+      {
+        id: "var-bento-12",
+        product_id: "prod-korean-bento-strawberry",
+        name: "Double Bento 12cm (2-3 Porsi)",
+        price: 135000,
+        is_default: false,
+        display_order: 2,
+      },
+    ],
+  },
+  {
+    id: "prod-korean-bento-earlgrey",
+    category_id: "cat-bento",
+    name: "Korean Bento Earl Grey Lavender",
+    slug: "korean-bento-earl-grey-lavender",
+    description:
+      "Perpaduan teh Earl Grey beraroma citrus bergamot yang diseduh langsung ke dalam krim, dipadukan sentuhan lembut aroma lavender. Tidak terlalu manis dan sangat menenangkan.",
+    flavor_notes: ["Earl Grey Bergamot", "Floral Lavender", "Light Mascarpone"],
+    base_price: 105000,
+    is_active: true,
+    is_featured: false,
+    display_order: 4,
+    minimum_lead_time_days: 1,
+    images: [
+      {
+        id: "img-bento-earlgrey",
+        product_id: "prod-korean-bento-earlgrey",
+        storage_path: "https://images.unsplash.com/photo-1549576490-b0b4831ef60a?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Korean Bento Earl Grey Lavender dengan hiasan kelopak bunga kering",
+        display_order: 1,
+        is_primary: true,
+      },
+    ],
+    variants: [
+      {
+        id: "var-bento-eg-10",
+        product_id: "prod-korean-bento-earlgrey",
+        name: "Single Bento 10cm (1-2 Porsi)",
+        price: 105000,
+        is_default: true,
+        display_order: 1,
+      },
+    ],
+  },
+  {
+    id: "prod-biscoff-dessert-box",
+    category_id: "cat-slices",
+    name: "Lotus Biscoff Cream Cheese Dessert Box",
+    slug: "lotus-biscoff-cream-cheese-box",
+    description:
+      "Kotak dessert berukuran 10x10cm siap santap (Ready Stock harian). Lapisan remah biskuit Lotus Biscoff renyah, krim keju vanila lembut, dan lelehan selai karamel Biscoff lumer di bagian atas.",
+    flavor_notes: ["Lotus Biscoff Caramel", "Cream Cheese Mousse", "Spiced Cookie Crunch"],
+    base_price: 55000,
+    is_active: true,
+    is_featured: true,
+    display_order: 5,
+    minimum_lead_time_days: 0, // Ready stock
+    images: [
+      {
+        id: "img-biscoff-1",
+        product_id: "prod-biscoff-dessert-box",
+        storage_path: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Lotus Biscoff Cream Cheese Dessert Box potongan sendok",
+        display_order: 1,
+        is_primary: true,
+      },
+    ],
+    variants: [
+      {
+        id: "var-box-single",
+        product_id: "prod-biscoff-dessert-box",
+        name: "Single Box 250ml",
+        price: 55000,
+        is_default: true,
+        display_order: 1,
+      },
+      {
+        id: "var-box-duo",
+        product_id: "prod-biscoff-dessert-box",
+        name: "Bundle Duo 2x 250ml",
+        price: 100000,
+        is_default: false,
+        display_order: 2,
+      },
+    ],
+  },
+  {
+    id: "prod-tiramisu-slice-box",
+    category_id: "cat-slices",
+    name: "Classic Italian Mascarpone Tiramisu Box",
+    slug: "classic-italian-mascarpone-tiramisu",
+    description:
+      "Tiramisu autentik tanpa pemanis buatan. Ladyfinger biskuit Savoiardi dicelup espresso murni, dilapisi krim mascarpone lembut dan taburan cokelat bubuk Valrhona pekat.",
+    flavor_notes: ["Italian Mascarpone", "Fresh Espresso", "Valrhona Cocoa"],
+    base_price: 65000,
+    is_active: true,
+    is_featured: false,
+    display_order: 6,
+    minimum_lead_time_days: 0, // Ready stock
+    images: [
+      {
+        id: "img-tiramisu-1",
+        product_id: "prod-tiramisu-slice-box",
+        storage_path: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Classic Italian Tiramisu dalam kotak kaca bening",
+        display_order: 1,
+        is_primary: true,
+      },
+    ],
+    variants: [
+      {
+        id: "var-tiramisu-single",
+        product_id: "prod-tiramisu-slice-box",
+        name: "Single Box 250ml",
+        price: 65000,
+        is_default: true,
+        display_order: 1,
+      },
+    ],
+  },
+  {
+    id: "prod-signature-hamper",
+    category_id: "cat-hampers",
+    name: "Sofiz Artisanal Celebration Gift Box",
+    slug: "sofiz-artisanal-celebration-box",
+    description:
+      "Paket bingkisan mewah isi 1 Whole Basque Burnt Cheesecake 16cm, 2 Dessert Box pilihan, lilin artisan aromaterapi, dan kartu ucapan kustom bertulis tangan di dalam kotak hardbox berbalut pita emas.",
+    flavor_notes: ["Curated Bakery Assortment", "Gold Ribbon Hardbox", "Custom Greeting"],
+    base_price: 435000,
+    is_active: true,
+    is_featured: true,
+    display_order: 7,
+    minimum_lead_time_days: 3,
+    images: [
+      {
+        id: "img-hamper-1",
+        product_id: "prod-signature-hamper",
+        storage_path: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80",
+        alt_text: "Sofiz Artisanal Celebration Gift Box dengan pita satin",
+        display_order: 1,
+        is_primary: true,
+      },
+    ],
+    variants: [
+      {
+        id: "var-hamper-full",
+        product_id: "prod-signature-hamper",
+        name: "Deluxe Celebration Set",
+        price: 435000,
+        is_default: true,
+        display_order: 1,
+      },
+    ],
+  },
+];
