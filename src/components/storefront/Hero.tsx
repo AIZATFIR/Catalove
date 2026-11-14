@@ -2,25 +2,34 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ShoppingBag } from "lucide-react";
+import { ArrowDown, Sliders, ShoppingBag } from "lucide-react";
 import type { Product } from "@/types/bakery";
 import { CakeCircularCarousel } from "@/components/storefront/CakeCircularCarousel";
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { saveBusinessSettings } from "@/lib/business-settings";
+import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils/formatters";
 
 interface HeroProps {
   products: Product[];
   onOpenQuiz?: () => void;
+  isCanvasMode?: boolean;
+  onToggleCanvasMode?: () => void;
 }
 
-export function Hero({ products }: HeroProps) {
+export function Hero({
+  products,
+  isCanvasMode = false,
+  onToggleCanvasMode,
+}: HeroProps) {
   const settings = useBusinessSettings();
   const { addItem } = useCart();
   const [showcaseIndex, setShowcaseIndex] = useState(0);
 
   const heroStyle = settings.theme_config?.hero_style || "split_dynamic";
+  const isSplitReverse = heroStyle === "split_reverse";
   const currency = settings.currency_symbol || "Rp";
 
   const eyebrow = settings.hero_eyebrow ?? "Template Website";
@@ -32,9 +41,23 @@ export function Hero({ products }: HeroProps) {
   const badge2 = settings.hero_badge_2 ?? "Siap Pakai";
   const badge3 = settings.hero_badge_3 ?? "Order WA";
 
-  const directOrderWaUrl = `https://wa.me/${settings.seller_whatsapp || "6285946689168"}?text=${encodeURIComponent(
-    "Halo, saya mau pesan Catalove untuk brand saya."
-  )}`;
+  const updateHeroField = (
+    field: "hero_eyebrow" | "hero_title" | "hero_subtitle",
+    value: string
+  ) => {
+    saveBusinessSettings({
+      ...settings,
+      [field]: value,
+    });
+  };
+
+  const handleToggleCanvas = () => {
+    if (onToggleCanvasMode) {
+      onToggleCanvasMode();
+    } else if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("catalove-toggle-canvas"));
+    }
+  };
 
   const featuredProducts = products
     .filter((p) => p.is_active && p.images?.length > 0)
@@ -52,36 +75,77 @@ export function Hero({ products }: HeroProps) {
     return (
       <section className="relative isolate overflow-hidden border-b border-[#DBD0C5]/40 py-14 sm:py-20 transition-colors dark:border-white/10">
         <div className="mx-auto max-w-5xl px-4 sm:px-8 text-center flex flex-col items-center gap-6">
-          {eyebrow && (
-            <p className="rounded-full border border-[var(--storefront-accent)]/30 bg-[var(--storefront-accent)]/10 px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--storefront-accent)]">
-              {eyebrow}
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={eyebrow}
+              onChange={(e) => updateHeroField("hero_eyebrow", e.target.value)}
+              aria-label="Edit label eyebrow Hero"
+              className="rounded-full border border-dashed border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] px-4 py-1 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--storefront-accent)] focus:outline-none"
+            />
+          ) : (
+            eyebrow && (
+              <p className="rounded-full border border-[var(--storefront-line)] bg-[var(--color-surface-tint)] px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--storefront-accent)]">
+                {eyebrow}
+              </p>
+            )
+          )}
+
+          {isCanvasMode ? (
+            <textarea
+              rows={2}
+              value={title}
+              onChange={(e) => updateHeroField("hero_title", e.target.value)}
+              aria-label="Edit judul utama Hero"
+              className="w-full max-w-3xl resize-none rounded-2xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-4 py-2 text-center font-serif text-4xl sm:text-6xl font-medium leading-[1.06] tracking-tight text-[var(--storefront-ink)] focus:outline-none"
+            />
+          ) : (
+            <h1
+              data-gsap-title
+              className="font-serif text-4xl sm:text-6xl lg:text-7xl font-medium leading-[1.02] tracking-tight text-[var(--storefront-ink)]"
+            >
+              {title}
+            </h1>
+          )}
+
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={subtitle}
+              onChange={(e) => updateHeroField("hero_subtitle", e.target.value)}
+              aria-label="Edit subjudul Hero"
+              className="w-full max-w-xl rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-4 py-2 text-center text-base sm:text-lg text-[var(--storefront-ink)] opacity-80 focus:outline-none"
+            />
+          ) : (
+            <p className="max-w-xl text-base sm:text-lg leading-relaxed text-[var(--storefront-ink)] opacity-75">
+              {subtitle}
             </p>
           )}
 
-          <h1
-            data-gsap-title
-            className="font-serif text-4xl sm:text-6xl lg:text-7xl font-medium leading-[1.02] tracking-tight text-[#4D3040] dark:text-[#FAF4EE]"
-          >
-            {title}
-          </h1>
-
-          <p className="max-w-xl text-base sm:text-lg leading-relaxed text-[#55464B] dark:text-[#D8CBC0]">
-            {subtitle}
-          </p>
-
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <a
-              href={directOrderWaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => openOrderSchemeModal()}
               className="touch-target inline-flex items-center justify-center gap-2 rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-bold text-white shadow-lg hover:opacity-95 transition-all"
             >
               <span>{settings.hero_primary_cta || "Pesan Catalove"}</span>
-            </a>
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleCanvas}
+              className={`touch-target inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-sm font-semibold transition-colors ${
+                isCanvasMode
+                  ? "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
+                  : "border-[#4D3040]/30 dark:border-white/25 hover:bg-stone-100 dark:hover:bg-white/10"
+              }`}
+            >
+              <Sliders className="h-4 w-4" />
+              <span>Mode Kanvas</span>
+            </button>
             <button
               type="button"
               onClick={scrollToDiscovery}
-              className="touch-target inline-flex items-center justify-center gap-2 rounded-full border border-[#4D3040]/30 dark:border-white/25 px-7 py-3.5 text-sm font-semibold hover:bg-stone-100 dark:hover:bg-white/10"
+              className="touch-target inline-flex items-center justify-center gap-2 rounded-full border border-[#4D3040]/20 dark:border-white/15 px-5 py-3.5 text-sm font-semibold hover:bg-stone-100 dark:hover:bg-white/10"
             >
               <span>{settings.hero_secondary_cta || "Sample"}</span>
               <ArrowDown className="h-4 w-4" />
@@ -127,42 +191,92 @@ export function Hero({ products }: HeroProps) {
   return (
     <section className="relative isolate overflow-hidden border-b border-[#DBD0C5]/40 py-10 sm:py-16 transition-colors dark:border-white/10">
       <div className="mx-auto grid max-w-[1600px] grid-cols-1 items-center gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-12 lg:px-12">
-        {/* Left Copy & CTA */}
-        <div className="relative z-10 order-2 flex flex-col items-start gap-6 lg:order-1 lg:col-span-6 lg:gap-7">
-          {eyebrow && (
-            <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[.22em] text-[#8D624C] dark:text-[#D1A686]">
-              <span aria-hidden="true" className="h-px w-8 bg-[var(--storefront-accent)]" />
-              {eyebrow}
-            </p>
+        {/* Copy & CTA */}
+        <div
+          className={`relative z-10 order-2 flex flex-col items-start gap-6 lg:col-span-6 lg:gap-7 ${
+            isSplitReverse ? "lg:order-2" : "lg:order-1"
+          }`}
+        >
+          {isCanvasMode ? (
+            <div className="flex items-center gap-3 w-full">
+              <span aria-hidden="true" className="h-px w-8 shrink-0 bg-[var(--storefront-accent)]" />
+              <input
+                type="text"
+                value={eyebrow}
+                onChange={(e) => updateHeroField("hero_eyebrow", e.target.value)}
+                aria-label="Edit label eyebrow Hero"
+                className="w-60 rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[.22em] text-[#8D624C] dark:text-[#D1A686] focus:outline-none"
+              />
+            </div>
+          ) : (
+            eyebrow && (
+              <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[.22em] text-[#8D624C] dark:text-[#D1A686]">
+                <span aria-hidden="true" className="h-px w-8 bg-[var(--storefront-accent)]" />
+                {eyebrow}
+              </p>
+            )
           )}
 
-          <div className="space-y-4">
-            <h1
-              data-gsap-title
-              className="max-w-2xl font-serif text-[2.6rem] sm:text-6xl lg:text-[4.25rem] font-medium leading-[1.03] tracking-[-.025em] text-[#4D3040] dark:text-[#FAF4EE]"
-            >
-              {title}
-            </h1>
-            <p className="max-w-md text-base leading-7 text-[#55464B] dark:text-[#D8CBC0] sm:text-lg">
-              {subtitle}
-            </p>
+          <div className="space-y-4 w-full">
+            {isCanvasMode ? (
+              <textarea
+                rows={3}
+                value={title}
+                onChange={(e) => updateHeroField("hero_title", e.target.value)}
+                aria-label="Edit judul utama Hero"
+                className="w-full max-w-2xl resize-none rounded-2xl border border-dashed border-[var(--storefront-accent)] bg-white/65 dark:bg-white/5 px-3.5 py-2 font-serif text-[2.2rem] sm:text-5xl font-medium leading-[1.06] tracking-[-.025em] text-[var(--storefront-ink)] focus:outline-none"
+              />
+            ) : (
+              <h1
+                data-gsap-title
+                className="max-w-2xl font-serif text-[2.6rem] sm:text-6xl lg:text-[4.25rem] font-medium leading-[1.03] tracking-[-.025em] text-[var(--storefront-ink)]"
+              >
+                {title}
+              </h1>
+            )}
+
+            {isCanvasMode ? (
+              <input
+                type="text"
+                value={subtitle}
+                onChange={(e) => updateHeroField("hero_subtitle", e.target.value)}
+                aria-label="Edit subjudul Hero"
+                className="w-full max-w-md rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/65 dark:bg-white/5 px-3 py-1.5 text-base leading-7 text-[var(--storefront-ink)] opacity-80 sm:text-lg focus:outline-none"
+              />
+            ) : (
+              <p className="max-w-md text-base leading-7 text-[var(--storefront-ink)] opacity-75 sm:text-lg">
+                {subtitle}
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex w-full flex-wrap items-center gap-3 pt-1">
-            <a
-              href={directOrderWaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => openOrderSchemeModal()}
               className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
             >
               <span>{settings.hero_primary_cta || "Pesan Catalove"}</span>
-            </a>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleCanvas}
+              className={`touch-target inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-sm font-semibold transition-colors ${
+                isCanvasMode
+                  ? "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
+                  : "border-[#4D3040]/30 dark:border-white/20 hover:bg-stone-100 dark:hover:bg-white/10"
+              }`}
+            >
+              <Sliders aria-hidden="true" className="h-4 w-4" />
+              <span>Mode Kanvas</span>
+            </button>
 
             <button
               type="button"
               onClick={scrollToDiscovery}
-              className="touch-target inline-flex items-center justify-center gap-2 rounded-full border border-[#4D3040]/30 dark:border-white/20 px-6 py-3.5 text-sm font-semibold hover:bg-stone-100 dark:hover:bg-white/10"
+              className="touch-target inline-flex items-center justify-center gap-2 rounded-full border border-[#4D3040]/20 dark:border-white/15 px-5 py-3.5 text-sm font-semibold hover:bg-stone-100 dark:hover:bg-white/10"
             >
               <span>{settings.hero_secondary_cta || "Sample"}</span>
               <ArrowDown aria-hidden="true" className="h-4 w-4" />
@@ -179,10 +293,12 @@ export function Hero({ products }: HeroProps) {
           </div>
         </div>
 
-        {/* Right Showcase Visual Area */}
+        {/* Showcase Visual Area */}
         <div
-          data-gsap-reveal
-          className="relative z-10 order-1 mx-auto w-full lg:order-2 lg:col-span-6 lg:pl-4"
+          {...(!isCanvasMode ? { "data-gsap-reveal": true } : {})}
+          className={`relative z-10 order-1 mx-auto w-full lg:col-span-6 ${
+            isSplitReverse ? "lg:order-1 lg:pr-4" : "lg:order-2 lg:pl-4"
+          }`}
         >
           {heroStyle === "bento_grid" && featuredProducts.length >= 2 ? (
             <div className="grid grid-cols-2 gap-3 sm:gap-4">

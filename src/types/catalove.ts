@@ -41,6 +41,7 @@ export type CardStyleOption =
 
 export type HeroStyleOption =
   | "split_dynamic"
+  | "split_reverse"
   | "bento_grid"
   | "minimal_center"
   | "rotating_showcase";
@@ -53,6 +54,23 @@ export type CatalogLayoutOption =
   | "grid_4"
   | "masonry";
 
+export type CanvasSectionId =
+  | "hero"
+  | "feed"
+  | "pricing"
+  | "lookbook"
+  | "showcase"
+  | "carousel"
+  | "cta";
+
+export interface CustomColorPalette {
+  enabled: boolean;
+  accent: string;
+  bg: string;
+  surface: string;
+  ink: string;
+}
+
 export interface ThemeConfig {
   font_heading: FontHeadingOption;
   font_body: FontBodyOption;
@@ -62,6 +80,9 @@ export interface ThemeConfig {
   catalog_layout?: CatalogLayoutOption;
   catalog_columns_desktop: 2 | 3 | 4;
   catalog_columns_mobile: 1 | 2;
+  custom_colors?: CustomColorPalette;
+  section_order?: CanvasSectionId[];
+  hidden_sections?: CanvasSectionId[];
 }
 
 export interface MarqueeAnnouncement {

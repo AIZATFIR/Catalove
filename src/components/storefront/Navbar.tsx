@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart, Menu, Palette, ShoppingBag, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Heart, Menu, Palette, ShoppingBag, Sliders, X } from "lucide-react";
 import { Skiper24 } from "@/components/ui/skiper-ui/skiper24";
 import { Skiper25 } from "@/components/ui/skiper-ui/skiper25";
 import { Skiper26 } from "@/components/ui/skiper-ui/skiper26";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { saveBusinessSettings } from "@/lib/business-settings";
+import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
 import { useCart } from "@/context/CartContext";
 
 interface NavbarProps {
@@ -14,39 +17,92 @@ interface NavbarProps {
 }
 
 const links = [
-  { href: "/catalog", label: "Katalog" },
-  { href: "/#discovery-feed", label: "Feed" },
+  { href: "/#discovery-feed", label: "Katalog" },
+  { href: "/#harga", label: "Harga & Skema" },
+  { href: "/catalog", label: "Semua Sample" },
   { href: "/bio", label: "Bio" },
-  { href: "/admin/settings", label: "Studio" },
 ];
 
 export function Navbar({ onOpenQuiz }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isCanvasMode, setIsCanvasMode] = useState(false);
+  const [editingBrand, setEditingBrand] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
   const settings = useBusinessSettings();
   const { totalItems, savedIds, openCart, openWishlist } = useCart();
 
-  const whatsappUrl = `https://wa.me/${settings.seller_whatsapp || "6285946689168"}?text=${encodeURIComponent(
-    "Halo, saya mau pesan Catalove untuk brand saya."
-  )}`;
+  useEffect(() => {
+    const handleCanvasState = (e: Event) => {
+      const detail = (e as CustomEvent<{ active?: boolean }>).detail;
+      if (typeof detail?.active === "boolean") {
+        setIsCanvasMode(detail.active);
+        if (!detail.active) setEditingBrand(false);
+      }
+    };
+    window.addEventListener("catalove-canvas-state", handleCanvasState);
+    return () => {
+      window.removeEventListener("catalove-canvas-state", handleCanvasState);
+    };
+  }, []);
+
+  const handleToggleCanvas = () => {
+    if (pathname !== "/") {
+      router.push("/?canvas=1");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("catalove-toggle-canvas"));
+  };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#DBD0C5]/50 bg-[#FCFAF6]/90 backdrop-blur-md dark:border-white/10 dark:bg-[#1A1412]/90 transition-colors duration-300">
+    <header className="sticky top-0 z-40 border-b border-[var(--storefront-line)] bg-[var(--storefront-background)] text-[var(--storefront-ink)] transition-colors duration-300">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-4 sm:h-[4.5rem] sm:px-8 lg:px-12">
-        {/* Clean Brand Wordmark */}
-        <Link
-          href="/"
-          className="shrink-0 select-none"
-          aria-label={settings.store_name || "Catalove"}
-        >
-          <span className="block font-serif text-[1.45rem] sm:text-[1.6rem] font-semibold leading-none tracking-[-.035em] text-[#4D3040] dark:text-[#FAF4EE]">
-            {settings.store_name || "Catalove"}
-          </span>
-        </Link>
+        {/* Clean Brand Wordmark (Inline-editable in Canvas Mode) */}
+        {isCanvasMode && editingBrand ? (
+          <input
+            type="text"
+            autoFocus
+            value={settings.store_name || "Catalove"}
+            onChange={(e) =>
+              saveBusinessSettings({
+                ...settings,
+                store_name: e.target.value,
+              })
+            }
+            onBlur={() => setEditingBrand(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === "Escape") setEditingBrand(false);
+            }}
+            aria-label="Edit nama brand"
+            className="w-40 rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white dark:bg-stone-900 px-2.5 py-1 font-serif text-xl font-semibold text-stone-900 dark:text-[#FAF4EE] focus:outline-none"
+          />
+        ) : isCanvasMode ? (
+          <button
+            type="button"
+            onClick={() => setEditingBrand(true)}
+            title="Klik untuk ganti nama brand"
+            className="shrink-0 select-none rounded-lg border border-dashed border-[var(--storefront-accent)] px-2 py-0.5 text-left"
+          >
+            <span className="block font-serif text-[1.4rem] sm:text-[1.55rem] font-semibold leading-none tracking-[-.035em] text-[var(--storefront-ink)]">
+              {settings.store_name || "Catalove"}
+            </span>
+          </button>
+        ) : (
+          <Link
+            href="/"
+            className="shrink-0 select-none"
+            aria-label={settings.store_name || "Catalove"}
+          >
+            <span className="block font-serif text-[1.45rem] sm:text-[1.6rem] font-semibold leading-none tracking-[-.035em] text-[var(--storefront-ink)]">
+              {settings.store_name || "Catalove"}
+            </span>
+          </Link>
+        )}
 
         {/* Minimal Desktop Navigation */}
         <nav
           aria-label="Navigasi utama"
-          className="hidden items-center gap-7 text-[13px] font-medium text-[#4D3040] md:flex dark:text-[#FAF4EE]"
+          className="hidden items-center gap-6 text-[13px] font-medium text-[var(--storefront-ink)] md:flex"
         >
           {links.map((link) => (
             <Link
@@ -61,11 +117,23 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
             <button
               type="button"
               onClick={onOpenQuiz}
-              className="py-2 text-[13px] font-medium text-[#4D3040] hover:text-[var(--storefront-accent)] dark:text-[#FAF4EE] cursor-pointer whitespace-nowrap"
+              className="py-2 text-[13px] font-medium text-[var(--storefront-ink)] hover:text-[var(--storefront-accent)] cursor-pointer whitespace-nowrap"
             >
               Bantu Pilih
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleToggleCanvas}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              isCanvasMode
+                ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white shadow-sm"
+                : "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Mode Kanvas</span>
+          </button>
         </nav>
 
         {/* Controls */}
@@ -102,20 +170,33 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
             )}
           </button>
 
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => openOrderSchemeModal()}
             className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-bold tracking-wide text-white transition-opacity hover:opacity-90 whitespace-nowrap"
           >
             {settings.nav_cta_text || "Pesan Catalove"}
-          </a>
+          </button>
         </div>
 
         {/* Mobile Quick Controls & Menu Button */}
         <div className="flex items-center gap-1.5 lg:hidden">
           <Skiper24 />
           <Skiper26 />
+
+          <button
+            type="button"
+            onClick={handleToggleCanvas}
+            aria-label="Mode Kanvas"
+            className={`md:hidden inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+              isCanvasMode
+                ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                : "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
+            }`}
+          >
+            <Sliders className="w-3 h-3" />
+            <span>Kanvas</span>
+          </button>
 
           <button
             type="button"
@@ -200,14 +281,16 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
               <Palette className="w-4 h-4" />
               <span>Studio</span>
             </Link>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="touch-target flex items-center text-sm font-bold text-[#25D366] py-2.5"
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                openOrderSchemeModal();
+              }}
+              className="touch-target flex items-center text-left text-sm font-bold text-[#25D366] py-2.5"
             >
               Pesan Catalove
-            </a>
+            </button>
           </nav>
         </div>
       )}

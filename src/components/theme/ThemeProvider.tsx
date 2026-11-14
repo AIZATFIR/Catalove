@@ -21,7 +21,7 @@ const FONT_BODY_MAP: Record<string, string> = {
   outfit: "var(--font-outfit), sans-serif",
 };
 
-const THEME_COLOR_MAP: Record<
+export const THEME_COLOR_MAP: Record<
   string,
   {
     light: { accent: string; glow: string; bg: string; surface: string; ink: string };
@@ -58,6 +58,24 @@ const THEME_COLOR_MAP: Record<
   },
 };
 
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "").trim();
+  const full =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((ch) => ch + ch)
+          .join("")
+      : clean;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+    return `rgba(194, 120, 56, ${alpha})`;
+  }
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function DynamicThemeBridge() {
   const settings = useBusinessSettings();
   const themeConfig: ThemeConfig = settings?.theme_config || {
@@ -83,19 +101,37 @@ function DynamicThemeBridge() {
     root.style.setProperty("--font-active-body", bodyFont);
     root.style.setProperty("--font-sans", bodyFont);
 
-    // Apply Dynamic Color Palette
+    // Apply Dynamic Color Palette (custom hex overrides or curated presets)
     const palette = THEME_COLOR_MAP[themeConfig.color_theme] || THEME_COLOR_MAP.warm_oat;
+    const custom = themeConfig.custom_colors;
 
     const applyColors = (darkNow: boolean) => {
-      const c = darkNow ? palette.dark : palette.light;
+      const c =
+        custom?.enabled && custom.accent
+          ? {
+              accent: custom.accent,
+              glow: hexToRgba(custom.accent, 0.35),
+              bg: custom.bg || palette.light.bg,
+              surface: custom.surface || palette.light.surface,
+              ink: custom.ink || palette.light.ink,
+            }
+          : darkNow
+            ? palette.dark
+            : palette.light;
+
       root.style.setProperty("--storefront-accent", c.accent);
       root.style.setProperty("--color-accent", c.accent);
       root.style.setProperty("--color-orange", c.accent);
       root.style.setProperty("--color-accent-glow", c.glow);
       root.style.setProperty("--color-orange-glow", c.glow);
+      root.style.setProperty("--color-surface-tint", hexToRgba(c.accent, 0.12));
       root.style.setProperty("--storefront-background", c.bg);
+      root.style.setProperty("--background", c.bg);
       root.style.setProperty("--storefront-surface", c.surface);
       root.style.setProperty("--storefront-ink", c.ink);
+      root.style.setProperty("--foreground", c.ink);
+      root.style.setProperty("--storefront-muted", hexToRgba(c.ink, 0.72));
+      root.style.setProperty("--storefront-line", hexToRgba(c.ink, 0.16));
     };
 
     applyColors(root.classList.contains("dark"));

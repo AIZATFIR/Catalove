@@ -3,13 +3,10 @@
 import React from "react";
 import Image from "next/image";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
 
 export function BrandStory() {
   const settings = useBusinessSettings();
-
-  const waUrl = `https://wa.me/${settings.seller_whatsapp || "6285946689168"}?text=${encodeURIComponent(
-    "Halo, saya mau pesan Catalove untuk brand saya."
-  )}`;
 
   const feat1Title = settings.feature_1_title || "Simple UI";
   const feat1Desc = settings.feature_1_desc || "Fokus visual produk.";
@@ -56,14 +53,13 @@ export function BrandStory() {
           )}
 
           <div>
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => openOrderSchemeModal()}
               className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-bold text-white shadow-md hover:opacity-90 transition-opacity"
             >
               Pesan Catalove
-            </a>
+            </button>
           </div>
 
           <div className="grid gap-4 border-t border-[#DBD0C5]/40 pt-6 dark:border-white/10 sm:grid-cols-3">

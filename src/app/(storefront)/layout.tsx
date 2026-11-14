@@ -3,6 +3,7 @@ import { StorefrontMotion } from "@/components/storefront/StorefrontMotion";
 import { CartProvider } from "@/context/CartContext";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { LiveCustomizerDock } from "@/components/storefront/LiveCustomizerDock";
+import { OrderSchemeModal } from "@/components/storefront/PricingSection";
 
 export default function StorefrontLayout({
   children,
@@ -16,6 +17,7 @@ export default function StorefrontLayout({
           {children}
           <CartDrawer />
           <LiveCustomizerDock />
+          <OrderSchemeModal />
         </div>
       </StorefrontMotion>
     </CartProvider>
