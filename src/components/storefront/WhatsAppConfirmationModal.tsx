@@ -24,8 +24,8 @@ export const WhatsAppConfirmationModal: React.FC<WhatsAppConfirmationModalProps>
 
   if (!isOpen || !order) return null;
 
-  const storeName = settings.store_name || "Catalove Studio";
-  const sellerWa = settings.seller_whatsapp || "6281234567890";
+  const storeName = settings.store_name || "Catalove";
+  const sellerWa = settings.seller_whatsapp || "6285946689168";
   const currency = settings.currency_symbol || "Rp";
 
   const item = order.items[0];

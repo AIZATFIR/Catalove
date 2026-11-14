@@ -15,7 +15,6 @@ import {
   QrCode,
   Share2,
   ShoppingBag,
-  Sparkles,
   X,
 } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -63,15 +62,18 @@ export default function BioLinkPage() {
     };
   }, []);
 
-  const storeName = settings.store_name || "Catalove Studio";
+  const storeName = settings.store_name || "Catalove";
   const storeTagline =
-    settings.store_tagline || "Curated catalog & bespoke shopping experience";
+    settings.store_tagline || "Simple yet interesting catalog for your brand.";
   const storeAddress =
     settings.store_address || settings.kitchen_address || "Indonesia";
   const currency = settings.currency_symbol || "Rp";
-  const cleanWa = (settings.seller_whatsapp || "6281234567890").replace(/[^0-9]/g, "");
+  const cleanWa = (settings.seller_whatsapp || "6285946689168").replace(/[^0-9]/g, "");
+  const isDefaultWa = cleanWa === "6285946689168";
   const whatsappUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(
-    `Halo ${storeName}, saya mengunjungi halaman Bio-Link Anda dan ingin bertanya seputar produk.`
+    isDefaultWa
+      ? "Halo, saya mau pesan Catalove untuk brand saya."
+      : `Halo ${storeName}, saya ingin bertanya.`
   )}`;
 
   const initials = storeName
@@ -110,7 +112,7 @@ export default function BioLinkPage() {
             className="touch-target inline-flex items-center gap-1.5 rounded-full border border-stone-300/80 dark:border-white/15 bg-white/75 dark:bg-white/5 px-3.5 py-2 text-xs font-semibold hover:border-[var(--storefront-accent)] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Kembali ke Toko</span>
+            <span>Beranda</span>
           </Link>
 
           <button
@@ -119,7 +121,7 @@ export default function BioLinkPage() {
             className="touch-target inline-flex items-center gap-1.5 rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-bold text-white shadow-md hover:opacity-95 transition-opacity"
           >
             <QrCode className="h-3.5 w-3.5" />
-            <span>QR & Bagikan Toko</span>
+            <span>Bagikan</span>
           </button>
         </div>
 
@@ -129,16 +131,15 @@ export default function BioLinkPage() {
             <span>{initials || "C"}</span>
             <span
               className="absolute -bottom-1 -right-1 rounded-full bg-white dark:bg-stone-900 p-1 shadow-sm"
-              title="Verified UMKM Store"
+              title="Catalove"
             >
               <BadgeCheck className="h-5 w-5 text-sky-500" />
             </span>
           </div>
 
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--storefront-accent)]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--storefront-accent)]">
-              <Sparkles className="h-3 w-3" />
-              <span>{settings.footer_badge || "Verified Store"}</span>
+            <div className="inline-flex items-center rounded-full bg-[var(--storefront-accent)]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--storefront-accent)]">
+              <span>{settings.footer_badge || "Catalove"}</span>
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
               {storeName}
@@ -154,7 +155,8 @@ export default function BioLinkPage() {
               <span>{storeAddress}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-700 dark:text-emerald-300 font-semibold">
-              <span>🟢 Buka · Respon Cepat WhatsApp</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span>Online</span>
             </span>
           </div>
         </section>
@@ -172,9 +174,9 @@ export default function BioLinkPage() {
                 <MessageCircle className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-sm font-bold leading-none">Chat WhatsApp Admin</p>
+                <p className="text-sm font-bold leading-none">Pesan Catalove</p>
                 <p className="text-[11px] text-white/90 mt-1">
-                  Tanya stok, konsultasi & pesan cepat tanpa antre
+                  +62 859-4668-9168
                 </p>
               </div>
             </div>
@@ -187,14 +189,14 @@ export default function BioLinkPage() {
           >
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--storefront-accent)]/15 text-[var(--storefront-accent)]">
-                <Sparkles className="h-5 w-5" />
+                <ShoppingBag className="h-5 w-5" />
               </span>
               <div>
                 <p className="text-sm font-bold leading-none">
-                  Jelajahi Feed TikTok & Pinterest
+                  Feed
                 </p>
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
-                  Scroll visual interaktif, ketuk 2x suka, & quick-view
+                  Waterfall & Snap
                 </p>
               </div>
             </div>
@@ -211,10 +213,10 @@ export default function BioLinkPage() {
               </span>
               <div>
                 <p className="text-sm font-bold leading-none">
-                  Katalog Lengkap & Pencarian
+                  Katalog
                 </p>
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
-                  Filter kategori, promo spesial & siap kirim hari ini
+                  Semua sample
                 </p>
               </div>
             </div>

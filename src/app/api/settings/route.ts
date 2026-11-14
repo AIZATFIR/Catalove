@@ -97,6 +97,10 @@ export async function GET() {
       }
     }
 
+    if (Object.keys(content).length === 0 || !content.catalove_v3) {
+      return NextResponse.json({ settings: INITIAL_SETTINGS });
+    }
+
     const textSettings: Record<string, string> = {};
     for (const key of TEXT_KEYS) {
       if (content[key] !== undefined) {
@@ -173,7 +177,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Partial<BusinessSettings>;
 
-    const contentConfig: Record<string, any> = {};
+    const contentConfig: Record<string, any> = {
+      catalove_v3: true,
+    };
     for (const key of TEXT_KEYS) {
       if ((body as any)[key] !== undefined) {
         contentConfig[key] = String((body as any)[key] || "").trim();

@@ -1,7 +1,7 @@
 import { INITIAL_SETTINGS } from "@/lib/data/seed-cakes";
 import type { BusinessSettings } from "@/types/bakery";
 
-const STORAGE_KEY = "catalove-business-settings";
+const STORAGE_KEY = "catalove-business-settings-v3";
 
 export function readBusinessSettings(): BusinessSettings {
   if (typeof window === "undefined") return INITIAL_SETTINGS;

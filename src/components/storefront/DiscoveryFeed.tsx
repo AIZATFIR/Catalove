@@ -17,7 +17,6 @@ import {
   Share2,
   ShoppingBag,
   Smartphone,
-  Sparkles,
   Tag,
   X,
   Zap,
@@ -46,12 +45,6 @@ interface DiscoveryFeedProps {
   title?: string;
   subtitle?: string;
   hideHeader?: boolean;
-}
-
-function deterministicViews(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 17 + id.charCodeAt(i)) % 45;
-  return 18 + h;
 }
 
 export function DiscoveryFeed({
@@ -120,23 +113,13 @@ export function DiscoveryFeed({
       <div className="mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-12 space-y-6">
         {/* Section Heading + View Mode Bar */}
         {!hideHeader && (
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--storefront-accent)]">
-                {settings.catalog_eyebrow || "Eksplorasi Interaktif"}
-              </p>
-              <h2 className="mt-1 font-serif text-3xl sm:text-4xl lg:text-5xl font-medium text-[#4D3040] dark:text-[#FAF4EE]">
-                {title || settings.catalog_title || "Temukan Produk Pilihan"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm text-[#67575B] dark:text-[#D8CBC0]">
-                {subtitle ||
-                  settings.catalog_desc ||
-                  "Scroll layaknya Pinterest atau TikTok. Ketuk dua kali foto untuk menyimpan favorit."}
-              </p>
-            </div>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#4D3040] dark:text-[#FAF4EE]">
+              {title || settings.catalog_title || "Sample"}
+            </h2>
 
-            {/* Attention-Psychology Mode Switcher */}
-            <div className="inline-flex items-center p-1 rounded-full bg-stone-200/70 dark:bg-white/10 backdrop-blur-md border border-stone-300/60 dark:border-white/10 self-start lg:self-auto">
+            {/* View Mode Switcher */}
+            <div className="inline-flex items-center p-1 rounded-full bg-stone-200/70 dark:bg-white/10 backdrop-blur-md border border-stone-300/60 dark:border-white/10 self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setViewMode("pinterest")}
@@ -147,7 +130,7 @@ export function DiscoveryFeed({
                 }`}
               >
                 <Columns2 className="w-3.5 h-3.5 text-[var(--storefront-accent)]" />
-                <span>Pinterest Waterfall</span>
+                <span>Waterfall</span>
               </button>
 
               <button
@@ -160,7 +143,7 @@ export function DiscoveryFeed({
                 }`}
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>TikTok Feed</span>
+                <span>Snap</span>
               </button>
 
               <button
@@ -181,10 +164,7 @@ export function DiscoveryFeed({
 
         {/* Quick Mode Bar even when header is hidden */}
         {hideHeader && (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-              Menampilkan {filteredProducts.length} produk
-            </span>
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <div className="inline-flex items-center p-1 rounded-full bg-stone-200/70 dark:bg-white/10 backdrop-blur-md border border-stone-300/60 dark:border-white/10">
               <button
                 type="button"
@@ -196,7 +176,7 @@ export function DiscoveryFeed({
                 }`}
               >
                 <Columns2 className="w-3.5 h-3.5 text-[var(--storefront-accent)]" />
-                <span>Pinterest</span>
+                <span>Waterfall</span>
               </button>
               <button
                 type="button"
@@ -208,7 +188,7 @@ export function DiscoveryFeed({
                 }`}
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>TikTok Feed</span>
+                <span>Snap</span>
               </button>
               <button
                 type="button"
@@ -226,14 +206,14 @@ export function DiscoveryFeed({
           </div>
         )}
 
-        {/* Attention-Psychology Filter Chips */}
+        {/* Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
-            { id: "all", label: `Semua (${products.length})`, icon: Sparkles },
-            { id: "popular", label: "Paling Populer", icon: Flame },
-            { id: "promo", label: "Sedang Promo", icon: Tag },
-            { id: "ready", label: "Siap Kirim Hari Ini", icon: Zap },
-            { id: "liked", label: `Disukai (${savedIds.length})`, icon: Heart },
+            { id: "all", label: "Semua", icon: LayoutGrid },
+            { id: "popular", label: "Unggulan", icon: Flame },
+            { id: "promo", label: "Promo", icon: Tag },
+            { id: "ready", label: "Ready", icon: Zap },
+            { id: "liked", label: "Tersimpan", icon: Heart },
           ].map((chip) => {
             const Icon = chip.icon;
             const active = quickFilter === chip.id;
@@ -280,7 +260,7 @@ export function DiscoveryFeed({
         {filteredProducts.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-stone-300 dark:border-white/15 py-16 px-4 text-center space-y-3">
             <p className="font-serif text-xl font-medium">
-              Tidak ada produk yang cocok dengan filter ini
+              Kosong
             </p>
             <button
               type="button"
@@ -290,7 +270,7 @@ export function DiscoveryFeed({
               }}
               className="rounded-full bg-[var(--storefront-accent)] px-5 py-2 text-xs font-bold text-white"
             >
-              Reset Filter Tampilan
+              Reset
             </button>
           </div>
         ) : viewMode === "tiktok" ? (
@@ -356,7 +336,7 @@ function TikTokVerticalFeed({
   onOpenQuickView: (product: Product) => void;
 }) {
   const settings = useBusinessSettings();
-  const { addItem, toggleLike, isLiked, getLikeCount } = useCart();
+  const { addItem, toggleLike, isLiked } = useCart();
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -462,11 +442,9 @@ function TikTokVerticalFeed({
               product.variants?.[0];
             const price = chosenVar ? chosenVar.price : product.base_price;
             const liked = isLiked(product.id);
-            const likes = getLikeCount(product.id);
-            const viewsNow = deterministicViews(product.id);
             const waQuickUrl = buildQuickProductWhatsAppUrl({
               storeName: settings.store_name || "Catalove",
-              whatsappNumber: settings.seller_whatsapp || "6281234567890",
+              whatsappNumber: settings.seller_whatsapp || "6285946689168",
               productName: product.name,
               variantName: chosenVar?.name,
               price,
@@ -545,11 +523,10 @@ function TikTokVerticalFeed({
                   </>
                 )}
 
-                {/* Top Attention Social Proof Pill */}
+                {/* Top Badge */}
                 <div className="absolute top-6 left-4 z-20 flex flex-wrap gap-1.5 items-center max-w-[75%]">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/15 px-3 py-1 text-[10px] font-bold text-white">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    {viewsNow} orang melihat • {product.badge || "Pilihan Favorit"}
+                  <span className="inline-flex items-center rounded-full bg-black/55 backdrop-blur-md border border-white/15 px-3 py-1 text-[10px] font-bold text-white">
+                    {product.badge || "Sample"}
                   </span>
                 </div>
 
@@ -589,9 +566,6 @@ function TikTokVerticalFeed({
                     >
                       <Heart className={`w-5 h-5 ${liked ? "fill-white" : ""}`} />
                     </div>
-                    <span className="text-[11px] font-bold text-white drop-shadow">
-                      {likes}
-                    </span>
                   </button>
 
                   {/* Specs / Preview */}
@@ -744,20 +718,11 @@ function TikTokVerticalFeed({
       <div className="hidden lg:block lg:col-span-5 xl:col-span-4 space-y-5">
         {activeProduct && (
           <div className="rounded-3xl border border-stone-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] backdrop-blur-md p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--storefront-accent)]">
-                Sedang Tampil ({activeIndex + 1} dari {products.length})
-              </span>
-              <span className="text-xs text-stone-500">
-                Ketuk 2x foto untuk ❤️
-              </span>
-            </div>
-
             <div>
               <h3 className="font-serif text-2xl font-bold text-[#4D3040] dark:text-white">
                 {activeProduct.name}
               </h3>
-              <p className="mt-1.5 text-sm text-stone-600 dark:text-stone-300 leading-relaxed line-clamp-3">
+              <p className="mt-1.5 text-sm text-stone-600 dark:text-stone-300 leading-relaxed line-clamp-2">
                 {activeProduct.description}
               </p>
             </div>
@@ -782,13 +747,13 @@ function TikTokVerticalFeed({
                 className="flex-1 py-3 px-4 rounded-full bg-[var(--storefront-accent)] text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>+ Keranjang</span>
+                <span>+ Bag</span>
               </button>
               <Link
                 href={`/product/${activeProduct.slug}`}
                 className="py-3 px-5 rounded-full border border-stone-300 dark:border-white/20 text-xs font-bold hover:bg-stone-100 dark:hover:bg-white/10"
               >
-                Buka Halaman →
+                Detail →
               </Link>
             </div>
           </div>
@@ -796,9 +761,6 @@ function TikTokVerticalFeed({
 
         {/* Quick Queue Thumbnail Strip */}
         <div className="space-y-2.5">
-          <p className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-            Antrean Koleksi (Klik untuk Lompat)
-          </p>
           <div className="grid grid-cols-4 gap-2">
             {products.map((p, idx) => {
               const thumb =
@@ -870,7 +832,7 @@ function QuickViewModal({
   const price = selectedVariant ? selectedVariant.price : product.base_price;
   const waUrl = buildQuickProductWhatsAppUrl({
     storeName: settings.store_name || "Catalove",
-    whatsappNumber: settings.seller_whatsapp || "6281234567890",
+    whatsappNumber: settings.seller_whatsapp || "6285946689168",
     productName: product.name,
     variantName: selectedVariant?.name,
     price: price * quantity,

@@ -47,8 +47,8 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={`Cari produk, kategori, atau kata kunci di ${settings.store_name || "katalog"}...`}
-            aria-label="Cari produk di katalog"
+            placeholder="Cari..."
+            aria-label="Cari"
             wrapperClassName="!max-w-none !rounded-none !border-[#BFAF9F] !bg-white !py-2.5 !pl-10 !pr-9 dark:!bg-[#2C2421] dark:!border-white/20 dark:!text-[#FAF4EE]"
             className="!text-sm placeholder:!text-[#806C71] dark:placeholder:!text-stone-400 dark:!text-[#FAF4EE]"
           />
@@ -85,7 +85,7 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
                   : "border-transparent text-[#55464B] hover:text-[#4D3040] dark:text-[#D8CBC0] dark:hover:text-white"
               }`}
             >
-              Siap hari ini
+              Ready
             </button>
             <button
               onClick={() => onAvailabilityChange("preorder")}
@@ -106,10 +106,10 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
               onChange={(e) => onSortChange(e.target.value)}
               className="appearance-none border border-[#BFAF9F] bg-white py-2 pl-3 pr-8 text-xs font-medium text-[#4D3040] focus:outline-none focus:border-[#4D3040] cursor-pointer dark:bg-[#2C2421] dark:text-[#FAF4EE] dark:border-white/20"
             >
-              <option value="default">Urutkan: Rekomendasi</option>
-              <option value="price-asc">Harga: Terendah</option>
-              <option value="price-desc">Harga: Tertinggi</option>
-              <option value="lead-time">Lead Time: Tercepat</option>
+              <option value="default">Default</option>
+              <option value="price-asc">Termurah</option>
+              <option value="price-desc">Termahal</option>
+              <option value="lead-time">Tercepat</option>
             </select>
             <SlidersHorizontal className="w-3.5 h-3.5 text-[#806C71] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none dark:text-stone-400" />
           </div>
@@ -126,7 +126,7 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
               : "border-transparent text-[#55464B] hover:text-[#4D3040] dark:text-[#D8CBC0] dark:hover:text-white"
           }`}
         >
-          Semua Koleksi ({totalResults})
+          Semua ({totalResults})
         </button>
 
         {categories.map((cat) => (

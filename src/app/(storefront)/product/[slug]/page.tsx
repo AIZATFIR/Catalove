@@ -13,7 +13,7 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils/formatters";
 import type { Product } from "@/types/bakery";
-import { ChevronRight, Clock, ShieldCheck, Heart, Sparkles, ArrowLeft } from "lucide-react";
+import { ChevronRight, Clock, ShieldCheck, Heart, Tag, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 
 export default function ProductDetailPage() {
@@ -221,11 +221,11 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-caramel-100 dark:border-white/10 text-xs text-cocoa-700 dark:text-[#D8CBC0]">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Kualitas Pilihan {settings.store_name || "Terpercaya"}</span>
+                  <span>{settings.store_name || "Catalove"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[var(--storefront-accent)] shrink-0" />
-                  <span>Disiapkan &amp; Dikirim dengan Teliti</span>
+                  <Tag className="w-4 h-4 text-[var(--storefront-accent)] shrink-0" />
+                  <span>Direct WhatsApp</span>
                 </div>
               </div>
             </div>

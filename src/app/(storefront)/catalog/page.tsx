@@ -97,11 +97,7 @@ export default function CatalogPage() {
     return products;
   }, [productsList, categories, selectedCategory, searchQuery, availabilityFilter, sortBy]);
 
-  const catalogEyebrow = settings.catalog_eyebrow || "Koleksi Terkurasi";
-  const catalogTitle = settings.catalog_title || "Temukan Produk Terbaik";
-  const catalogDesc =
-    settings.catalog_desc ||
-    "Cari berdasarkan nama, kategori, atau ketersediaan stok.";
+  const catalogTitle = settings.catalog_title || "Katalog";
 
   return (
     <div className="min-h-screen bg-[#FCFAF6] text-[#33262A] dark:bg-[#1A1412] dark:text-[#F2E7DC] transition-colors">
@@ -115,19 +111,9 @@ export default function CatalogPage() {
       <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-8 sm:py-12 lg:px-12">
         {/* Page Header */}
         <div className="mb-8 border-b border-[#DBD0C5]/40 pb-6 dark:border-white/10">
-          <p className="text-[11px] font-semibold uppercase tracking-[.22em] text-[#8D624C] dark:text-[#D1A686]">
-            {catalogEyebrow}
-          </p>
-          <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4">
-            <div>
-              <h1 className="font-serif text-3xl font-medium tracking-tight text-[#4D3040] dark:text-[#FAF4EE] sm:text-5xl">
-                {catalogTitle}
-              </h1>
-              <p className="mt-2 text-sm text-[#55464B] dark:text-[#D8CBC0]">
-                {catalogDesc}
-              </p>
-            </div>
-          </div>
+          <h1 className="font-serif text-3xl font-medium tracking-tight text-[#4D3040] dark:text-[#FAF4EE] sm:text-5xl">
+            {catalogTitle}
+          </h1>
         </div>
 
         {/* Filters */}

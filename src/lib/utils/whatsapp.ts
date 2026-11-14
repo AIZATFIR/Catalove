@@ -77,7 +77,7 @@ export function buildWhatsAppUrl(
   storeName: string = INITIAL_SETTINGS.store_name || "Catalove",
   currencySymbol: string = INITIAL_SETTINGS.currency_symbol || "Rp"
 ): string {
-  const cleanPhone = (phoneNumber || "6281234567890").replace(/[^0-9]/g, "");
+  const cleanPhone = (phoneNumber || "6285946689168").replace(/[^0-9]/g, "");
   const message = buildWhatsAppMessage(order, storeName, currencySymbol);
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
@@ -103,7 +103,7 @@ export interface CartWhatsAppPayload {
 
 export function generateCartWhatsAppUrl(payload: CartWhatsAppPayload): string {
   const symbol = payload.currencySymbol || "Rp";
-  const cleanPhone = (payload.whatsappNumber || "6281234567890").replace(/[^0-9]/g, "");
+  const cleanPhone = (payload.whatsappNumber || "6285946689168").replace(/[^0-9]/g, "");
   const itemsText = payload.items
     .map(
       (it, idx) =>
@@ -143,7 +143,7 @@ export function buildQuickProductWhatsAppUrl(params: {
   currencySymbol?: string;
   isInquiry?: boolean;
 }): string {
-  const cleanPhone = (params.whatsappNumber || "6281234567890").replace(/[^0-9]/g, "");
+  const cleanPhone = (params.whatsappNumber || "6285946689168").replace(/[^0-9]/g, "");
   const formatted = formatPrice(params.price, params.currencySymbol || "Rp");
   const variantLine = params.variantName ? ` (Varian: ${params.variantName})` : "";
   const message = params.isInquiry

@@ -12,9 +12,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@supabase/supabase-js";
 
 const STORAGE_KEYS = {
-  PRODUCTS: "catalove-products-v1",
-  CATEGORIES: "catalove-categories-v1",
-  LOCAL_MODE: "catalove-local-catalog-mode",
+  PRODUCTS: "catalove-products-v3",
+  CATEGORIES: "catalove-categories-v3",
+  LOCAL_MODE: "catalove-local-catalog-mode-v3",
 };
 
 // In-memory store for Node/SSR/automated testing fallback
@@ -56,7 +56,7 @@ function readBrowserStorage(): { categories: Category[]; products: Product[] } {
     // Initialize browser storage with current preset (defaulting to Universal Lifestyle Store)
     let presetKey: IndustryPreset = "general";
     try {
-      const savedSettings = window.localStorage.getItem("catalove-business-settings");
+      const savedSettings = window.localStorage.getItem("catalove-business-settings-v3");
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
         if (parsed?.industry_preset && INDUSTRY_PRESETS[parsed.industry_preset as IndustryPreset]) {
@@ -103,9 +103,9 @@ function writeBrowserStorage(categories: Category[], products: Product[], forceL
 function isBrowserLocalOverrideActive(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem(STORAGE_KEYS.LOCAL_MODE) === "1" || !isSupabaseConfigured();
+    return window.localStorage.getItem(STORAGE_KEYS.LOCAL_MODE) !== "supabase_live";
   } catch {
-    return !isSupabaseConfigured();
+    return true;
   }
 }
 

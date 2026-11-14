@@ -42,20 +42,12 @@ interface CartContextValue {
 const CART_STORAGE_KEY = "catalove-cart-v1";
 const WISHLIST_STORAGE_KEY = "catalove-wishlist-v1";
 
-function deterministicSeedLikes(productId: string): number {
-  let hash = 0;
-  for (let i = 0; i < productId.length; i++) {
-    hash = (hash * 31 + productId.charCodeAt(i)) % 350;
-  }
-  return 68 + hash;
-}
-
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [likeCounts] = useState<Record<string, number>>({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<"cart" | "wishlist">("cart");
   const [lastToast, setLastToast] = useState<string | null>(null);
@@ -167,14 +159,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return [productId, ...prev];
       });
 
-      setLikeCounts((prev) => {
-        const base = prev[productId] ?? deterministicSeedLikes(productId);
-        return {
-          ...prev,
-          [productId]: nowLiked ? base + 1 : Math.max(1, base - 1),
-        };
-      });
-
       return nowLiked;
     },
     []
@@ -186,12 +170,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const getLikeCount = useCallback(
-    (productId: string) => {
-      if (likeCounts[productId] !== undefined) return likeCounts[productId];
-      const base = deterministicSeedLikes(productId);
-      return savedIds.includes(productId) ? base + 1 : base;
-    },
-    [likeCounts, savedIds]
+    (productId: string) => (savedIds.includes(productId) ? 1 : 0),
+    [savedIds]
   );
 
   const openCart = useCallback(() => {

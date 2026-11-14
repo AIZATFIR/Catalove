@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   X,
-  Sparkles,
+  SlidersHorizontal,
   ArrowRight,
   RotateCcw,
   CheckCircle2,
@@ -125,14 +125,14 @@ export const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
         <div className="p-6 border-b border-stone-200/80 dark:border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[var(--storefront-accent)]/15 flex items-center justify-center text-[var(--storefront-accent)]">
-              <Sparkles className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4" />
             </div>
             <div>
               <h2 className="font-serif font-bold text-lg leading-none">
-                Asisten Pintar {settings.store_name || "Catalove"}
+                Bantu Pilih
               </h2>
               <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
-                Temukan pilihan produk terbaik sesuai preferensi Anda
+                {settings.store_name || "Catalove"}
               </p>
             </div>
           </div>

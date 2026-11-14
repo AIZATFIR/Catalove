@@ -12,7 +12,6 @@ import {
   MessageCircle,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
   Tag,
   Gift,
 } from "lucide-react";
@@ -165,8 +164,8 @@ export function CartDrawer() {
 
       const refCode = orderRes.order?.reference_code;
       const waUrl = generateCartWhatsAppUrl({
-        storeName: settings.store_name || "Catalove Studio",
-        whatsappNumber: settings.seller_whatsapp || "6281234567890",
+        storeName: settings.store_name || "Catalove",
+        whatsappNumber: settings.seller_whatsapp || "6285946689168",
         currencySymbol: currency,
         referenceCode: refCode,
         customerName: customerName.trim(),
@@ -308,9 +307,9 @@ export function CartDrawer() {
                   <ShoppingBag className="w-7 h-7" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg font-bold">Keranjang Masih Kosong</h3>
+                  <h3 className="font-serif text-lg font-bold">Keranjang Kosong</h3>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 max-w-xs mx-auto">
-                    Scroll koleksi produk favorit Anda di feed Pinterest atau TikTok dan ketuk &quot;+ Keranjang&quot;.
+                    Tambahkan item dari katalog.
                   </p>
                 </div>
                 <button
@@ -318,8 +317,7 @@ export function CartDrawer() {
                   onClick={() => setIsDrawerOpen(false)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[var(--storefront-accent)] px-5 py-2.5 text-xs font-bold text-white"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Mulai Jelajahi Produk</span>
+                  <span>Katalog</span>
                 </button>
               </div>
             ) : (
@@ -330,8 +328,8 @@ export function CartDrawer() {
                     <Gift className="w-4 h-4 text-[var(--storefront-accent)] shrink-0 mt-0.5" />
                     <p className="text-xs font-semibold leading-snug text-stone-800 dark:text-stone-100">
                       {rewardRemaining > 0
-                        ? `Tambah ${formatPrice(rewardRemaining, currency)} lagi untuk Prioritas Proses & Kemasan Eksklusif Gratis!`
-                        : "🎉 Selamat! Anda mendapat Prioritas Proses & Kemasan Eksklusif Gratis!"}
+                        ? `Tambah ${formatPrice(rewardRemaining, currency)} lagi untuk bonus kemasan.`
+                        : "Bonus aktif: Prioritas proses & kemasan gratis."}
                     </p>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-white/80 dark:bg-white/10">
@@ -627,9 +625,6 @@ export function CartDrawer() {
                         <p className="text-xs font-bold text-[var(--storefront-accent)] mt-1">
                           {formatPrice(product.base_price, currency)}
                         </p>
-                        <p className="text-[10px] text-stone-400 mt-0.5">
-                          ♥ {getLikeCount(product.id)} suka
-                        </p>
                       </div>
 
                       <div className="flex items-center gap-2 mt-2">
@@ -638,7 +633,7 @@ export function CartDrawer() {
                           onClick={() => addItem(product, undefined, 1)}
                           className="flex-1 py-1.5 px-3 rounded-full bg-[var(--storefront-accent)] text-white text-[11px] font-bold hover:opacity-90"
                         >
-                          + Keranjang
+                          + Bag
                         </button>
                         <Link
                           href={`/product/${product.slug}`}
