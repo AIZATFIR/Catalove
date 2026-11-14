@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OrderInputSchema } from "@/lib/validators/order";
 import { orderService } from "@/lib/services/order-service";
-import { getServerSupabase } from "@/lib/supabase/server";
-import { isSellerUser, verifyServerSession } from "@/lib/services/server-auth";
+import { verifyServerSession } from "@/lib/services/server-auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,23 +41,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  // Enforce server-side seller authentication
-  const serverSupabase = await getServerSupabase();
-  let isAuthorized = false;
+  // Enforce server-side seller authentication (honors demo/owner studio session cookie first, then Supabase Auth)
+  const cookieToken = req.cookies.get("admin_session")?.value;
+  const session = await verifyServerSession(cookieToken);
 
-  if (serverSupabase) {
-    const { data: { user } } = await serverSupabase.auth.getUser();
-    if (user) {
-      isAuthorized = await isSellerUser(user.id);
-    }
-  } else {
-    // Local demo development fallback
-    const authHeader = req.cookies.get("admin_session")?.value;
-    const session = await verifyServerSession(authHeader);
-    if (session) isAuthorized = true;
-  }
-
-  if (!isAuthorized) {
+  if (!session) {
     return NextResponse.json(
       { error: "Akses ditolak. Silakan masuk terlebih dahulu." },
       { status: 401 }

@@ -34,12 +34,20 @@ export function Skiper24({ className = "" }: { className?: string }) {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("sofiz-accent-color") || localStorage.getItem("zafir-accent-color") || "amber";
-    const found = ACCENT_PALETTES.find((p) => p.id === saved) || ACCENT_PALETTES[0];
-    applyPalette(found);
+    const manualId = sessionStorage.getItem("catalove-manual-accent");
+    if (manualId) {
+      const found = ACCENT_PALETTES.find((p) => p.id === manualId);
+      if (found) applyPalette(found, false);
+    }
+
+    const handleSettingsChange = () => {
+      sessionStorage.removeItem("catalove-manual-accent");
+    };
+    window.addEventListener("catalove-settings-change", handleSettingsChange);
+    return () => window.removeEventListener("catalove-settings-change", handleSettingsChange);
   }, []);
 
-  const applyPalette = (palette: AccentPalette) => {
+  const applyPalette = (palette: AccentPalette, markManual = true) => {
     setSelectedId(palette.id);
     document.documentElement.style.setProperty("--color-orange", palette.color);
     document.documentElement.style.setProperty("--color-orange-glow", palette.glow);
@@ -48,6 +56,9 @@ export function Skiper24({ className = "" }: { className?: string }) {
     document.documentElement.style.setProperty("--color-accent-glow", palette.glow);
     localStorage.setItem("sofiz-accent-color", palette.id);
     localStorage.setItem("zafir-accent-color", palette.id);
+    if (markManual) {
+      sessionStorage.setItem("catalove-manual-accent", palette.id);
+    }
   };
 
   const currentPalette = ACCENT_PALETTES.find((p) => p.id === selectedId) || ACCENT_PALETTES[0];

@@ -306,8 +306,9 @@ export default function BulkProductsPage() {
         await cakeService.createProduct({
           name: row.name.trim(),
           category_id: row.categoryId,
-          description: row.description.trim() || `${row.name.trim()} spesial dari dapur SofizCake. Dibuat fresh dengan bahan premium.`,
-          flavor_notes: row.flavorNotes.length > 0 ? row.flavorNotes : ["Freshly Baked", "Artisan"],
+          description: row.description.trim() || `${row.name.trim()} produk pilihan dengan kualitas terjaga.`,
+          flavor_notes: row.flavorNotes.length > 0 ? row.flavorNotes : ["Best Seller", "Kualitas Premium"],
+          specs: [],
           base_price: Number(row.price),
           minimum_lead_time_days: Number(row.leadTime),
           is_active: true,

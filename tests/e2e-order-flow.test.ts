@@ -6,7 +6,7 @@ import { buildWhatsAppMessage, buildWhatsAppUrl } from "../src/lib/utils/whatsap
 import { addDays, getTodayJakarta } from "../src/lib/utils/formatters";
 
 async function runE2E() {
-  console.log("🚀 Starting End-to-End SofizCake Integration Test...");
+  console.log("🚀 Starting End-to-End Catalove Integration Test...");
 
   // 1. Customer browses catalog
   const products = await cakeService.getProducts();
@@ -68,6 +68,7 @@ async function runE2E() {
     customerWhatsapp: "081233445566",
     requestedDate: closedDate,
     fulfillmentMethod: "pickup",
+    candleCount: 0,
   });
 
   assert.ok(blockedOrderRes.error, "Order on closed date must be blocked");

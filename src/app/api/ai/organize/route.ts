@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSupabase } from "@/lib/supabase/server";
-import { isSellerUser, verifyServerSession } from "@/lib/services/server-auth";
+import { verifyServerSession } from "@/lib/services/server-auth";
 
 export async function POST(req: NextRequest) {
-  // 1. Verify seller session
-  const serverSupabase = await getServerSupabase();
-  let isAuthorized = false;
+  // 1. Verify seller session (honors demo/owner studio session cookie first, then Supabase Auth)
+  const cookieToken = req.cookies.get("admin_session")?.value;
+  const session = await verifyServerSession(cookieToken);
 
-  if (serverSupabase) {
-    const { data: { user } } = await serverSupabase.auth.getUser();
-    if (user) {
-      isAuthorized = await isSellerUser(user.id);
-    }
-  } else {
-    const authHeader = req.cookies.get("admin_session")?.value;
-    const session = await verifyServerSession(authHeader);
-    if (session) isAuthorized = true;
-  }
-
-  if (!isAuthorized) {
+  if (!session) {
     return NextResponse.json(
       { error: "Akses ditolak. Silakan masuk terlebih dahulu." },
       { status: 401 }
@@ -30,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (!apiKey) {
     return NextResponse.json({
       available: false,
-      message: "AI Organizer belum aktif (GEMINI_API_KEY belum diatur). Mama dapat mengisi detail produk secara manual.",
+      message: "AI Organizer belum aktif (GEMINI_API_KEY belum diatur). Anda dapat mengisi detail produk secara manual.",
     });
   }
 
@@ -47,19 +35,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Call Gemini Multimodal API
-    // System instruction: suggest flavors, draft description, and category. Never set name or price.
-    const prompt = `Anda adalah asisten kuliner SofizCake (bakery artisan rumahan di Indonesia). 
-Lihat foto kue ini dan berikan saran untuk pengelola toko:
-1. flavor_notes: array berisi 2-4 catatan rasa dalam bahasa Indonesia (contoh: ["Cokelat Belgia", "Krim Vanila", "Stroberi Segar"]).
-2. suggested_category: pilih salah satu dari: "whole-cakes", "bento-cakes", "slice-boxes", "hampers".
-3. draft_description: deskripsi hangat dan menggugah selera sebanyak 1-2 kalimat dalam bahasa Indonesia.
+    // System instruction: suggest highlight tags/variants, draft description, and category for any UMKM product. Never set name or price.
+    const prompt = `Anda adalah asisten copywriter & kurator katalog UMKM profesional di platform Catalove (mendukung berbagai bisnis: Fashion, Kuliner/Bakery, Florist, Kerajinan/Craft, Gadget/Gear, Jasa, hingga Lifestyle).
+Lihat foto produk ini dan berikan saran untuk pemilik toko:
+1. flavor_notes: array berisi 2-4 tag keunggulan, varian, material, atau catatan rasa dalam bahasa Indonesia (contoh: ["Katun Combed 24s", "Jahitan Rapi", "Unisex"] atau ["Cokelat Belgia", "Tanpa Pengawet", "Best Seller"]).
+2. suggested_category: pilih salah satu slug kategori yang paling relevan: "best-seller", "new-arrivals", "bundling-hemat", "koleksi-khusus", "whole-cakes", "hampers".
+3. draft_description: deskripsi elegan, informatif, dan persuasif sebanyak 1-2 kalimat dalam bahasa Indonesia.
 
-PENTING: JANGAN tentukan nama kue atau harga. Nama dan harga wajib diisi sendiri oleh pemilik toko secara manual.
+PENTING: JANGAN tentukan nama produk atau harga. Nama dan harga wajib diisi sendiri oleh pemilik toko secara manual.
 
 Balas HANYA dalam format JSON valid:
 {
   "flavor_notes": ["..."],
-  "suggested_category": "whole-cakes",
+  "suggested_category": "best-seller",
   "draft_description": "..."
 }`;
 
@@ -86,7 +74,7 @@ Balas HANYA dalam format JSON valid:
     if (!inlineData) {
       return NextResponse.json({
         available: true,
-        message: "Foto belum dapat dianalisis secara otomatis. Mama dapat mengisi detail rasa dan deskripsi secara manual.",
+        message: "Foto belum dapat dianalisis secara otomatis. Anda dapat mengisi detail tag dan deskripsi secara manual.",
       });
     }
 
@@ -119,7 +107,7 @@ Balas HANYA dalam format JSON valid:
     if (!geminiRes.ok) {
       return NextResponse.json({
         available: false,
-        message: "Layanan saran AI sedang tidak dapat dijangkau. Mama dapat mengisi detail produk secara manual.",
+        message: "Layanan saran AI sedang tidak dapat dijangkau. Anda dapat mengisi detail produk secara manual.",
       });
     }
 
@@ -139,14 +127,14 @@ Balas HANYA dalam format JSON valid:
       available: true,
       suggestions: {
         flavor_notes: Array.isArray(parsed.flavor_notes) ? parsed.flavor_notes : [],
-        suggested_category: parsed.suggested_category || "whole-cakes",
+        suggested_category: parsed.suggested_category || "best-seller",
         draft_description: parsed.draft_description || "",
       },
     });
   } catch (err: unknown) {
     return NextResponse.json({
       available: false,
-      message: "Terjadi kendala saat memproses saran AI. Mama dapat melanjutkan pengisian manual.",
+      message: "Terjadi kendala saat memproses saran AI. Anda dapat melanjutkan pengisian manual.",
     });
   }
 }

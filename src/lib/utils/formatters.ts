@@ -7,6 +7,17 @@ export function formatIDR(amount: number): string {
   }).format(amount);
 }
 
+export function formatPrice(amount: number, currencySymbol: string = "Rp"): string {
+  if (!currencySymbol || currencySymbol === "Rp" || currencySymbol === "IDR") {
+    return formatIDR(amount);
+  }
+  const formatted = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `${currencySymbol} ${formatted}`;
+}
+
 export function formatDateIndonesian(dateStr?: string | null): string {
   if (!dateStr) return "-";
   const [year, month, day] = dateStr.split("-").map(Number);

@@ -68,23 +68,23 @@ export default function AdminAvailabilityPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-caramel-700">
+          <span className="text-xs font-semibold uppercase tracking-wider text-caramel-700 dark:text-amber-300">
             Jadwal Operasional
           </span>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 mt-0.5">
-            Kouta & Ketersediaan Harian
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 dark:text-white mt-0.5">
+            Kuota &amp; Ketersediaan Harian
           </h1>
-          <p className="text-xs text-cocoa-600 mt-1">
-            Pilih tanggal di bawah untuk mengatur kue yang dapat dipesan pada hari tersebut.
+          <p className="text-xs text-cocoa-600 dark:text-stone-300 mt-1">
+            Pilih tanggal di bawah untuk mengatur produk atau layanan yang dapat dipesan pada hari tersebut.
           </p>
         </div>
 
         <button
           onClick={handleCopyWeekend}
           disabled={isSaving}
-          className="touch-target inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-butter-100 hover:bg-butter-200 text-cocoa-900 border border-butter-300 text-xs font-semibold shadow-sm self-start sm:self-auto active:scale-95 transition-all"
+          className="touch-target inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-butter-100 hover:bg-butter-200 dark:bg-white/10 dark:hover:bg-white/20 text-cocoa-900 dark:text-stone-100 border border-butter-300 dark:border-white/15 text-xs font-semibold shadow-sm self-start sm:self-auto active:scale-95 transition-all"
         >
-          <Copy className="w-3.5 h-3.5 text-caramel-700" />
+          <Copy className="w-3.5 h-3.5 text-caramel-700 dark:text-amber-300" />
           <span>Salin ke 2 Hari ke Depan</span>
         </button>
       </div>
@@ -97,9 +97,9 @@ export default function AdminAvailabilityPage() {
       )}
 
       {/* Date Selector Pills (Horizontal swipe on phone) */}
-      <div className="rounded-3xl bg-white border border-caramel-200/80 shadow-soft p-4 sm:p-5">
-        <label className="text-xs font-bold uppercase tracking-wider text-cocoa-900 block mb-3">
-          Pilih Tanggal Acara:
+      <div className="rounded-3xl bg-white dark:bg-[#211B19] border border-caramel-200/80 dark:border-white/10 shadow-soft p-4 sm:p-5">
+        <label className="text-xs font-bold uppercase tracking-wider text-cocoa-900 dark:text-stone-200 block mb-3">
+          Pilih Tanggal Layanan / Pengiriman:
         </label>
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-2 px-2 sm:mx-0 sm:px-0">
           {next14Days.map((dateStr, idx) => {
@@ -116,7 +116,7 @@ export default function AdminAvailabilityPage() {
                 className={`touch-target shrink-0 flex flex-col items-center justify-center w-16 py-2.5 rounded-2xl border text-center transition-all ${
                   isSelected
                     ? "bg-caramel-600 text-white border-caramel-700 shadow-md scale-105"
-                    : "bg-vanilla-50 text-cocoa-800 border-caramel-200 hover:bg-vanilla-100"
+                    : "bg-vanilla-50 dark:bg-stone-900 text-cocoa-800 dark:text-stone-200 border-caramel-200 dark:border-white/10 hover:bg-vanilla-100 dark:hover:bg-stone-800"
                 }`}
               >
                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
@@ -130,14 +130,14 @@ export default function AdminAvailabilityPage() {
       </div>
 
       {/* Products Availability Toggle for Selected Date */}
-      <div className="rounded-3xl bg-white border border-caramel-200/80 shadow-soft p-5 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-caramel-100 pb-3">
+      <div className="rounded-3xl bg-white dark:bg-[#211B19] border border-caramel-200/80 dark:border-white/10 shadow-soft p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-caramel-100 dark:border-white/10 pb-3">
           <div>
-            <h2 className="font-serif font-bold text-lg text-cocoa-950">
+            <h2 className="font-serif font-bold text-lg text-cocoa-950 dark:text-white">
               Ketersediaan untuk {formatDateIndonesian(selectedDate)}
             </h2>
-            <p className="text-xs text-cocoa-500">
-              Ubah status kue bila kuota porsi pada tanggal ini telah habis atau dapur libur.
+            <p className="text-xs text-cocoa-500 dark:text-stone-400">
+              Ubah status produk bila kuota order pada tanggal ini telah penuh atau toko/studio libur.
             </p>
           </div>
         </div>
@@ -149,25 +149,25 @@ export default function AdminAvailabilityPage() {
             return (
               <div
                 key={product.id}
-                className="p-4 rounded-2xl bg-vanilla-50/70 border border-caramel-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="p-4 rounded-2xl bg-vanilla-50/70 dark:bg-stone-900/70 border border-caramel-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 <div>
-                  <h4 className="font-bold text-sm text-cocoa-900">
+                  <h4 className="font-bold text-sm text-cocoa-900 dark:text-stone-100">
                     {product.name}
                   </h4>
-                  <p className="text-xs text-cocoa-500 mt-0.5">
+                  <p className="text-xs text-cocoa-500 dark:text-stone-400 mt-0.5">
                     Lead time: {product.minimum_lead_time_days === 0 ? "Ready Stock" : `H-${product.minimum_lead_time_days}`}
                   </p>
                 </div>
 
                 {/* 3-State Toggle Pill */}
-                <div className="flex items-center gap-1.5 p-1 rounded-full bg-white border border-caramel-200 text-xs font-semibold self-start sm:self-auto">
+                <div className="flex items-center gap-1.5 p-1 rounded-full bg-white dark:bg-stone-800 border border-caramel-200 dark:border-white/10 text-xs font-semibold self-start sm:self-auto">
                   <button
                     onClick={() => handleToggle(product.id, "available")}
                     className={`px-3 py-1.5 rounded-full transition-all ${
                       currentStatus === "available"
                         ? "bg-emerald-600 text-white shadow-sm"
-                        : "text-cocoa-600 hover:text-cocoa-900"
+                        : "text-cocoa-600 dark:text-stone-300 hover:text-cocoa-900 dark:hover:text-white"
                     }`}
                   >
                     Tersedia
@@ -177,7 +177,7 @@ export default function AdminAvailabilityPage() {
                     className={`px-3 py-1.5 rounded-full transition-all ${
                       currentStatus === "sold_out"
                         ? "bg-rose-600 text-white shadow-sm"
-                        : "text-cocoa-600 hover:text-cocoa-900"
+                        : "text-cocoa-600 dark:text-stone-300 hover:text-cocoa-900 dark:hover:text-white"
                     }`}
                   >
                     Habis (Penuh)
@@ -187,7 +187,7 @@ export default function AdminAvailabilityPage() {
                     className={`px-3 py-1.5 rounded-full transition-all ${
                       currentStatus === "closed"
                         ? "bg-gray-700 text-white shadow-sm"
-                        : "text-cocoa-600 hover:text-cocoa-900"
+                        : "text-cocoa-600 dark:text-stone-300 hover:text-cocoa-900 dark:hover:text-white"
                     }`}
                   >
                     Tutup

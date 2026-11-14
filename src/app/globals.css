@@ -196,8 +196,8 @@
 
 html.dark,
 html.dark body {
-  background: #1A1412;
-  color: #F2E7DC;
+  background: var(--storefront-background);
+  color: var(--storefront-ink);
 }
 
 .dark input,

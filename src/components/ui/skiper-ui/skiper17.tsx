@@ -6,7 +6,8 @@ import { useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { ScrollTrigger, gsap, useGSAP } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
-import { formatIDR } from "@/lib/utils/formatters";
+import { formatPrice } from "@/lib/utils/formatters";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 export interface Skiper17CardData {
   id: number | string;
@@ -32,6 +33,8 @@ export function StickyCard002({
   containerClassName,
   imageClassName,
 }: StickyCard002Props) {
+  const settings = useBusinessSettings();
+  const currency = settings.currency_symbol || "Rp";
   const container = useRef<HTMLDivElement>(null);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -127,7 +130,7 @@ export function StickyCard002({
                     </h3>
                     {card.price ? (
                       <p className="mt-2 text-sm font-semibold text-white/90">
-                        Mulai {formatIDR(card.price)} {card.leadTime !== undefined ? `· ${card.leadTime === 0 ? "Ready" : `H-${card.leadTime}`}` : ""}
+                        Mulai {formatPrice(card.price, currency)} {card.leadTime !== undefined ? `· ${card.leadTime === 0 ? "Ready" : `H-${card.leadTime}`}` : ""}
                       </p>
                     ) : null}
                   </div>
@@ -136,7 +139,7 @@ export function StickyCard002({
                       href={`/product/${card.slug}`}
                       className="touch-target inline-flex items-center gap-2 border border-white/80 bg-white/15 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-md transition-colors hover:bg-white hover:text-[#4D3040] dark:hover:bg-[#FAF4EE] dark:hover:text-[#211B19]"
                     >
-                      <span>Lihat Kue</span>
+                      <span>Lihat Produk</span>
                       <ArrowUpRight className="h-4 w-4" />
                     </Link>
                   )}
@@ -146,7 +149,7 @@ export function StickyCard002({
           ))}
         </div>
       </div>
-      <ul className="sr-only" aria-label="Pilihan kue unggulan">
+      <ul className="sr-only" aria-label="Pilihan produk unggulan">
         {cards.map((card) => <li key={card.id}>{card.title}</li>)}
       </ul>
     </div>

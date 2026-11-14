@@ -75,6 +75,14 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link
+                  href="/bio"
+                  className="hover:text-[#4D3040] dark:hover:text-[#FAF4EE] transition-colors font-medium"
+                >
+                  Bio-Link & QR Toko
+                </Link>
+              </li>
+              <li>
                 <a
                   href="#alur-pesan"
                   className="hover:text-[#4D3040] dark:hover:text-[#FAF4EE] transition-colors font-medium"

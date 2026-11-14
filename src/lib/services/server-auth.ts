@@ -7,7 +7,7 @@ export interface AdminUser {
   role: "owner" | "admin";
 }
 
-const DEFAULT_ADMIN_EMAIL = "mama@sofizcake.com";
+const DEFAULT_ADMIN_EMAIL = "owner@catalove.id";
 
 export async function isSellerUser(userId: string): Promise<boolean> {
   if (!isSupabaseConfigured()) return true;
@@ -33,6 +33,7 @@ export async function isSellerUser(userId: string): Promise<boolean> {
       if (
         u.app_metadata?.role === "seller" ||
         u.user_metadata?.role === "seller" ||
+        u.email?.includes("@catalove.id") ||
         u.email?.includes("@sofizcake.com")
       ) {
         await admin.from("seller_users").upsert({ user_id: userId, is_active: true });

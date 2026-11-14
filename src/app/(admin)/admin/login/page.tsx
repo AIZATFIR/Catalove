@@ -2,19 +2,29 @@
 
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Cake, Lock, ArrowRight, Mail } from "lucide-react";
+import { Store, Lock, ArrowRight, Mail, Zap } from "lucide-react";
 import { authService } from "@/lib/services/auth-service";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/Button";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const settings = useBusinessSettings();
   const nextUrl = searchParams.get("next") || "/admin";
 
-  const [email, setEmail] = useState("mama@sofizcake.com");
+  const [email, setEmail] = useState("owner@catalove.id");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const storeName = settings.store_name || "Catalove Studio";
+
+  const handleInstantDemoLogin = () => {
+    document.cookie = "admin_session=demo_seller_session_valid; path=/; max-age=86400";
+    router.push(nextUrl);
+    router.refresh();
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,13 +48,13 @@ function LoginForm() {
       {/* Brand Header */}
       <div className="text-center space-y-2">
         <div className="w-14 h-14 rounded-full bg-butter-500 border border-butter-600 flex items-center justify-center text-cocoa-900 mx-auto shadow-soft">
-          <Cake className="w-7 h-7 text-caramel-800" />
+          <Store className="w-7 h-7 text-caramel-800" />
         </div>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 dark:text-white">
-          Dapur SofizCake
+          {storeName}
         </h1>
         <p className="text-xs text-cocoa-600 dark:text-stone-300">
-          Masuk untuk mengelola pesanan, stok kue harian, dan katalog online.
+          Masuk untuk mengelola produk, tampilan brand, jadwal, dan pesanan toko Anda.
         </p>
       </div>
 
@@ -53,6 +63,16 @@ function LoginForm() {
           {error}
         </div>
       )}
+
+      {/* 1-Click Instant Studio Access */}
+      <button
+        type="button"
+        onClick={handleInstantDemoLogin}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl border border-[var(--storefront-accent)]/40 bg-[var(--storefront-accent)]/10 px-4 py-3 text-xs font-bold text-[var(--storefront-accent)] hover:bg-[var(--storefront-accent)] hover:text-white transition-all active:scale-[0.99]"
+      >
+        <Zap className="w-4 h-4" />
+        <span>⚡ Masuk Instan ke Studio (Mode Demo / Owner)</span>
+      </button>
 
       {/* Login Form */}
       <form onSubmit={handleLogin} className="space-y-4">
@@ -66,7 +86,7 @@ function LoginForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="mama@sofizcake.com"
+              placeholder="owner@catalove.id"
               required
               className="w-full pl-10 pr-4 py-3 rounded-2xl bg-vanilla-50 border border-caramel-300 text-sm text-cocoa-900 focus:outline-none focus:border-caramel-600 dark:bg-stone-900 dark:border-white/10 dark:text-white"
             />
@@ -101,7 +121,7 @@ function LoginForm() {
       </form>
 
       <p className="text-[11px] text-center text-cocoa-400 dark:text-stone-400">
-        Akun pengelola terproteksi dengan autentikasi aman SofizCake.
+        Portal pengelola terproteksi untuk {storeName} • Catalove Studio Engine.
       </p>
     </div>
   );

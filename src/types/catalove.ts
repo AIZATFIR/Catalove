@@ -45,12 +45,21 @@ export type HeroStyleOption =
   | "minimal_center"
   | "rotating_showcase";
 
+export type CatalogLayoutOption =
+  | "pinterest_masonry"
+  | "tiktok_feed"
+  | "grid_2"
+  | "grid_3"
+  | "grid_4"
+  | "masonry";
+
 export interface ThemeConfig {
   font_heading: FontHeadingOption;
   font_body: FontBodyOption;
   color_theme: ColorThemeOption;
   card_style: CardStyleOption;
   hero_style: HeroStyleOption;
+  catalog_layout?: CatalogLayoutOption;
   catalog_columns_desktop: 2 | 3 | 4;
   catalog_columns_mobile: 1 | 2;
 }
@@ -171,6 +180,9 @@ export interface BusinessSettings {
 
   industry_preset: IndustryPreset;
   workflow_mode: WorkflowMode;
+  catalog_layout?: CatalogLayoutOption;
+  enable_preloader?: boolean;
+  story_image_url?: string;
   theme_config: ThemeConfig;
   marquee_announcement: MarqueeAnnouncement;
 

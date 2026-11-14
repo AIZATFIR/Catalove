@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import CircularCarousel from "@/components/react-bits/CircularCarousel";
 import type { Product } from "@/types/bakery";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 type CarouselCakePhoto = {
   src: string;
@@ -26,6 +27,9 @@ function shuffle<T>(items: T[]): T[] {
 export function CakeCircularCarousel({ products, variant = "hero" }: { products: Product[]; variant?: "hero" | "gallery" }) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
+  const settings = useBusinessSettings();
+  const storeName = settings.store_name || "Catalove";
+
   const photos = useMemo<CarouselCakePhoto[]>(() => products
     .filter((product) => product.is_active)
     .flatMap((product) => product.images
@@ -34,9 +38,9 @@ export function CakeCircularCarousel({ products, variant = "hero" }: { products:
         src: image.storage_path,
         alt: image.alt_text || product.name,
         title: product.name,
-        subtitle: product.category?.name || "Dari koleksi SofizCake",
+        subtitle: product.category?.name || `Dari koleksi ${storeName}`,
         productSlug: product.slug,
-      }))), [products]);
+      }))), [products, storeName]);
   const [orderedPhotos, setOrderedPhotos] = useState(photos);
 
   useEffect(() => {
@@ -46,10 +50,10 @@ export function CakeCircularCarousel({ products, variant = "hero" }: { products:
   if (!orderedPhotos.length) return null;
 
   return (
-    <div className={`sofiz-circular-stage ${variant === "gallery" ? "sofiz-circular-stage--gallery" : ""}`} aria-label="Foto koleksi kue SofizCake">
+    <div className={`sofiz-circular-stage ${variant === "gallery" ? "sofiz-circular-stage--gallery" : ""}`} aria-label={`Foto koleksi ${storeName}`}>
       <CircularCarousel
         items={orderedPhotos}
-        ariaLabel="Jelajahi foto semua kue SofizCake"
+        ariaLabel={`Jelajahi foto semua produk ${storeName}`}
         preset="panorama"
         intro="assemble"
         cardWidth={320}

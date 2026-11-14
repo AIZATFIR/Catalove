@@ -30,7 +30,10 @@ export function BrandStory() {
         {/* Visual Showcase */}
         <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-[#EFE5D9] shadow-xl dark:bg-[#2C2421]" data-gsap-reveal>
           <Image
-            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1400&q=85"
+            src={
+              settings.story_image_url ||
+              "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1400&q=85"
+            }
             alt="Studio kreasi dan showcase"
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"

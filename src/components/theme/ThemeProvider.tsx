@@ -79,28 +79,30 @@ function DynamicThemeBridge() {
     const bodyFont = FONT_BODY_MAP[themeConfig.font_body] || FONT_BODY_MAP.jakarta;
 
     root.style.setProperty("--font-active-heading", headingFont);
+    root.style.setProperty("--font-serif", headingFont);
     root.style.setProperty("--font-active-body", bodyFont);
+    root.style.setProperty("--font-sans", bodyFont);
 
     // Apply Dynamic Color Palette
     const palette = THEME_COLOR_MAP[themeConfig.color_theme] || THEME_COLOR_MAP.warm_oat;
-    const isDark = root.classList.contains("dark");
-    const activeColors = isDark ? palette.dark : palette.light;
 
-    root.style.setProperty("--storefront-accent", activeColors.accent);
-    root.style.setProperty("--color-accent-glow", activeColors.glow);
-    root.style.setProperty("--storefront-background", activeColors.bg);
-    root.style.setProperty("--storefront-surface", activeColors.surface);
-    root.style.setProperty("--storefront-ink", activeColors.ink);
-
-    // Observe dark class changes on root to keep dynamic theme synced
-    const observer = new MutationObserver(() => {
-      const darkNow = root.classList.contains("dark");
+    const applyColors = (darkNow: boolean) => {
       const c = darkNow ? palette.dark : palette.light;
       root.style.setProperty("--storefront-accent", c.accent);
+      root.style.setProperty("--color-accent", c.accent);
+      root.style.setProperty("--color-orange", c.accent);
       root.style.setProperty("--color-accent-glow", c.glow);
+      root.style.setProperty("--color-orange-glow", c.glow);
       root.style.setProperty("--storefront-background", c.bg);
       root.style.setProperty("--storefront-surface", c.surface);
       root.style.setProperty("--storefront-ink", c.ink);
+    };
+
+    applyColors(root.classList.contains("dark"));
+
+    // Observe dark class changes on root to keep dynamic theme synced
+    const observer = new MutationObserver(() => {
+      applyColors(root.classList.contains("dark"));
     });
 
     observer.observe(root, { attributes: true, attributeFilter: ["class"] });

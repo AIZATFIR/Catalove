@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Cake, CalendarDays, PlusCircle, Settings2 } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Package, CalendarDays, PlusCircle, Settings2 } from "lucide-react";
 import { orderService } from "@/lib/services/order-service";
 import { MotionIcon } from "@/components/ui/MotionIcon";
 
@@ -41,7 +41,7 @@ export const AdminBottomNav: React.FC = () => {
     {
       label: "Katalog",
       href: "/admin/products",
-      icon: Cake,
+      icon: Package,
       active: pathname === "/admin/products",
     },
     {
@@ -51,7 +51,7 @@ export const AdminBottomNav: React.FC = () => {
       active: pathname.startsWith("/admin/availability"),
     },
     {
-      label: "Identitas",
+      label: "Desain",
       href: "/admin/settings",
       icon: Settings2,
       active: pathname.startsWith("/admin/settings"),

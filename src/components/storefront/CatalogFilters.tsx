@@ -5,6 +5,7 @@ import { Search, X, SlidersHorizontal } from "lucide-react";
 import { Category } from "@/types/bakery";
 import { SmoothInput } from "@/components/ui/skiper-ui/skiper106";
 import { MotionIcon } from "@/components/ui/MotionIcon";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface CatalogFiltersProps {
   categories: Category[];
@@ -31,6 +32,8 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
   onSortChange,
   totalResults,
 }) => {
+  const settings = useBusinessSettings();
+
   return (
     <div className="space-y-6">
       {/* Search Bar & Sort Row */}
@@ -44,8 +47,8 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Cari kue, rasa keju, cokelat, bento..."
-            aria-label="Cari produk kue"
+            placeholder={`Cari produk, kategori, atau kata kunci di ${settings.store_name || "katalog"}...`}
+            aria-label="Cari produk di katalog"
             wrapperClassName="!max-w-none !rounded-none !border-[#BFAF9F] !bg-white !py-2.5 !pl-10 !pr-9 dark:!bg-[#2C2421] dark:!border-white/20 dark:!text-[#FAF4EE]"
             className="!text-sm placeholder:!text-[#806C71] dark:placeholder:!text-stone-400 dark:!text-[#FAF4EE]"
           />

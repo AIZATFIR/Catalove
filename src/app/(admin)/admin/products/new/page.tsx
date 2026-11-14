@@ -20,7 +20,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { cakeService } from "@/lib/services/cake-service";
-import { INITIAL_CATEGORIES } from "@/lib/data/seed-cakes";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/Button";
 import { MotionIcon } from "@/components/ui/MotionIcon";
 
@@ -37,13 +37,16 @@ interface UploadedImageItem {
 
 export default function NewProductDraftPage() {
   const router = useRouter();
+  const settings = useBusinessSettings();
+  const currencySymbol = settings.currency_symbol || "Rp";
 
-  // Mode: "new_cake" | "append_existing"
-  const [mode, setMode] = useState<"new_cake" | "append_existing">("new_cake");
   const [images, setImages] = useState<UploadedImageItem[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState("");
 
   // Form Fields
   const [name, setName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [badge, setBadge] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
@@ -51,8 +54,10 @@ export default function NewProductDraftPage() {
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState<number>(0);
-  const [leadTime, setLeadTime] = useState<number>(2);
+  const [compareAtPrice, setCompareAtPrice] = useState<string>("");
+  const [leadTime, setLeadTime] = useState<number>(0);
   const [flavorNotesStr, setFlavorNotesStr] = useState("");
+  const [specs, setSpecs] = useState<{ label: string; value: string }[]>([]);
   const [variants, setVariants] = useState<{ name: string; price: number }[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,25 +77,41 @@ export default function NewProductDraftPage() {
     if (!newCategoryName.trim()) return;
     setCreatingCategory(true);
     try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCategoryName.trim() }),
-      });
-      const data = await res.json();
-      if (data.success && data.category) {
-        setCategories((prev) => [...prev, data.category]);
-        setCategoryId(data.category.id);
-        setNewCategoryName("");
-        setIsAddingNewCategory(false);
-      } else {
-        setFeedbackMessage(data.error || "Gagal membuat kategori baru");
-      }
-    } catch {
-      setFeedbackMessage("Gagal membuat kategori baru");
+      const created = await cakeService.createCategory({ name: newCategoryName.trim() });
+      setCategories((prev) => [...prev, created]);
+      setCategoryId(created.id);
+      setNewCategoryName("");
+      setIsAddingNewCategory(false);
+    } catch (err: unknown) {
+      setFeedbackMessage(
+        err instanceof Error ? err.message : "Gagal membuat kategori baru"
+      );
     } finally {
       setCreatingCategory(false);
     }
+  };
+
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+    try {
+      new URL(trimmed);
+    } catch {
+      setFeedbackMessage("URL foto tidak valid. Pastikan diawali https://");
+      return;
+    }
+
+    const newItem: UploadedImageItem = {
+      id: `url-${Date.now()}`,
+      previewUrl: trimmed,
+      uploadedUrl: trimmed,
+      storagePath: trimmed,
+      isPrimary: images.length === 0,
+      status: "success",
+    };
+    setImages((prev) => [...prev, newItem]);
+    setImageUrlInput("");
+    setFeedbackMessage("");
   };
 
   const uploadFile = async (item: UploadedImageItem) => {
@@ -191,7 +212,7 @@ export default function NewProductDraftPage() {
         if (data.suggestions.suggested_category) {
           setCategoryId(data.suggestions.suggested_category);
         }
-        setFeedbackMessage("Saran AI untuk deskripsi dan rasa berhasil diterapkan. Mama bebas mengubahnya.");
+        setFeedbackMessage("Saran AI untuk deskripsi dan tag berhasil diterapkan. Anda bebas mengubahnya.");
       }
     } catch {
       setFeedbackMessage("Layanan saran AI sedang tidak dapat dijangkau.");
@@ -265,17 +286,32 @@ export default function NewProductDraftPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      const cleanSpecs = specs
+        .map((s) => ({ label: s.label.trim(), value: s.value.trim() }))
+        .filter((s) => s.label && s.value);
+
+      const parsedCompare = Number(compareAtPrice);
+
       await cakeService.createProduct({
         name: name.trim(),
-        category_id: categoryId,
-        description: description.trim() || `${name.trim()} dibuat segar sesuai pesanan dari dapur SofizCake.`,
-        flavor_notes: flavorNotes.length > 0 ? flavorNotes : ["Freshly Baked", "Artisan"],
+        tagline: tagline.trim() || undefined,
+        badge: badge.trim() || undefined,
+        category_id: categoryId || null,
+        description:
+          description.trim() ||
+          `${name.trim()} koleksi pilihan dari ${settings.store_name || "Catalove"}.`,
+        flavor_notes: flavorNotes.length > 0 ? flavorNotes : ["Best Seller", "Pilihan Utama"],
+        specs: cleanSpecs,
         base_price: Number(basePrice),
+        compare_at_price:
+          compareAtPrice.trim() !== "" && Number.isFinite(parsedCompare) && parsedCompare > 0
+            ? parsedCompare
+            : null,
         minimum_lead_time_days: Number(leadTime),
         is_active: isPublish,
         is_featured: false,
         variants: variants.map((v, idx) => ({
-          name: v.name,
+          name: v.name.trim() || `Varian ${idx + 1}`,
           price: Number(v.price),
           is_default: idx === 0,
           display_order: idx + 1,
@@ -326,23 +362,23 @@ export default function NewProductDraftPage() {
       )}
 
       {/* SECTION 1: BULK IMAGE UPLOADER (HIGH PRIORITY) */}
-      <div className="rounded-3xl bg-white border border-caramel-200/80 shadow-soft p-5 sm:p-6 space-y-4">
+      <div className="rounded-3xl bg-white dark:bg-[#211B19] border border-caramel-200/80 dark:border-white/10 shadow-soft p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold uppercase tracking-wider text-cocoa-900 block">
+          <label className="text-xs font-bold uppercase tracking-wider text-cocoa-900 dark:text-[#FAF4EE] block">
             1. Foto Produk ({images.length} foto dipilih)
           </label>
-          <span className="text-[11px] text-cocoa-500">
+          <span className="text-[11px] text-cocoa-500 dark:text-[#C5B5A8]">
             Pilih satu foto utama
           </span>
         </div>
 
         {/* Upload Zone */}
-        <label className="touch-target border-2 border-dashed border-caramel-300 hover:border-caramel-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer bg-vanilla-50/60 hover:bg-butter-50 transition-all text-center">
-          <MotionIcon icon={UploadCloud} size={32} className="mb-2 text-caramel-600" />
-          <span className="font-bold text-xs text-cocoa-900">
+        <label className="touch-target border-2 border-dashed border-caramel-300 dark:border-white/20 hover:border-caramel-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer bg-vanilla-50/60 dark:bg-white/5 hover:bg-butter-50 dark:hover:bg-white/10 transition-all text-center">
+          <MotionIcon icon={UploadCloud} size={32} className="mb-2 text-caramel-600 dark:text-[#D1A686]" />
+          <span className="font-bold text-xs text-cocoa-900 dark:text-[#FAF4EE]">
             Sentuh untuk Pilih Foto dari Galeri HP / Kamera
           </span>
-          <span className="text-[11px] text-cocoa-500 mt-1">
+          <span className="text-[11px] text-cocoa-500 dark:text-[#C5B5A8] mt-1">
             Bisa pilih 1 hingga 10 foto sekaligus
           </span>
           <input
@@ -354,22 +390,40 @@ export default function NewProductDraftPage() {
           />
         </label>
 
+        {/* Optional Quick URL Image Adder */}
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={imageUrlInput}
+            onChange={(e) => setImageUrlInput(e.target.value)}
+            placeholder="Atau tempel URL foto produk (https://...)"
+            className="flex-1 px-3.5 py-2 rounded-xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
+          />
+          <button
+            type="button"
+            onClick={handleAddImageUrl}
+            className="px-3.5 py-2 rounded-xl bg-caramel-600 text-white text-xs font-bold hover:bg-caramel-700 shrink-0"
+          >
+            + Pakai URL
+          </button>
+        </div>
+
         {/* Thumbnail Previews Grid with Reorder & Primary Controls */}
         {images.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
             {images.map((img, idx) => (
               <div
                 key={img.id}
-                className={`relative rounded-2xl overflow-hidden border-2 bg-white shadow-sm p-1.5 transition-all ${
+                className={`relative rounded-2xl overflow-hidden border-2 bg-white dark:bg-[#2A221F] shadow-sm p-1.5 transition-all ${
                   img.isPrimary
                     ? "border-amber-500 ring-2 ring-amber-200"
-                    : "border-caramel-200"
+                    : "border-caramel-200 dark:border-white/10"
                 }`}
               >
                 <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-vanilla-200">
                   <Image
                     src={img.previewUrl}
-                    alt="Preview foto kue"
+                    alt="Preview foto produk"
                     fill
                     unoptimized
                     sizes="180px"
@@ -436,24 +490,85 @@ export default function NewProductDraftPage() {
       </div>
 
       {/* SECTION 2: PRODUCT DATA FORM */}
-      <div className="rounded-3xl bg-white border border-caramel-200/80 shadow-soft p-5 sm:p-6 space-y-4">
-        <label className="text-xs font-bold uppercase tracking-wider text-cocoa-900 block border-b border-caramel-100 pb-2">
-          2. Informasi Kue
+      <div className="rounded-3xl bg-white dark:bg-[#211B19] border border-caramel-200/80 dark:border-white/10 shadow-soft p-5 sm:p-6 space-y-4">
+        <label className="text-xs font-bold uppercase tracking-wider text-cocoa-900 dark:text-[#FAF4EE] block border-b border-caramel-100 dark:border-white/10 pb-2">
+          2. Informasi Produk
         </label>
 
         {/* Name */}
         <div className="space-y-1">
-          <label className="block text-xs font-bold text-cocoa-800">
-            Nama Kue <span className="text-rose-500">*</span>
+          <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+            Nama Produk <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Contoh: Triple Chocolate Fudge Cake"
+            placeholder="Contoh: Linen Oversized Shirt / Paket Branding / Signature Cake"
             required
-            className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 border border-caramel-300 text-xs font-semibold text-cocoa-900 focus:outline-none focus:border-caramel-600"
+            className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs font-semibold text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
           />
+        </div>
+
+        {/* Tagline & Badge */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+              Tagline / Hook Singkat (Opsional)
+            </label>
+            <input
+              type="text"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="Contoh: Handmade batch terbatas / Anti luntur"
+              className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+              Badge Sorotan (Opsional)
+            </label>
+            <input
+              type="text"
+              value={badge}
+              onChange={(e) => setBadge(e.target.value)}
+              placeholder="Contoh: Best Seller, Baru, Hemat 20%"
+              className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
+            />
+          </div>
+        </div>
+
+        {/* Base Price & Compare At Price */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+              Harga Dasar ({currencySymbol}) <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="1000"
+              step="1000"
+              value={basePrice || ""}
+              onChange={(e) => setBasePrice(Math.max(0, Number(e.target.value)))}
+              placeholder="Contoh: 185000"
+              required
+              className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs font-bold tabular-nums text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+              Harga Coret / Sebelum Diskon (Opsional)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="1000"
+              value={compareAtPrice}
+              onChange={(e) => setCompareAtPrice(e.target.value)}
+              placeholder="Kosongkan jika tidak promo"
+              className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs tabular-nums text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
+            />
+          </div>
         </div>
 
         {/* Category & Lead Time */}
@@ -507,18 +622,18 @@ export default function NewProductDraftPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-cocoa-800">
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
               Waktu Persiapan (Lead Time)
             </label>
             <select
               value={leadTime}
               onChange={(e) => setLeadTime(Number(e.target.value))}
-              className="w-full px-3 py-2.5 rounded-2xl bg-vanilla-50 border border-caramel-300 text-xs font-semibold text-cocoa-900 focus:outline-none focus:border-caramel-600"
+              className="w-full px-3 py-2.5 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/20 text-xs font-semibold text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
             >
               <option value={0}>H-0 (Ready Stock Hari Ini)</option>
               <option value={1}>H-1 (Butuh 1 Hari)</option>
               <option value={2}>H-2 (Butuh 2 Hari - Standar)</option>
-              <option value={3}>H-3 (Butuh 3 Hari - Hampers)</option>
+              <option value={3}>H-3 (Butuh 3 Hari - Custom / Pre-Order)</option>
             </select>
           </div>
         </div>
@@ -526,8 +641,8 @@ export default function NewProductDraftPage() {
         {/* Description with AI Suggestion Button */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold text-cocoa-800">
-              Deskripsi Rasa & Keistimewaan
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+              Deskripsi &amp; Keunggulan Produk
             </label>
             {images.some((img) => img.status === "success" && img.uploadedUrl) && (
               <button
@@ -545,40 +660,90 @@ export default function NewProductDraftPage() {
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Jelaskan bahan utama, rasa, dan kelembutan kuenya..."
-            className="w-full p-3 rounded-2xl bg-vanilla-50 border border-caramel-300 text-xs text-cocoa-900 focus:outline-none focus:border-caramel-600"
+            placeholder="Jelaskan keunggulan produk, bahan/material, isi paket, dan manfaatnya..."
+            className="w-full p-3 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
           />
         </div>
 
-        {/* Flavor Notes Tag */}
+        {/* Tags / Key Notes */}
         <div className="space-y-1">
-          <label className="block text-xs font-bold text-cocoa-800">
-            Kata Kunci Rasa (Pisahkan koma)
+          <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+            Tag / Kata Kunci Produk (Pisahkan koma)
           </label>
           <input
             type="text"
             value={flavorNotesStr}
             onChange={(e) => setFlavorNotesStr(e.target.value)}
-            placeholder="Contoh: Dark Chocolate, Cream Cheese, Berry"
-            className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 border border-caramel-300 text-xs text-cocoa-900 focus:outline-none focus:border-caramel-600"
+            placeholder="Contoh: Best Seller, Handmade, Bergaransi, Material Premium"
+            className="w-full px-4 py-2.5 rounded-2xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100 focus:outline-none focus:border-caramel-600"
           />
         </div>
 
-        {/* Base Price & Variants */}
-        <div className="space-y-2 pt-2 border-t border-caramel-100">
+        {/* Dynamic Specs Key-Value */}
+        <div className="space-y-2 pt-2 border-t border-caramel-100 dark:border-white/10">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold text-cocoa-800">
-              Varian Ukuran & Harga
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+              Spesifikasi Produk (Opsional)
+            </label>
+            <button
+              type="button"
+              onClick={() => setSpecs((prev) => [...prev, { label: "", value: "" }])}
+              className="text-xs font-semibold text-caramel-700 dark:text-amber-400 hover:underline flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Tambah Spesifikasi</span>
+            </button>
+          </div>
+          {specs.map((spec, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={spec.label}
+                onChange={(e) =>
+                  setSpecs((prev) =>
+                    prev.map((item, i) => (i === idx ? { ...item, label: e.target.value } : item))
+                  )
+                }
+                placeholder="Label (cth: Bahan / Garansi)"
+                className="w-1/3 px-3 py-2 rounded-xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100"
+              />
+              <input
+                type="text"
+                value={spec.value}
+                onChange={(e) =>
+                  setSpecs((prev) =>
+                    prev.map((item, i) => (i === idx ? { ...item, value: e.target.value } : item))
+                  )
+                }
+                placeholder="Nilai (cth: Katun 100% / 1 Tahun)"
+                className="flex-1 px-3 py-2 rounded-xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100"
+              />
+              <button
+                type="button"
+                onClick={() => setSpecs((prev) => prev.filter((_, i) => i !== idx))}
+                className="p-1.5 text-cocoa-400 hover:text-rose-600"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Variants */}
+        <div className="space-y-2 pt-2 border-t border-caramel-100 dark:border-white/10">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
+              Varian &amp; Harga (Opsional)
             </label>
             <button
               type="button"
               onClick={() =>
                 setVariants((prev) => [
                   ...prev,
-                  { name: `Varian Baru`, price: basePrice },
+                  { name: `Varian ${prev.length + 1}`, price: basePrice },
                 ])
               }
-              className="text-xs font-semibold text-caramel-700 hover:text-caramel-900 flex items-center gap-1"
+              className="text-xs font-semibold text-caramel-700 dark:text-amber-400 hover:underline flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Tambah Varian</span>
@@ -597,8 +762,8 @@ export default function NewProductDraftPage() {
                       prev.map((item, i) => (i === idx ? { ...item, name: val } : item))
                     );
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-vanilla-50 border border-caramel-300 text-xs"
-                  placeholder="Nama varian (cth: 16cm)"
+                  className="flex-1 px-3 py-2 rounded-xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs text-cocoa-900 dark:text-stone-100"
+                  placeholder="Nama varian (cth: Standar / Size M / Paket Pro)"
                 />
                 <input
                   type="number"
@@ -608,22 +773,20 @@ export default function NewProductDraftPage() {
                     setVariants((prev) =>
                       prev.map((item, i) => (i === idx ? { ...item, price: val } : item))
                     );
-                    if (idx === 0) setBasePrice(val);
+                    if (idx === 0 && basePrice === 0) setBasePrice(val);
                   }}
-                  className="w-28 px-3 py-2 rounded-xl bg-vanilla-50 border border-caramel-300 text-xs font-semibold"
+                  className="w-28 px-3 py-2 rounded-xl bg-vanilla-50 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs font-semibold text-cocoa-900 dark:text-stone-100"
                   placeholder="Harga"
                 />
-                {variants.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setVariants((prev) => prev.filter((_, i) => i !== idx))
-                    }
-                    className="p-1.5 text-cocoa-400 hover:text-rose-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVariants((prev) => prev.filter((_, i) => i !== idx))
+                  }
+                  className="p-1.5 text-cocoa-400 hover:text-rose-600"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>

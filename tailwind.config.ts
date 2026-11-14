@@ -58,8 +58,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        serif: ["var(--font-serif)", "Playfair Display", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "Inter", "system-ui", "-apple-system", "sans-serif"],
+        serif: ["var(--font-active-heading)", "var(--font-serif)", "Playfair Display", "Georgia", "serif"],
+        sans: ["var(--font-active-body)", "var(--font-sans)", "Plus Jakarta Sans", "Inter", "system-ui", "-apple-system", "sans-serif"],
       },
       boxShadow: {
         soft: "0 4px 20px -2px rgba(45, 35, 30, 0.06)",

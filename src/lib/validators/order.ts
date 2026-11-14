@@ -12,9 +12,9 @@ export const OrderInputSchema = z.object({
   requestedDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal tidak valid (YYYY-MM-DD)"),
-  fulfillmentMethod: z.enum(["pickup", "delivery"]),
+  fulfillmentMethod: z.enum(["pickup", "delivery", "shipping"]),
   deliveryAddress: z.string().max(250).optional().nullable(),
-  cakeInscription: z.string().max(80, "Tulisan di atas kue maksimal 80 karakter").optional().nullable(),
+  cakeInscription: z.string().max(120, "Catatan personal maksimal 120 karakter").optional().nullable(),
   candleCount: z.number().int().min(0).max(100).optional().default(0),
   greetingCardMessage: z.string().max(200, "Pesan kartu ucapan maksimal 200 karakter").optional().nullable(),
   customerNotes: z.string().max(300, "Catatan maksimal 300 karakter").optional().nullable(),

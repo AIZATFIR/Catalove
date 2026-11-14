@@ -1,11 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { X, Sparkles, ArrowRight, RotateCcw, CheckCircle2 } from "lucide-react";
+import {
+  X,
+  Sparkles,
+  ArrowRight,
+  RotateCcw,
+  CheckCircle2,
+  ShoppingBag,
+} from "lucide-react";
 import { Product } from "@/types/bakery";
-import { formatIDR } from "@/lib/utils/formatters";
+import { formatPrice } from "@/lib/utils/formatters";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useCart } from "@/context/CartContext";
 
 interface RecommendationDrawerProps {
   isOpen: boolean;
@@ -18,43 +27,88 @@ export const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
   onClose,
   products,
 }) => {
+  const settings = useBusinessSettings();
+  const { addItem } = useCart();
+
   const [step, setStep] = useState<number>(1);
-  const [occasion, setOccasion] = useState<string>("");
-  const [flavor, setFlavor] = useState<string>("");
-  const [size, setSize] = useState<string>("");
-  const [urgency, setUrgency] = useState<string>("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("all");
+  const [budgetRange, setBudgetRange] = useState<"all" | "low" | "mid" | "high">("all");
+  const [tagPref, setTagPref] = useState<string>("all");
 
-  if (!isOpen) return null;
+  const currency = settings.currency_symbol || "Rp";
 
-  // Simple deterministic scoring matching products based on selections
-  const getRecommendations = () => {
+  // Extract unique categories & tags from live store products
+  const dynamicCategories = useMemo(() => {
+    const map = new Map<string, string>();
+    products.forEach((p) => {
+      if (p.category?.id && p.category?.name) {
+        map.set(p.category.id, p.category.name);
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [products]);
+
+  const dynamicTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    products.forEach((p) => {
+      (p.flavor_notes || []).forEach((tag) => {
+        counts.set(tag, (counts.get(tag) || 0) + 1);
+      });
+    });
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([tag]) => tag);
+  }, [products]);
+
+  const priceThresholds = useMemo(() => {
+    if (products.length === 0) return { p33: 150000, p66: 350000 };
+    const sorted = [...products].map((p) => p.base_price).sort((a, b) => a - b);
+    const p33 = sorted[Math.floor(sorted.length * 0.33)] || sorted[0];
+    const p66 = sorted[Math.floor(sorted.length * 0.66)] || sorted[sorted.length - 1];
+    return { p33, p66 };
+  }, [products]);
+
+  const matches = useMemo(() => {
     return products
       .map((p) => {
-        let score = 0;
-        const text = (p.name + " " + p.description + " " + (p.flavor_notes || []).join(" ")).toLowerCase();
+        let score = p.is_featured ? 1 : 0;
 
-        if (flavor && text.includes(flavor.toLowerCase())) score += 3;
-        if (occasion === "ultah" && p.category_id === "cat-whole") score += 2;
-        if (occasion === "personal" && (p.category_id === "cat-bento" || p.category_id === "cat-slices")) score += 3;
-        if (occasion === "gift" && (p.category_id === "cat-hampers" || p.category_id === "cat-whole")) score += 3;
-        if (urgency === "today" && p.minimum_lead_time_days === 0) score += 4;
-        if (urgency === "future" && p.minimum_lead_time_days > 0) score += 2;
+        if (selectedCategoryName !== "all" && p.category?.id === selectedCategoryName) {
+          score += 4;
+        }
+        if (budgetRange === "low" && p.base_price <= priceThresholds.p33) score += 3;
+        if (
+          budgetRange === "mid" &&
+          p.base_price > priceThresholds.p33 &&
+          p.base_price <= priceThresholds.p66
+        )
+          score += 3;
+        if (budgetRange === "high" && p.base_price >= priceThresholds.p66) score += 3;
+
+        if (tagPref === "ready" && (p.minimum_lead_time_days ?? 0) === 0) score += 4;
+        if (
+          tagPref !== "all" &&
+          tagPref !== "ready" &&
+          (p.flavor_notes || []).some((t) => t.toLowerCase() === tagPref.toLowerCase())
+        ) {
+          score += 4;
+        }
 
         return { product: p, score };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
       .map((item) => item.product);
-  };
+  }, [products, selectedCategoryName, budgetRange, tagPref, priceThresholds]);
 
-  const matches = getRecommendations();
+  if (!isOpen) return null;
 
   const resetQuiz = () => {
     setStep(1);
-    setOccasion("");
-    setFlavor("");
-    setSize("");
-    setUrgency("");
+    setSelectedCategoryName("all");
+    setBudgetRange("all");
+    setTagPref("all");
   };
 
   return (
@@ -62,106 +116,130 @@ export const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-cocoa-950/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
       />
 
       {/* Slide-over Drawer Panel */}
-      <div className="relative w-full max-w-lg bg-vanilla-50 h-full shadow-2xl flex flex-col z-10 border-l border-caramel-200 animate-slide-up">
-        {/* Drawer Header */}
-        <div className="p-6 border-b border-caramel-200/80 bg-vanilla-100/90 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-butter-500 flex items-center justify-center text-cocoa-900">
-              <Sparkles className="w-4 h-4 text-caramel-800" />
+      <div className="relative w-full max-w-lg bg-[#FCFAF6] dark:bg-[#1E1815] text-stone-900 dark:text-stone-100 h-full shadow-2xl flex flex-col z-10 border-l border-stone-200 dark:border-white/10 animate-slide-up">
+        {/* Header */}
+        <div className="p-6 border-b border-stone-200/80 dark:border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[var(--storefront-accent)]/15 flex items-center justify-center text-[var(--storefront-accent)]">
+              <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-serif font-bold text-lg text-cocoa-900 leading-none">
-                Bantu Pilih Kue
+              <h2 className="font-serif font-bold text-lg leading-none">
+                Asisten Pintar {settings.store_name || "Catalove"}
               </h2>
-              <p className="text-[11px] text-cocoa-500 mt-1">
-                Rekomendasi rasa & ukuran sesuai acaramu
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
+                Temukan pilihan produk terbaik sesuai preferensi Anda
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="touch-target inline-flex items-center justify-center p-2 rounded-full text-cocoa-500 hover:text-cocoa-900 hover:bg-vanilla-200"
-            aria-label="Tutup rekomendasi"
+            className="touch-target inline-flex items-center justify-center p-2 rounded-full hover:bg-stone-200/60 dark:hover:bg-white/10"
+            aria-label="Tutup asisten"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Drawer Content */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {step === 1 && (
             <div className="space-y-4">
-              <span className="text-xs font-semibold text-caramel-600 uppercase tracking-wider">
-                Langkah 1 dari 4
+              <span className="text-xs font-bold text-[var(--storefront-accent)] uppercase tracking-wider">
+                Langkah 1 dari 3
               </span>
-              <h3 className="font-serif text-2xl font-bold text-cocoa-950">
-                Untuk momen apa kue ini disiapkan?
+              <h3 className="font-serif text-2xl font-bold">
+                Kategori apa yang sedang Anda cari?
               </h3>
 
               <div className="grid grid-cols-1 gap-2.5 pt-2">
-                {[
-                  { id: "ultah", label: "Pesta Ulang Tahun Spesial", desc: "Kue utuh bundar dengan lilin & ucapan" },
-                  { id: "personal", label: "Hadiah Personal / Bento", desc: "Ukuran mini 1-2 orang bernuansa estetik" },
-                  { id: "camilan", label: "Camilan Santai / Kumpul Sore", desc: "Dessert box potong siap santap" },
-                  { id: "gift", label: "Hampers & Bingkisan Bingkisan", desc: "Kotak mewah dengan kemasan pita pita" },
-                ].map((opt) => (
+                {dynamicCategories.map((cat) => (
                   <button
-                    key={opt.id}
+                    key={cat.id}
                     onClick={() => {
-                      setOccasion(opt.id);
+                      setSelectedCategoryName(cat.id);
                       setStep(2);
                     }}
-                    className="touch-target w-full p-4 rounded-2xl text-left bg-white border border-caramel-200/80 hover:border-caramel-500 hover:bg-butter-50 transition-all flex items-center justify-between group shadow-sm active:scale-[0.99]"
+                    className="touch-target w-full p-4 rounded-2xl text-left bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 hover:border-[var(--storefront-accent)] transition-all flex items-center justify-between group shadow-sm"
                   >
-                    <div>
-                      <div className="font-bold text-sm text-cocoa-900 group-hover:text-caramel-700">
-                        {opt.label}
-                      </div>
-                      <div className="text-xs text-cocoa-500 mt-0.5">{opt.desc}</div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-caramel-400 group-hover:text-caramel-700 group-hover:translate-x-1 transition-all" />
+                    <span className="font-bold text-sm">{cat.name}</span>
+                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[var(--storefront-accent)] group-hover:translate-x-1 transition-all" />
                   </button>
                 ))}
+                <button
+                  onClick={() => {
+                    setSelectedCategoryName("all");
+                    setStep(2);
+                  }}
+                  className="touch-target w-full p-4 rounded-2xl text-left bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 hover:border-[var(--storefront-accent)] transition-all flex items-center justify-between group shadow-sm"
+                >
+                  <div>
+                    <div className="font-bold text-sm">Semua Kategori / Tunjukkan yang Terbaik</div>
+                    <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                      Eksplor seluruh koleksi terlaris toko
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[var(--storefront-accent)] group-hover:translate-x-1 transition-all" />
+                </button>
               </div>
             </div>
           )}
 
           {step === 2 && (
             <div className="space-y-4">
-              <span className="text-xs font-semibold text-caramel-600 uppercase tracking-wider">
-                Langkah 2 dari 4
+              <span className="text-xs font-bold text-[var(--storefront-accent)] uppercase tracking-wider">
+                Langkah 2 dari 3
               </span>
-              <h3 className="font-serif text-2xl font-bold text-cocoa-950">
-                Karakter rasa apa yang paling disukai?
+              <h3 className="font-serif text-2xl font-bold">
+                Perkiraan rentang budget Anda?
               </h3>
 
               <div className="grid grid-cols-1 gap-2.5 pt-2">
                 {[
-                  { id: "cheese", label: "Gurih Creamy Keju (Cheesecake)", desc: "Sensasi lumer Basque & mascarpone lembut" },
-                  { id: "chocolate", label: "Pekat Legit Dark Chocolate", desc: "Cokelat Belgia asli 70% kaya rasa" },
-                  { id: "fruit", label: "Segar Buah & Strawberry", desc: "Sponge chiffon ringan dengan buah asli" },
-                  { id: "caramel", label: "Lotus Biscoff & Karamel Rempah", desc: "Aroma biskuit karamel renyah & manis pas" },
+                  {
+                    id: "low",
+                    label: "Hemat & Ekonomis",
+                    desc: `Kisaran hingga ${formatPrice(priceThresholds.p33, currency)}`,
+                  },
+                  {
+                    id: "mid",
+                    label: "Menengah / Best Value",
+                    desc: `${formatPrice(priceThresholds.p33, currency)} – ${formatPrice(
+                      priceThresholds.p66,
+                      currency
+                    )}`,
+                  },
+                  {
+                    id: "high",
+                    label: "Premium & Eksklusif",
+                    desc: `Mulai ${formatPrice(priceThresholds.p66, currency)} ke atas`,
+                  },
+                  {
+                    id: "all",
+                    label: "Bebas (Sesuai Kualitas Terbaik)",
+                    desc: "Tampilkan semua opsi harga",
+                  },
                 ].map((opt) => (
                   <button
                     key={opt.id}
                     onClick={() => {
-                      setFlavor(opt.id);
+                      setBudgetRange(opt.id as any);
                       setStep(3);
                     }}
-                    className="touch-target w-full p-4 rounded-2xl text-left bg-white border border-caramel-200/80 hover:border-caramel-500 hover:bg-butter-50 transition-all flex items-center justify-between group shadow-sm active:scale-[0.99]"
+                    className="touch-target w-full p-4 rounded-2xl text-left bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 hover:border-[var(--storefront-accent)] transition-all flex items-center justify-between group shadow-sm"
                   >
                     <div>
-                      <div className="font-bold text-sm text-cocoa-900 group-hover:text-caramel-700">
-                        {opt.label}
+                      <div className="font-bold text-sm">{opt.label}</div>
+                      <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                        {opt.desc}
                       </div>
-                      <div className="text-xs text-cocoa-500 mt-0.5">{opt.desc}</div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-caramel-400 group-hover:text-caramel-700 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[var(--storefront-accent)] group-hover:translate-x-1 transition-all" />
                   </button>
                 ))}
               </div>
@@ -170,90 +248,73 @@ export const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
 
           {step === 3 && (
             <div className="space-y-4">
-              <span className="text-xs font-semibold text-caramel-600 uppercase tracking-wider">
-                Langkah 3 dari 4
+              <span className="text-xs font-bold text-[var(--storefront-accent)] uppercase tracking-wider">
+                Langkah Terakhir
               </span>
-              <h3 className="font-serif text-2xl font-bold text-cocoa-950">
-                Berapa perkiraan jumlah penikmatnya?
+              <h3 className="font-serif text-2xl font-bold">
+                Prioritas atau gaya yang disukai?
               </h3>
 
               <div className="grid grid-cols-1 gap-2.5 pt-2">
-                {[
-                  { id: "small", label: "1 - 2 Orang (Porsi Personal)", desc: "Bento Cake atau Dessert Box 250ml" },
-                  { id: "medium", label: "4 - 6 Orang (Keluarga Kecil)", desc: "Whole Cake Diameter 16cm" },
-                  { id: "large", label: "8 - 10 Orang (Pesta Ramai)", desc: "Whole Cake Diameter 20cm atau Paket Hampers" },
-                ].map((opt) => (
+                <button
+                  onClick={() => {
+                    setTagPref("ready");
+                    setStep(4);
+                  }}
+                  className="touch-target w-full p-4 rounded-2xl text-left bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 hover:border-[var(--storefront-accent)] transition-all flex items-center justify-between group shadow-sm"
+                >
+                  <div>
+                    <div className="font-bold text-sm">Siap Kirim Hari Ini (Ready Stock)</div>
+                    <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                      Produk tanpa waktu tunggu pre-order
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[var(--storefront-accent)]" />
+                </button>
+
+                {dynamicTags.map((tag) => (
                   <button
-                    key={opt.id}
+                    key={tag}
                     onClick={() => {
-                      setSize(opt.id);
+                      setTagPref(tag);
                       setStep(4);
                     }}
-                    className="touch-target w-full p-4 rounded-2xl text-left bg-white border border-caramel-200/80 hover:border-caramel-500 hover:bg-butter-50 transition-all flex items-center justify-between group shadow-sm active:scale-[0.99]"
+                    className="touch-target w-full p-4 rounded-2xl text-left bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 hover:border-[var(--storefront-accent)] transition-all flex items-center justify-between group shadow-sm"
                   >
-                    <div>
-                      <div className="font-bold text-sm text-cocoa-900 group-hover:text-caramel-700">
-                        {opt.label}
-                      </div>
-                      <div className="text-xs text-cocoa-500 mt-0.5">{opt.desc}</div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-caramel-400 group-hover:text-caramel-700 group-hover:translate-x-1 transition-all" />
+                    <span className="font-bold text-sm">Fokus: #{tag}</span>
+                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[var(--storefront-accent)]" />
                   </button>
                 ))}
+
+                <button
+                  onClick={() => {
+                    setTagPref("all");
+                    setStep(4);
+                  }}
+                  className="touch-target w-full p-4 rounded-2xl text-left bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 hover:border-[var(--storefront-accent)] transition-all flex items-center justify-between group shadow-sm"
+                >
+                  <span className="font-bold text-sm">Tampilkan Rekomendasi Terbaik</span>
+                  <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[var(--storefront-accent)]" />
+                </button>
               </div>
             </div>
           )}
 
           {step === 4 && (
-            <div className="space-y-4">
-              <span className="text-xs font-semibold text-caramel-600 uppercase tracking-wider">
-                Langkah Terakhir
-              </span>
-              <h3 className="font-serif text-2xl font-bold text-cocoa-950">
-                Kapan kue ini perlu disajikan?
-              </h3>
-
-              <div className="grid grid-cols-1 gap-2.5 pt-2">
-                {[
-                  { id: "today", label: "Hari Ini / Besok (Ready Stock)", desc: "Pilih produk yang siap langsung dikirim" },
-                  { id: "future", label: "Lebih dari H-2 (Pre-Order)", desc: "Pilihan lengkap bebas kustom tulisan & tanggal" },
-                ].map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      setUrgency(opt.id);
-                      setStep(5);
-                    }}
-                    className="touch-target w-full p-4 rounded-2xl text-left bg-white border border-caramel-200/80 hover:border-caramel-500 hover:bg-butter-50 transition-all flex items-center justify-between group shadow-sm active:scale-[0.99]"
-                  >
-                    <div>
-                      <div className="font-bold text-sm text-cocoa-900 group-hover:text-caramel-700">
-                        {opt.label}
-                      </div>
-                      <div className="text-xs text-cocoa-500 mt-0.5">{opt.desc}</div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-caramel-400 group-hover:text-caramel-700 group-hover:translate-x-1 transition-all" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {step === 5 && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wider inline-flex items-center gap-1">
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider inline-flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Rekomendasi Ditemukan</span>
+                    <span>Kurasi Ditemukan</span>
                   </span>
-                  <h3 className="font-serif text-2xl font-bold text-cocoa-950 mt-1">
-                    Kue Paling Pas Buat Kamu
+                  <h3 className="font-serif text-2xl font-bold mt-1">
+                    Paling Cocok Untuk Anda
                   </h3>
                 </div>
                 <button
                   onClick={resetQuiz}
-                  className="touch-target text-xs text-cocoa-500 hover:text-caramel-700 flex items-center gap-1 font-medium"
+                  className="touch-target text-xs text-stone-500 hover:text-[var(--storefront-accent)] flex items-center gap-1 font-medium"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Ulangi</span>
@@ -262,13 +323,13 @@ export const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
 
               <div className="space-y-4">
                 {matches.map((product) => {
-                  const img = product.images.find((i) => i.is_primary) || product.images[0];
+                  const img = product.images?.find((i) => i.is_primary) || product.images?.[0];
                   return (
                     <div
                       key={product.id}
-                      className="p-4 rounded-2xl bg-white border border-caramel-200/80 shadow-soft flex gap-4 items-center group hover:border-caramel-400 transition-all"
+                      className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-stone-200/80 dark:border-white/10 shadow-sm flex gap-4 items-center"
                     >
-                      <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-vanilla-200">
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-stone-200">
                         {img && (
                           <Image
                             src={img.storage_path}
@@ -281,32 +342,45 @@ export const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-semibold text-caramel-700 uppercase tracking-wider">
-                          {product.minimum_lead_time_days === 0 ? "Ready Stock" : `Pre-Order H-${product.minimum_lead_time_days}`}
+                        <div className="text-[10px] font-bold text-[var(--storefront-accent)] uppercase tracking-wider">
+                          {product.badge ||
+                            (product.minimum_lead_time_days === 0
+                              ? "Ready Stock"
+                              : `Pre-Order H-${product.minimum_lead_time_days}`)}
                         </div>
-                        <h4 className="font-serif font-bold text-sm text-cocoa-900 truncate mt-0.5">
+                        <h4 className="font-serif font-bold text-sm truncate mt-0.5">
                           {product.name}
                         </h4>
-                        <p className="text-xs font-bold text-cocoa-950 mt-1">
-                          {formatIDR(product.base_price)}
+                        <p className="text-xs font-bold mt-1">
+                          {formatPrice(product.base_price, currency)}
                         </p>
                       </div>
 
-                      <Link
-                        href={`/product/${product.slug}`}
-                        onClick={onClose}
-                        className="touch-target shrink-0 p-2.5 rounded-full bg-caramel-50 hover:bg-caramel-600 hover:text-white text-caramel-700 border border-caramel-200 transition-all"
-                        aria-label={`Lihat kue ${product.name}`}
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => addItem(product, undefined, 1)}
+                          className="p-2.5 rounded-full bg-[var(--storefront-accent)] text-white hover:opacity-90"
+                          aria-label={`Tambah ${product.name} ke keranjang`}
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                        </button>
+                        <Link
+                          href={`/product/${product.slug}`}
+                          onClick={onClose}
+                          className="p-2.5 rounded-full border border-stone-200 dark:border-white/15 hover:bg-stone-100 dark:hover:bg-white/10"
+                          aria-label={`Lihat ${product.name}`}
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </div>
                   );
                 })}
               </div>
 
-              <div className="p-4 bg-butter-100/70 border border-butter-300 text-xs text-cocoa-800 leading-relaxed dark:bg-[#2C2421] dark:border-white/10 dark:text-[#D8CBC0]">
-                <span className="font-semibold text-cocoa-900 dark:text-[#FAF4EE]">Tips Mama:</span> Kamu bisa request kustom tulisan ucapan pada saat mengisi tanggal pemesanan.
+              <div className="p-4 rounded-2xl bg-[var(--storefront-accent)]/10 border border-[var(--storefront-accent)]/25 text-xs leading-relaxed">
+                <span className="font-bold">Tips Belanja:</span> Anda dapat mencantumkan catatan khusus atau bertanya langsung via WhatsApp sebelum mengonfirmasi pesanan.
               </div>
             </div>
           )}

@@ -34,7 +34,7 @@ const mockOrder: OrderRequest = {
 const message = buildWhatsAppMessage(mockOrder);
 assert.ok(message.includes("ID Permintaan: #SC-2610-8491"), "Message must contain ID Permintaan");
 assert.ok(message.includes("Nama: Sarah Wijaya"), "Message must contain customer name");
-assert.ok(message.includes("Kue: Basque Burnt Cheesecake Caramel"), "Message must contain cake name");
+assert.ok(message.includes("Produk: Basque Burnt Cheesecake Caramel"), "Message must contain product name");
 assert.ok(message.includes("Varian: Diameter 16cm (4-6 Porsi)"), "Message must contain variant");
 assert.ok(message.includes("Estimasi subtotal: Rp 245.000"), "Message must contain subtotal");
 assert.ok(message.includes("Mohon konfirmasi"), "Message must contain confirmation request");

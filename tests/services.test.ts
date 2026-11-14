@@ -45,6 +45,7 @@ async function runTests() {
     customerWhatsapp: "081234567890",
     requestedDate: validFutureDate,
     fulfillmentMethod: "pickup",
+    candleCount: 0,
   });
 
   assert.ok(newOrderRes.order, "Order should be created successfully");
@@ -64,6 +65,7 @@ async function runTests() {
     is_active: true,
     is_featured: false,
     flavor_notes: ["Uji Matcha", "Light Chiffon"],
+    specs: [],
     variants: [
       { name: "Ukuran 18cm", price: 185000, is_default: true, display_order: 1 },
       { name: "Ukuran 22cm", price: 275000, is_default: false, display_order: 2 },

@@ -59,10 +59,10 @@ export const FulfillmentDatePicker: React.FC<FulfillmentDatePickerProps> = ({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-bold uppercase tracking-wider text-cocoa-800">
+        <label className="block text-xs font-bold uppercase tracking-wider text-cocoa-800 dark:text-stone-200">
           Tanggal Diinginkan <span className="text-rose-500">*</span>
         </label>
-        <span className="text-[11px] font-semibold text-caramel-700">
+        <span className="text-[11px] font-semibold text-caramel-700 dark:text-amber-300">
           {leadTimeDays === 0
             ? "Ready Stock (Bisa Hari Ini)"
             : `Minimal Pemesanan H-${leadTimeDays}`}
@@ -70,33 +70,33 @@ export const FulfillmentDatePicker: React.FC<FulfillmentDatePickerProps> = ({
       </div>
 
       <div className="relative">
-        <Calendar className="w-5 h-5 text-cocoa-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <Calendar className="w-5 h-5 text-cocoa-400 dark:text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           type="date"
           min={minDate}
           value={selectedDate}
           onChange={(e) => onChangeDate(e.target.value)}
-          className="touch-target w-full pl-11 pr-4 py-3 rounded-2xl bg-vanilla-50 border border-caramel-300 text-sm font-semibold text-cocoa-900 focus:outline-none focus:border-caramel-600 focus:ring-1 focus:ring-caramel-500 shadow-sm transition-all"
+          className="touch-target w-full pl-11 pr-4 py-3 rounded-2xl bg-vanilla-50 dark:bg-white/5 border border-caramel-300 dark:border-white/15 text-sm font-semibold text-cocoa-900 dark:text-white focus:outline-none focus:border-caramel-600 focus:ring-1 focus:ring-caramel-500 shadow-sm transition-all"
         />
       </div>
 
       {/* Date Preview & Availability Badge */}
       {selectedDate && (
         <div className="flex items-center justify-between pt-1 text-xs">
-          <span className="text-cocoa-600 font-medium">
+          <span className="text-cocoa-600 dark:text-stone-300 font-medium">
             {formatDateIndonesian(selectedDate)}
           </span>
 
           <div className="flex items-center gap-1.5 font-semibold">
             {isChecking ? (
-              <span className="text-cocoa-400">Memeriksa ketersediaan...</span>
+              <span className="text-cocoa-400 dark:text-stone-400">Memeriksa ketersediaan...</span>
             ) : isAvailable ? (
-              <span className="text-emerald-700 flex items-center gap-1">
+              <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5" />
-                <span>Kouta Tersedia</span>
+                <span>Kuota Tersedia</span>
               </span>
             ) : (
-              <span className="text-rose-600 flex items-center gap-1">
+              <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" />
                 <span>{statusMessage}</span>
               </span>

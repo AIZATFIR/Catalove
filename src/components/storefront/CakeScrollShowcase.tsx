@@ -20,7 +20,7 @@ export function CakeScrollShowcase({ products }: { products: Product[] }) {
   if (!featured) return null;
 
   return (
-    <section aria-label="Perbesar foto kue saat menggulir">
+    <section aria-label="Perbesar foto produk saat menggulir">
       <ScrollExpand
         src={featured.image.storage_path}
         alt={featured.image.alt_text || featured.product.name}
@@ -37,22 +37,22 @@ export function CakeScrollShowcase({ products }: { products: Product[] }) {
         smoothing={0.08}
         overlayScrim={0.46}
         useWindowScroll
-        className="sofiz-cake-expand"
+        className="catalove-product-expand"
         style={{ height: "100svh", minHeight: "520px" }}
       >
         <div className="max-w-2xl text-white">
           <p className="text-xs font-medium uppercase tracking-[.2em] text-white/75">
-            {settings.scroll_showcase_eyebrow || "Koleksi SofizCake"}
+            {settings.scroll_showcase_eyebrow || `Koleksi ${settings.store_name || "Catalove"}`}
           </p>
           <h2 className="mt-3 font-serif text-4xl font-medium leading-tight sm:text-6xl">{featured.product.name}</h2>
           <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-white/85 sm:text-base sm:leading-7">
-            {settings.scroll_showcase_desc || "Pilih kue dan tanggal yang kamu mau. Mama akan mengonfirmasi pesanan lewat WhatsApp."}
+            {settings.scroll_showcase_desc || "Pilih varian favorit Anda dan ajukan pemesanan dengan konfirmasi instan via WhatsApp."}
           </p>
           <Link
             href={`/product/${featured.product.slug}`}
             className="mt-7 inline-flex min-h-11 items-center border border-white/75 px-6 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-[#4D3040] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           >
-            {settings.scroll_showcase_button || "Lihat detail kue"}
+            {settings.scroll_showcase_button || "Lihat Detail Produk"}
           </Link>
         </div>
       </ScrollExpand>

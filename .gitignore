@@ -34,3 +34,4 @@ next-env.d.ts
 _bmad/
 _bmad-output/
 supabase/.temp/
+.env*

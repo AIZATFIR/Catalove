@@ -1,6 +1,10 @@
 import React from "react";
 import { StorefrontMotion } from "@/components/storefront/StorefrontMotion";
 import { AnnouncementBar } from "@/components/storefront/AnnouncementBar";
+import { CartProvider } from "@/context/CartContext";
+import { CartDrawer } from "@/components/storefront/CartDrawer";
+import { LiveCustomizerDock } from "@/components/storefront/LiveCustomizerDock";
+import { LiveSocialProofToast } from "@/components/storefront/LiveSocialProofToast";
 
 export default function StorefrontLayout({
   children,
@@ -8,11 +12,16 @@ export default function StorefrontLayout({
   children: React.ReactNode;
 }) {
   return (
-    <StorefrontMotion>
-      <div className="min-h-screen flex flex-col bg-[#FCFAF6] text-[#33262A] dark:bg-[#1A1412] dark:text-[#F2E7DC] transition-colors duration-300">
-        <AnnouncementBar />
-        {children}
-      </div>
-    </StorefrontMotion>
+    <CartProvider>
+      <StorefrontMotion>
+        <div className="min-h-screen flex flex-col bg-[var(--storefront-background)] text-[var(--storefront-ink)] transition-colors duration-300">
+          <AnnouncementBar />
+          {children}
+          <CartDrawer />
+          <LiveCustomizerDock />
+          <LiveSocialProofToast />
+        </div>
+      </StorefrontMotion>
+    </CartProvider>
   );
 }

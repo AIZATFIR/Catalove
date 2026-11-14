@@ -127,6 +127,12 @@ export async function GET() {
         store_tagline: data?.store_tagline ?? INITIAL_SETTINGS.store_tagline,
         industry_preset: content.industry_preset || INITIAL_SETTINGS.industry_preset,
         workflow_mode: content.workflow_mode || INITIAL_SETTINGS.workflow_mode,
+        catalog_layout: content.catalog_layout || INITIAL_SETTINGS.catalog_layout,
+        enable_preloader:
+          content.enable_preloader !== undefined
+            ? Boolean(content.enable_preloader)
+            : INITIAL_SETTINGS.enable_preloader,
+        story_image_url: content.story_image_url || INITIAL_SETTINGS.story_image_url,
         theme_config: themeConfig,
         marquee_announcement: marquee,
       },
@@ -178,6 +184,9 @@ export async function POST(req: NextRequest) {
     if (body.marquee_announcement) contentConfig.marquee_announcement = body.marquee_announcement;
     if (body.industry_preset) contentConfig.industry_preset = body.industry_preset;
     if (body.workflow_mode) contentConfig.workflow_mode = body.workflow_mode;
+    if (body.catalog_layout) contentConfig.catalog_layout = body.catalog_layout;
+    if (body.enable_preloader !== undefined) contentConfig.enable_preloader = body.enable_preloader;
+    if (body.story_image_url) contentConfig.story_image_url = body.story_image_url;
     if (body.store_address) contentConfig.store_address = body.store_address;
     if (body.currency_symbol) contentConfig.currency_symbol = body.currency_symbol;
     if (body.tiktok_handle) contentConfig.tiktok_handle = body.tiktok_handle;

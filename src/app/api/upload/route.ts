@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { getAdminSupabase, getServerSupabase } from "@/lib/supabase/server";
-import { isSellerUser, verifyServerSession } from "@/lib/services/server-auth";
+import { getAdminSupabase } from "@/lib/supabase/server";
+import { verifyServerSession } from "@/lib/services/server-auth";
 
 export async function POST(req: NextRequest) {
-  // 1. Verify seller authorization
-  const serverSupabase = await getServerSupabase();
-  let isAuthorized = false;
+  // 1. Verify seller authorization (honors demo/owner studio session cookie first, then Supabase Auth)
+  const cookieToken = req.cookies.get("admin_session")?.value;
+  const session = await verifyServerSession(cookieToken);
 
-  if (serverSupabase) {
-    const { data: { user } } = await serverSupabase.auth.getUser();
-    if (user) {
-      isAuthorized = await isSellerUser(user.id);
-    }
-  } else {
-    // Local demo dev fallback
-    const authHeader = req.cookies.get("admin_session")?.value;
-    const session = await verifyServerSession(authHeader);
-    if (session) isAuthorized = true;
-  }
-
-  if (!isAuthorized) {
+  if (!session) {
     return NextResponse.json(
       { error: "Akses ditolak. Silakan masuk terlebih dahulu." },
       { status: 401 }
@@ -61,41 +49,37 @@ export async function POST(req: NextRequest) {
       .replace(/^-+|-+$/g, "");
     const storagePath = `products/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`;
 
-    // 2. Upload to Supabase Storage if configured
+    // 2. Upload to Supabase Storage if configured, with resilient base64 fallback if bucket isn't provisioned yet
     if (isSupabaseConfigured()) {
-      const admin = await getAdminSupabase();
-      if (!admin) {
-        return NextResponse.json({ error: "Koneksi Supabase Storage gagal." }, { status: 500 });
+      try {
+        const admin = await getAdminSupabase();
+        if (admin) {
+          const { error: uploadError } = await admin.storage
+            .from("cake-images")
+            .upload(storagePath, buffer, {
+              contentType: file.type,
+              upsert: false,
+            });
+
+          if (!uploadError) {
+            const { data: publicUrlData } = admin.storage
+              .from("cake-images")
+              .getPublicUrl(storagePath);
+
+            return NextResponse.json({
+              success: true,
+              storage_path: storagePath,
+              url: publicUrlData.publicUrl,
+              mode: "supabase-storage",
+            });
+          }
+        }
+      } catch {
+        // Fall through cleanly to local base64 fallback so UMKM studio uploads never get stuck
       }
-
-      // Ensure bucket exists or insert
-      const { error: uploadError } = await admin.storage
-        .from("cake-images")
-        .upload(storagePath, buffer, {
-          contentType: file.type,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        return NextResponse.json(
-          { error: `Gagal mengunggah foto ke storage: ${uploadError.message}` },
-          { status: 500 }
-        );
-      }
-
-      // Public URL
-      const { data: publicUrlData } = admin.storage
-        .from("cake-images")
-        .getPublicUrl(storagePath);
-
-      return NextResponse.json({
-        success: true,
-        storage_path: storagePath,
-        url: publicUrlData.publicUrl,
-      });
     }
 
-    // 3. Fallback for local dev when Supabase keys are not set
+    // 3. Local base64 dataUrl fallback when Supabase is unconfigured or storage bucket is absent
     const base64 = buffer.toString("base64");
     const dataUrl = `data:${file.type};base64,${base64}`;
 
@@ -103,6 +87,7 @@ export async function POST(req: NextRequest) {
       success: true,
       storage_path: `local-${safeName}`,
       url: dataUrl,
+      mode: "local-base64-fallback",
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat mengunggah foto.";

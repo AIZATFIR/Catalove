@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Save,
@@ -13,12 +13,16 @@ import {
   Store,
   Layers,
   Megaphone,
+  Download,
+  Upload,
+  RotateCcw,
 } from "lucide-react";
-import { INITIAL_SETTINGS } from "@/lib/data/seed-cakes";
 import {
+  INITIAL_SETTINGS,
   INDUSTRY_PRESETS,
   DEFAULT_THEME_CONFIG,
 } from "@/lib/data/universal-presets";
+import { cakeService } from "@/lib/services/cake-service";
 import {
   readBusinessSettings,
   saveBusinessSettings,
@@ -32,13 +36,18 @@ import type {
   FontBodyOption,
   ColorThemeOption,
   CardStyleOption,
+  HeroStyleOption,
+  CatalogLayoutOption,
 } from "@/types/catalove";
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<BusinessSettings>(INITIAL_SETTINGS);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [applyingPresetKey, setApplyingPresetKey] = useState<IndustryPreset | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>("");
   const [isSyncing, setIsSyncing] = useState(true);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<
     "presets" | "workflow" | "theme" | "marquee" | "identity" | "content"
   >("presets");
@@ -51,8 +60,22 @@ export default function AdminSettingsPage() {
     });
   }, []);
 
+  const persistSettingsImmediately = async (nextSettings: BusinessSettings) => {
+    saveBusinessSettings(nextSettings);
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextSettings),
+      });
+    } catch {
+      // localStorage persistence remains intact
+    }
+  };
+
   const update = (key: keyof BusinessSettings, value: any) => {
     setSaved(false);
+    setStatusMessage("");
     setSettings((current) => ({
       ...current,
       [key]:
@@ -62,6 +85,7 @@ export default function AdminSettingsPage() {
 
   const updateTheme = (field: string, value: any) => {
     setSaved(false);
+    setStatusMessage("");
     setSettings((current) => ({
       ...current,
       theme_config: {
@@ -73,6 +97,7 @@ export default function AdminSettingsPage() {
 
   const updateMarquee = (field: string, value: any) => {
     setSaved(false);
+    setStatusMessage("");
     setSettings((current) => ({
       ...current,
       marquee_announcement: {
@@ -82,46 +107,117 @@ export default function AdminSettingsPage() {
     }));
   };
 
-  const applyIndustryPreset = (presetKey: IndustryPreset) => {
+  const applyIndustryPreset = async (
+    presetKey: IndustryPreset,
+    withSampleCatalog: boolean
+  ) => {
     const preset = INDUSTRY_PRESETS[presetKey];
     if (!preset) return;
-    if (
-      !confirm(
-        `Terapkan preset "${preset.label}"? Tema, font, gaya kartu, dan alur pemesanan akan otomatis disesuaikan.`
-      )
-    )
-      return;
+    const promptMsg = withSampleCatalog
+      ? `Terapkan preset "${preset.label}" BESERTA ${preset.products.length} contoh produknya ke etalase web?`
+      : `Terapkan hanya tema, font, dan teks preset "${preset.label}" tanpa mengubah produk katalog Anda?`;
 
+    if (!confirm(promptMsg)) return;
+
+    setApplyingPresetKey(presetKey);
     setSaved(false);
-    setSettings((current) => ({
-      ...current,
+
+    const nextSettings: BusinessSettings = {
+      ...settings,
       industry_preset: presetKey,
       ...preset.settings,
       theme_config: {
-        ...(current.theme_config || DEFAULT_THEME_CONFIG),
+        ...(settings.theme_config || DEFAULT_THEME_CONFIG),
         ...(preset.settings.theme_config || {}),
       },
-    }));
+    };
+
+    try {
+      setSettings(nextSettings);
+      await persistSettingsImmediately(nextSettings);
+      if (withSampleCatalog) {
+        await cakeService.applyIndustryPresetCatalog(presetKey);
+      }
+      setSaved(true);
+      setStatusMessage(
+        withSampleCatalog
+          ? `Preset "${preset.label}" + ${preset.products.length} contoh produk berhasil diterapkan langsung ke toko!`
+          : `Tema & teks preset "${preset.label}" berhasil diterapkan tanpa mengubah produk.`
+      );
+    } finally {
+      setApplyingPresetKey(null);
+    }
+  };
+
+  const handleExportJson = () => {
+    const slug = (settings.store_name || "catalove")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+    const blob = new Blob([JSON.stringify(settings, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `catalove-settings-${slug}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatusMessage("File konfigurasi JSON berhasil diunduh.");
+  };
+
+  const handleImportJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw) as Partial<BusinessSettings>;
+      if (!parsed || typeof parsed !== "object" || !parsed.store_name) {
+        alert("Format file JSON Catalove tidak valid.");
+        return;
+      }
+      const merged: BusinessSettings = {
+        ...INITIAL_SETTINGS,
+        ...parsed,
+        theme_config: {
+          ...DEFAULT_THEME_CONFIG,
+          ...(parsed.theme_config || {}),
+        },
+      };
+      setSettings(merged);
+      await persistSettingsImmediately(merged);
+      setSaved(true);
+      setStatusMessage(`Konfigurasi "${merged.store_name}" berhasil diimpor & diterapkan.`);
+    } catch {
+      alert("Gagal membaca file JSON. Pastikan file konfigurasi valid.");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  const handleResetDefault = async () => {
+    if (
+      !confirm(
+        "Reset semua desain dan teks ke pengaturan awal Catalove Universal?"
+      )
+    ) {
+      return;
+    }
+    setSettings(INITIAL_SETTINGS);
+    await persistSettingsImmediately(INITIAL_SETTINGS);
+    setSaved(true);
+    setStatusMessage("Pengaturan desain dikembalikan ke default Catalove.");
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
     setSaved(false);
+    setStatusMessage("");
 
     try {
-      saveBusinessSettings(settings);
-      const res = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
-
-      if (res.ok) {
-        setSaved(true);
-      }
-    } catch {
+      await persistSettingsImmediately(settings);
       setSaved(true);
+      setStatusMessage("Semua perubahan desain dan identitas toko berhasil disimpan.");
     } finally {
       setSaving(false);
     }
@@ -136,33 +232,88 @@ export default function AdminSettingsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8 pb-24">
       {/* Page Header */}
-      <header className="border-b border-[#DBD0C5] pb-6 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[.2em] text-[#8D624C] dark:text-[#C88A42]">
-            Catalove Studio Engine
-          </p>
-          <h1 className="mt-1 font-serif text-3xl font-medium text-[#4D3040] sm:text-4xl dark:text-white">
-            Pengaturan & Desain Toko
-          </h1>
-          <p className="mt-1.5 text-sm text-[#67575B] dark:text-stone-300">
-            Kustomisasi jenis usaha, alur workflow, font awwwards, palet warna, dan semua teks web.
-          </p>
+      <header className="border-b border-[#DBD0C5] pb-6 dark:border-white/10 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[.2em] text-[#8D624C] dark:text-[#C88A42]">
+              Catalove Studio Engine
+            </p>
+            <h1 className="mt-1 font-serif text-3xl font-medium text-[#4D3040] sm:text-4xl dark:text-white">
+              Pengaturan &amp; Desain Toko
+            </h1>
+            <p className="mt-1.5 text-sm text-[#67575B] dark:text-stone-300">
+              Kustomisasi jenis usaha, alur workflow, font awwwards, palet warna, discovery layout, dan semua teks web.
+            </p>
+          </div>
+
+          <button
+            onClick={submit}
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--storefront-accent)] px-6 py-3 text-sm font-bold text-white shadow-md transition-all hover:opacity-90 disabled:opacity-50 shrink-0"
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : saved ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            <span>{saving ? "Menyimpan..." : saved ? "Tersimpan!" : "Simpan Perubahan"}</span>
+          </button>
         </div>
 
-        <button
-          onClick={submit}
-          disabled={saving}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--storefront-accent)] px-6 py-3 text-sm font-bold text-white shadow-md transition-all hover:opacity-90 disabled:opacity-50"
-        >
-          {saving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : saved ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Save className="h-4 w-4" />
+        {/* Backup / Restore Studio Toolbar */}
+        <div className="flex flex-wrap items-center gap-2.5 pt-1">
+          <button
+            type="button"
+            onClick={handleExportJson}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#DBD0C5] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[#4D3040] hover:bg-[#F5EBDD] dark:border-white/15 dark:bg-white/5 dark:text-stone-200"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Export JSON</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => importInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#DBD0C5] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[#4D3040] hover:bg-[#F5EBDD] dark:border-white/15 dark:bg-white/5 dark:text-stone-200"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            <span>Import JSON</span>
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json"
+            onChange={handleImportJson}
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            onClick={handleResetDefault}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/70 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Reset Default</span>
+          </button>
+
+          {isSyncing && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 ml-auto">
+              <RefreshCw className="h-3 w-3 animate-spin" /> Menyelaraskan...
+            </span>
           )}
-          <span>{saving ? "Menyimpan..." : saved ? "Tersimpan!" : "Simpan Perubahan"}</span>
-        </button>
+        </div>
+
+        {statusMessage && (
+          <div
+            role="status"
+            className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center gap-2"
+          >
+            <Check className="h-4 w-4 shrink-0" />
+            <span>{statusMessage}</span>
+          </div>
+        )}
       </header>
 
       {/* Tabs Bar */}
@@ -258,31 +409,57 @@ export default function AdminSettingsPage() {
               {(Object.keys(INDUSTRY_PRESETS) as IndustryPreset[]).map((key) => {
                 const item = INDUSTRY_PRESETS[key];
                 const isSelected = settings.industry_preset === key;
+                const isApplying = applyingPresetKey === key;
                 return (
                   <div
                     key={key}
-                    onClick={() => applyIndustryPreset(key)}
-                    className={`cursor-pointer rounded-xl border p-5 transition-all ${
+                    className={`flex flex-col justify-between rounded-xl border p-5 transition-all ${
                       isSelected
                         ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)]/5 ring-2 ring-[var(--storefront-accent)]/30"
                         : "border-[#DBD0C5]/60 bg-white/50 hover:border-[#8D624C] dark:border-white/10 dark:bg-stone-900/50"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-stone-900 dark:text-stone-100">
-                        {item.label}
-                      </h3>
-                      {isSelected && (
-                        <span className="rounded-full bg-[var(--storefront-accent)] text-white p-1">
-                          <Check className="h-3 w-3" />
-                        </span>
-                      )}
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-semibold text-stone-900 dark:text-stone-100">
+                          {item.label}
+                        </h3>
+                        {isSelected && (
+                          <span className="rounded-full bg-[var(--storefront-accent)] text-white p-1">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-stone-600 dark:text-stone-400">
+                        {item.description}
+                      </p>
+                      <p className="mt-2 text-[11px] font-medium text-[#8D624C] dark:text-[#D1A686]">
+                        Termasuk {item.products.length} produk &amp; {item.categories.length} kategori contoh
+                      </p>
                     </div>
-                    <p className="mt-2 text-xs leading-5 text-stone-600 dark:text-stone-400">
-                      {item.description}
-                    </p>
-                    <div className="mt-4 flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-[var(--storefront-accent)]">
-                      <span>Terapkan Preset →</span>
+
+                    <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-[#DBD0C5]/40 dark:border-white/10">
+                      <button
+                        type="button"
+                        disabled={isApplying}
+                        onClick={() => void applyIndustryPreset(key, true)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--storefront-accent)] px-3 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                      >
+                        {isApplying ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5" />
+                        )}
+                        <span>Terapkan Tema + Contoh Produk</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isApplying}
+                        onClick={() => void applyIndustryPreset(key, false)}
+                        className="w-full inline-flex items-center justify-center rounded-lg border border-[#DBD0C5] px-3 py-1.5 text-[11px] font-semibold text-stone-700 hover:bg-white/80 dark:border-white/15 dark:text-stone-300 dark:hover:bg-white/10"
+                      >
+                        Hanya Tema &amp; Teks
+                      </button>
                     </div>
                   </div>
                 );
@@ -431,6 +608,39 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
+            {/* Body Font */}
+            <div>
+              <h2 className="font-serif text-xl font-medium text-[#4D3040] dark:text-white">
+                Font Teks &amp; Deskripsi (Body Typography)
+              </h2>
+              <p className="mt-1 text-xs text-stone-500">
+                Pasangkan dengan font judul untuk kenyamanan baca di ponsel maupun desktop.
+              </p>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { id: "jakarta" as FontBodyOption, label: "Plus Jakarta Sans", tag: "Ramah & Editorial (Default)" },
+                  { id: "inter" as FontBodyOption, label: "Inter", tag: "Bersih, Tajam & Netral" },
+                  { id: "outfit" as FontBodyOption, label: "Outfit", tag: "Geometris Hangat & Modern" },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => updateTheme("font_body", f.id)}
+                    className={`rounded-lg border p-3 text-left transition-all ${
+                      currentTheme.font_body === f.id
+                        ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)]/10 ring-2 ring-[var(--storefront-accent)]/30 font-bold"
+                        : "border-[#DBD0C5]/60 bg-white/40 hover:border-stone-400 dark:border-white/10 dark:bg-stone-900/40"
+                    }`}
+                  >
+                    <span className="block text-sm text-stone-900 dark:text-stone-100">
+                      {f.label}
+                    </span>
+                    <span className="text-[10px] text-stone-500">{f.tag}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Color Palette */}
             <div>
               <h2 className="font-serif text-xl font-medium text-[#4D3040] dark:text-white">
@@ -452,7 +662,7 @@ export default function AdminSettingsPage() {
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => updateTheme("color_theme", c.id)}
+                    onClick={() => updateTheme("color_theme", c.id as ColorThemeOption)}
                     className={`flex items-center gap-2.5 rounded-lg border p-3 text-left transition-all ${
                       currentTheme.color_theme === c.id
                         ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)]/10 ring-2 ring-[var(--storefront-accent)]/30"
@@ -471,12 +681,125 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
+            {/* Product Card Style */}
+            <div>
+              <h2 className="font-serif text-xl font-medium text-[#4D3040] dark:text-white">
+                Gaya Kartu Produk (Card Aesthetic)
+              </h2>
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { id: "modern_glass" as CardStyleOption, label: "Modern Glass", desc: "Bayangan lembut & rounded modern" },
+                  { id: "clean_flat" as CardStyleOption, label: "Clean Flat", desc: "Minimalis bersih tanpa border berat" },
+                  { id: "bordered_clay" as CardStyleOption, label: "Bordered Clay", desc: "Garis editorial hangat" },
+                  { id: "minimal_mono" as CardStyleOption, label: "Minimal Mono", desc: "Tegas & presisi ala galeri" },
+                ].map((card) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => updateTheme("card_style", card.id)}
+                    className={`rounded-lg border p-3 text-left transition-all ${
+                      currentTheme.card_style === card.id
+                        ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)]/10 ring-2 ring-[var(--storefront-accent)]/30 font-bold"
+                        : "border-[#DBD0C5]/60 bg-white/40 hover:border-stone-400 dark:border-white/10 dark:bg-stone-900/40"
+                    }`}
+                  >
+                    <span className="block text-xs font-bold text-stone-900 dark:text-stone-100">
+                      {card.label}
+                    </span>
+                    <span className="text-[10px] text-stone-500">{card.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hero Layout Style */}
+            <div>
+              <h2 className="font-serif text-xl font-medium text-[#4D3040] dark:text-white">
+                Tata Letak Hero Utama
+              </h2>
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { id: "split_dynamic" as HeroStyleOption, label: "Split Editorial", desc: "Teks kiri + Showcase kanan" },
+                  { id: "bento_grid" as HeroStyleOption, label: "Bento Grid", desc: "Mozaik multi-produk visual" },
+                  { id: "minimal_center" as HeroStyleOption, label: "Minimal Center", desc: "Fokus tipografi besar di tengah" },
+                  { id: "rotating_showcase" as HeroStyleOption, label: "Rotating Gallery", desc: "Sorotan foto berputar" },
+                ].map((h) => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => updateTheme("hero_style", h.id)}
+                    className={`rounded-lg border p-3 text-left transition-all ${
+                      currentTheme.hero_style === h.id
+                        ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)]/10 ring-2 ring-[var(--storefront-accent)]/30 font-bold"
+                        : "border-[#DBD0C5]/60 bg-white/40 hover:border-stone-400 dark:border-white/10 dark:bg-stone-900/40"
+                    }`}
+                  >
+                    <span className="block text-xs font-bold text-stone-900 dark:text-stone-100">
+                      {h.label}
+                    </span>
+                    <span className="text-[10px] text-stone-500">{h.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Discovery Feed Layout */}
+            <div>
+              <h2 className="font-serif text-xl font-medium text-[#4D3040] dark:text-white">
+                Mode Scroll Discovery Bawaan (Attention Flow)
+              </h2>
+              <p className="mt-1 text-xs text-stone-500">
+                Pengunjung tetap bisa berganti tampilan di halaman toko, namun mode ini menjadi tampilan pertama saat halaman dibuka.
+              </p>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {[
+                  { id: "pinterest_masonry" as CatalogLayoutOption, label: "Pinterest Waterfall", desc: "Masonry variatif" },
+                  { id: "tiktok_feed" as CatalogLayoutOption, label: "TikTok Snap Feed", desc: "Scroll vertikal fokus" },
+                  { id: "grid_2" as CatalogLayoutOption, label: "Grid 2 Kolom", desc: "Foto besar mewah" },
+                  { id: "grid_3" as CatalogLayoutOption, label: "Grid 3 Kolom", desc: "Seimbang & klasik" },
+                  { id: "grid_4" as CatalogLayoutOption, label: "Grid 4 Kolom", desc: "Padat & cepat" },
+                ].map((layoutOption) => {
+                  const activeLayout =
+                    settings.catalog_layout ||
+                    currentTheme.catalog_layout ||
+                    "pinterest_masonry";
+                  return (
+                    <button
+                      key={layoutOption.id}
+                      type="button"
+                      onClick={() => {
+                        setSaved(false);
+                        setSettings((current) => ({
+                          ...current,
+                          catalog_layout: layoutOption.id,
+                          theme_config: {
+                            ...(current.theme_config || DEFAULT_THEME_CONFIG),
+                            catalog_layout: layoutOption.id,
+                          },
+                        }));
+                      }}
+                      className={`rounded-lg border p-3 text-left transition-all ${
+                        activeLayout === layoutOption.id
+                          ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)]/10 ring-2 ring-[var(--storefront-accent)]/30 font-bold"
+                          : "border-[#DBD0C5]/60 bg-white/40 hover:border-stone-400 dark:border-white/10 dark:bg-stone-900/40"
+                      }`}
+                    >
+                      <span className="block text-xs font-bold text-stone-900 dark:text-stone-100">
+                        {layoutOption.label}
+                      </span>
+                      <span className="text-[10px] text-stone-500">{layoutOption.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Catalog Grid Columns */}
             <div>
               <h2 className="font-serif text-xl font-medium text-[#4D3040] dark:text-white">
-                Tata Letak Kolom Katalog (Desktop)
+                Kepadatan Kolom Grid (Desktop)
               </h2>
-              <div className="mt-3 flex gap-3">
+              <div className="mt-3 flex flex-wrap gap-3">
                 {[
                   { cols: 2, label: "2 Kolom (Luxury & Big Photos)" },
                   { cols: 3, label: "3 Kolom (Balanced Editorial)" },
@@ -496,6 +819,29 @@ export default function AdminSettingsPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Preloader Toggle */}
+            <div className="rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-[#4D3040] dark:text-white">
+                  Animasi Pembuka (Opening Preloader)
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Nonaktifkan agar pengunjung langsung melihat Hero &amp; Pinterest/TikTok feed dalam &lt; 0.3 detik.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => update("enable_preloader", !settings.enable_preloader)}
+                className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-all ${
+                  settings.enable_preloader
+                    ? "bg-[var(--storefront-accent)] text-white"
+                    : "bg-stone-200 text-stone-700 dark:bg-white/10 dark:text-stone-300"
+                }`}
+              >
+                {settings.enable_preloader ? "Aktif" : "Nonaktif (Instan)"}
+              </button>
             </div>
           </section>
         )}
@@ -793,12 +1139,203 @@ export default function AdminSettingsPage() {
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400 mb-1">
+                  URL Foto Brand Story (Banner Cerita Usaha)
+                </label>
+                <input
+                  type="url"
+                  value={settings.story_image_url || ""}
+                  placeholder="https://images.unsplash.com/..."
+                  onChange={(e) => update("story_image_url", e.target.value)}
+                  className="w-full border-b border-stone-300 bg-transparent py-1 text-sm dark:border-white/20"
+                />
+              </div>
+
+              {/* 3 Feature Pillars */}
+              <div className="grid gap-4 sm:grid-cols-3 pt-3 border-t border-[#DBD0C5]/40 dark:border-white/10">
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400">
+                    Keunggulan 1
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Judul Keunggulan 1"
+                    value={settings.feature_1_title || ""}
+                    onChange={(e) => update("feature_1_title", e.target.value)}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm font-semibold dark:border-white/20"
+                  />
+                  <textarea
+                    rows={2}
+                    placeholder="Deskripsi singkat..."
+                    value={settings.feature_1_desc || ""}
+                    onChange={(e) => update("feature_1_desc", e.target.value)}
+                    className="w-full rounded-md border border-stone-300 bg-transparent p-2 text-xs dark:border-white/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400">
+                    Keunggulan 2
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Judul Keunggulan 2"
+                    value={settings.feature_2_title || ""}
+                    onChange={(e) => update("feature_2_title", e.target.value)}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm font-semibold dark:border-white/20"
+                  />
+                  <textarea
+                    rows={2}
+                    placeholder="Deskripsi singkat..."
+                    value={settings.feature_2_desc || ""}
+                    onChange={(e) => update("feature_2_desc", e.target.value)}
+                    className="w-full rounded-md border border-stone-300 bg-transparent p-2 text-xs dark:border-white/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400">
+                    Keunggulan 3
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Judul Keunggulan 3"
+                    value={settings.feature_3_title || ""}
+                    onChange={(e) => update("feature_3_title", e.target.value)}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm font-semibold dark:border-white/20"
+                  />
+                  <textarea
+                    rows={2}
+                    placeholder="Deskripsi singkat..."
+                    value={settings.feature_3_desc || ""}
+                    onChange={(e) => update("feature_3_desc", e.target.value)}
+                    className="w-full rounded-md border border-stone-300 bg-transparent p-2 text-xs dark:border-white/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Order Steps Section */}
+            <div className="space-y-4 rounded-xl border border-[#DBD0C5]/60 bg-white/40 p-5 dark:border-white/10 dark:bg-stone-900/40">
+              <h3 className="font-bold text-stone-900 dark:text-stone-100">
+                3. Cara Pemesanan (3 Langkah)
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400 mb-1">
+                    Judul Alur Pemesanan
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.steps_title || settings.order_steps_title || ""}
+                    placeholder="Contoh: Pesan Dalam 3 Langkah Mudah"
+                    onChange={(e) => {
+                      update("steps_title", e.target.value);
+                      update("order_steps_title", e.target.value);
+                    }}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm dark:border-white/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400 mb-1">
+                    Eyebrow Alur Pemesanan
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.steps_eyebrow || settings.order_steps_eyebrow || ""}
+                    placeholder="Contoh: Cara Pemesanan"
+                    onChange={(e) => {
+                      update("steps_eyebrow", e.target.value);
+                      update("order_steps_eyebrow", e.target.value);
+                    }}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm dark:border-white/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3 pt-2">
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400">
+                    Langkah 1
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Judul Langkah 1"
+                    value={settings.step_1_title || settings.order_step_1_title || ""}
+                    onChange={(e) => {
+                      update("step_1_title", e.target.value);
+                      update("order_step_1_title", e.target.value);
+                    }}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm font-semibold dark:border-white/20"
+                  />
+                  <textarea
+                    rows={2}
+                    placeholder="Penjelasan langkah 1..."
+                    value={settings.step_1_desc || settings.order_step_1_desc || ""}
+                    onChange={(e) => {
+                      update("step_1_desc", e.target.value);
+                      update("order_step_1_desc", e.target.value);
+                    }}
+                    className="w-full rounded-md border border-stone-300 bg-transparent p-2 text-xs dark:border-white/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400">
+                    Langkah 2
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Judul Langkah 2"
+                    value={settings.step_2_title || settings.order_step_2_title || ""}
+                    onChange={(e) => {
+                      update("step_2_title", e.target.value);
+                      update("order_step_2_title", e.target.value);
+                    }}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm font-semibold dark:border-white/20"
+                  />
+                  <textarea
+                    rows={2}
+                    placeholder="Penjelasan langkah 2..."
+                    value={settings.step_2_desc || settings.order_step_2_desc || ""}
+                    onChange={(e) => {
+                      update("step_2_desc", e.target.value);
+                      update("order_step_2_desc", e.target.value);
+                    }}
+                    className="w-full rounded-md border border-stone-300 bg-transparent p-2 text-xs dark:border-white/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400">
+                    Langkah 3
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Judul Langkah 3"
+                    value={settings.step_3_title || settings.order_step_3_title || ""}
+                    onChange={(e) => {
+                      update("step_3_title", e.target.value);
+                      update("order_step_3_title", e.target.value);
+                    }}
+                    className="w-full border-b border-stone-300 bg-transparent py-1 text-sm font-semibold dark:border-white/20"
+                  />
+                  <textarea
+                    rows={2}
+                    placeholder="Penjelasan langkah 3..."
+                    value={settings.step_3_desc || settings.order_step_3_desc || ""}
+                    onChange={(e) => {
+                      update("step_3_desc", e.target.value);
+                      update("order_step_3_desc", e.target.value);
+                    }}
+                    className="w-full rounded-md border border-stone-300 bg-transparent p-2 text-xs dark:border-white/20"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Footer Section */}
             <div className="space-y-4 rounded-xl border border-[#DBD0C5]/60 bg-white/40 p-5 dark:border-white/10 dark:bg-stone-900/40">
               <h3 className="font-bold text-stone-900 dark:text-stone-100">
-                3. Footer Teks
+                4. Footer Teks
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>

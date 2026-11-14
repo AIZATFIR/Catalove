@@ -19,25 +19,33 @@ import {
   Plus,
   Save,
   Search,
+  Sparkles,
   Star,
   Trash2,
   UploadCloud,
   X,
 } from "lucide-react";
 import { cakeService } from "@/lib/services/cake-service";
-import type { Category, Product, ProductImage, ProductVariant } from "@/types/bakery";
-import { formatIDR } from "@/lib/utils/formatters";
+import type { Category, Product } from "@/types/bakery";
+import type { IndustryPreset } from "@/types/catalove";
+import { INDUSTRY_PRESETS } from "@/lib/data/universal-presets";
+import { formatPrice } from "@/lib/utils/formatters";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { ProductImage as StorefrontProductImage } from "@/components/storefront/ProductImage";
 
 interface EditModalState {
   isOpen: boolean;
   product: Product | null;
   name: string;
+  tagline: string;
+  badge: string;
   categoryId: string;
   description: string;
   basePrice: number;
+  compareAtPrice: number | "";
   leadTime: number;
   flavorNotesStr: string;
+  specs: { label: string; value: string }[];
   isActive: boolean;
   isFeatured: boolean;
   images: {
@@ -57,10 +65,16 @@ interface EditModalState {
 }
 
 export default function AdminProductsPage() {
+  const settings = useBusinessSettings();
+  const currencySymbol = settings.currency_symbol || "Rp";
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedPreset, setSelectedPreset] = useState<IndustryPreset>(
+    settings.industry_preset || "general"
+  );
+  const [applyingPreset, setApplyingPreset] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   // Category Manager Modal State
@@ -73,11 +87,15 @@ export default function AdminProductsPage() {
     isOpen: false,
     product: null,
     name: "",
+    tagline: "",
+    badge: "",
     categoryId: "",
     description: "",
     basePrice: 0,
+    compareAtPrice: "",
     leadTime: 2,
     flavorNotesStr: "",
+    specs: [],
     isActive: true,
     isFeatured: false,
     images: [],
@@ -100,26 +118,48 @@ export default function AdminProductsPage() {
     void loadCategories();
   }, []);
 
+  const handleLoadPresetCatalog = async () => {
+    const presetInfo = INDUSTRY_PRESETS[selectedPreset];
+    if (!presetInfo) return;
+    if (
+      !confirm(
+        `Muat contoh produk & kategori untuk usaha "${presetInfo.label}"? Katalog lokal akan diisi produk contoh siap pakai yang bisa Anda edit.`
+      )
+    ) {
+      return;
+    }
+
+    setApplyingPreset(true);
+    try {
+      const result = await cakeService.applyIndustryPresetCatalog(selectedPreset);
+      setCategories(result.categories);
+      setProducts(result.products);
+      setSelectedCategory("all");
+      setFeedback({
+        text: `Berhasil memuat ${result.products.length} contoh produk preset "${presetInfo.label}".`,
+        type: "success",
+      });
+    } catch {
+      setFeedback({ text: "Gagal memuat contoh produk preset.", type: "error" });
+    } finally {
+      setApplyingPreset(false);
+    }
+  };
+
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
     setIsCreatingCategory(true);
     try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCatName.trim() }),
+      const created = await cakeService.createCategory({ name: newCatName.trim() });
+      setNewCatName("");
+      setFeedback({ text: `Kategori "${created.name}" berhasil dibuat.`, type: "success" });
+      await loadCategories();
+    } catch (err: unknown) {
+      setFeedback({
+        text: err instanceof Error ? err.message : "Gagal membuat kategori.",
+        type: "error",
       });
-      const data = await res.json();
-      if (data.success && data.category) {
-        setNewCatName("");
-        setFeedback({ text: `Kategori "${data.category.name}" berhasil dibuat.`, type: "success" });
-        await loadCategories();
-      } else {
-        setFeedback({ text: data.error || "Gagal membuat kategori.", type: "error" });
-      }
-    } catch {
-      setFeedback({ text: "Gagal membuat kategori.", type: "error" });
     } finally {
       setIsCreatingCategory(false);
     }
@@ -128,16 +168,13 @@ export default function AdminProductsPage() {
   const handleDeleteCategory = async (catId: string, catName: string) => {
     if (!confirm(`Hapus kategori "${catName}"? Produk di dalamnya tidak akan terhapus tapi menjadi tanpa kategori.`)) return;
     try {
-      const res = await fetch(`/api/categories?id=${encodeURIComponent(catId)}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (data.success) {
+      const ok = await cakeService.deleteCategory(catId);
+      if (ok) {
         setFeedback({ text: `Kategori "${catName}" berhasil dihapus.`, type: "success" });
         await loadCategories();
         await loadProducts();
       } else {
-        setFeedback({ text: data.error || "Gagal menghapus kategori.", type: "error" });
+        setFeedback({ text: "Gagal menghapus kategori.", type: "error" });
       }
     } catch {
       setFeedback({ text: "Gagal menghapus kategori.", type: "error" });
@@ -187,11 +224,15 @@ export default function AdminProductsPage() {
       isOpen: true,
       product,
       name: product.name,
+      tagline: product.tagline || "",
+      badge: product.badge || "",
       categoryId: product.category_id || "",
       description: product.description,
       basePrice: product.base_price,
+      compareAtPrice: product.compare_at_price ?? "",
       leadTime: product.minimum_lead_time_days,
       flavorNotesStr: (product.flavor_notes || []).join(", "),
+      specs: (product.specs || []).map((s) => ({ label: s.label, value: s.value })),
       isActive: product.is_active,
       isFeatured: product.is_featured,
       images: (product.images || []).map((img, idx) => ({
@@ -264,7 +305,7 @@ export default function AdminProductsPage() {
     e.preventDefault();
     if (!editModal.product) return;
     if (!editModal.name.trim()) {
-      alert("Nama kue wajib diisi.");
+      alert("Nama produk wajib diisi.");
       return;
     }
     if (!Number.isFinite(editModal.basePrice) || editModal.basePrice < 1000) {
@@ -279,12 +320,25 @@ export default function AdminProductsPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      const cleanSpecs = editModal.specs
+        .map((s) => ({ label: s.label.trim(), value: s.value.trim() }))
+        .filter((s) => s.label && s.value);
+
       const payload = {
         name: editModal.name.trim(),
+        tagline: editModal.tagline.trim() || undefined,
+        badge: editModal.badge.trim() || undefined,
         category_id: editModal.categoryId || null,
-        description: editModal.description.trim() || `${editModal.name.trim()} dari dapur SofizCake.`,
-        flavor_notes: flavorNotes.length > 0 ? flavorNotes : ["Freshly Baked"],
+        description:
+          editModal.description.trim() ||
+          `${editModal.name.trim()} dari koleksi ${settings.store_name || "Catalove"}.`,
+        flavor_notes: flavorNotes.length > 0 ? flavorNotes : ["Best Seller"],
+        specs: cleanSpecs,
         base_price: Number(editModal.basePrice),
+        compare_at_price:
+          editModal.compareAtPrice !== "" && Number(editModal.compareAtPrice) > 0
+            ? Number(editModal.compareAtPrice)
+            : null,
         minimum_lead_time_days: Number(editModal.leadTime),
         is_active: editModal.isActive,
         is_featured: editModal.isFeatured,
@@ -402,37 +456,76 @@ export default function AdminProductsPage() {
         </div>
       )}
 
-      {/* Search & Category Filter Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col sm:flex-row gap-3">
-          <label className="relative block w-full sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama atau deskripsi produk..."
-              aria-label="Cari produk"
-              className="w-full border border-[#BFAE9F] bg-transparent py-2 pl-9 pr-3 text-sm focus:border-[#4D3040] focus:outline-none dark:border-white/20 dark:text-white"
-            />
-          </label>
+      {/* Search, Category & Preset Catalog Toolbar */}
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#DBD0C5]/70 bg-white/60 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-[#211B19]">
+          <div className="flex items-start gap-2.5">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--storefront-accent)]" />
+            <div>
+              <p className="text-xs font-bold text-[#4D3040] dark:text-white">
+                Muat Contoh Produk Preset Usaha
+              </p>
+              <p className="text-[11px] text-[#67575B] dark:text-stone-400">
+                Isi katalog secara instan sesuai bidang usaha (Fashion, Bakery, Florist, Craft, Gadget, Jasa).
+              </p>
+            </div>
+          </div>
 
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="border border-[#BFAE9F] bg-transparent px-3 py-2 text-sm text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:bg-[#1A1412] dark:text-white"
-          >
-            <option value="all">Semua Kategori ({products.length})</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={selectedPreset}
+              onChange={(e) => setSelectedPreset(e.target.value as IndustryPreset)}
+              className="border border-[#BFAE9F] bg-white px-3 py-2 text-xs font-semibold text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:bg-[#1A1412] dark:text-white"
+            >
+              {(Object.keys(INDUSTRY_PRESETS) as IndustryPreset[]).map((key) => (
+                <option key={key} value={key}>
+                  {INDUSTRY_PRESETS[key].label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleLoadPresetCatalog}
+              disabled={applyingPreset}
+              className="touch-target inline-flex items-center gap-1.5 border border-[#4D3040] bg-[#4D3040] px-4 py-2 text-xs font-semibold text-white hover:bg-[#392333] disabled:opacity-50 dark:border-[#C88A42] dark:bg-[#C88A42] dark:text-[#211B19]"
+            >
+              {applyingPreset ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+              <span>Muat Preset</span>
+            </button>
+          </div>
         </div>
 
-        <p className="text-xs text-[#67575B] dark:text-stone-400">
-          Total: <span className="font-semibold text-[#4D3040] dark:text-white">{visibleProducts.length}</span> produk
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-1 flex-col sm:flex-row gap-3">
+            <label className="relative block w-full sm:max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama atau deskripsi produk..."
+                aria-label="Cari produk"
+                className="w-full border border-[#BFAE9F] bg-transparent py-2 pl-9 pr-3 text-sm focus:border-[#4D3040] focus:outline-none dark:border-white/20 dark:text-white"
+              />
+            </label>
+
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="border border-[#BFAE9F] bg-transparent px-3 py-2 text-sm text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:bg-[#1A1412] dark:text-white"
+            >
+              <option value="all">Semua Kategori ({products.length})</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="text-xs text-[#67575B] dark:text-stone-400">
+            Total: <span className="font-semibold text-[#4D3040] dark:text-white">{visibleProducts.length}</span> produk
+          </p>
+        </div>
       </div>
 
       {/* Product Cards List */}
@@ -495,13 +588,18 @@ export default function AdminProductsPage() {
 
                 <div className="flex flex-wrap items-center gap-4 text-xs pt-1">
                   <span className="font-semibold text-[#4D3040] dark:text-white">
-                    Mulai {formatIDR(product.base_price)}
+                    Mulai {formatPrice(product.base_price, currencySymbol)}
                   </span>
+                  {product.compare_at_price && product.compare_at_price > product.base_price && (
+                    <span className="text-stone-400 line-through">
+                      {formatPrice(product.compare_at_price, currencySymbol)}
+                    </span>
+                  )}
                   <span className="text-[#806C71] dark:text-stone-400">
                     {isReady ? "Siap hari ini (Ready)" : `Pre-Order H-${product.minimum_lead_time_days}`}
                   </span>
                   <span className="text-[#806C71] dark:text-stone-400">
-                    {product.variants?.length || 0} varian ukuran
+                    {product.variants?.length || 0} varian
                   </span>
                   <span className="text-[#806C71] dark:text-stone-400">
                     {product.images?.length || 0} foto
@@ -517,7 +615,7 @@ export default function AdminProductsPage() {
                     type="button"
                     onClick={() => openEditModal(product)}
                     className="touch-target inline-flex items-center gap-1.5 border border-[#4D3040] bg-[#4D3040] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#392333] dark:border-[#C88A42] dark:bg-[#C88A42] dark:text-[#211B19] cursor-pointer"
-                    title="Edit lengkap: deskripsi, foto, ukuran, harga"
+                    title="Edit lengkap: deskripsi, foto, varian, harga, spesifikasi"
                   >
                     <Pencil size={13} />
                     <span>Edit Lengkap</span>
@@ -532,7 +630,7 @@ export default function AdminProductsPage() {
                         ? "border-[#BFAE9F] text-[#4D3040] hover:bg-[#F5EBDD] dark:border-white/20 dark:text-stone-200 dark:hover:bg-white/10"
                         : "border-emerald-600 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
                     }`}
-                    title={product.is_active ? "Sembunyikan kue dari etalase" : "Tayangkan kembali ke etalase"}
+                    title={product.is_active ? "Sembunyikan produk dari etalase" : "Tayangkan kembali ke etalase"}
                   >
                     {product.is_active ? <EyeOff size={13} /> : <Eye size={13} />}
                     <span>{product.is_active ? "Sembunyikan" : "Tayangkan"}</span>
@@ -628,11 +726,11 @@ export default function AdminProductsPage() {
             </div>
 
             <form onSubmit={handleSaveModal} className="space-y-6 pt-5">
-              {/* 1. Nama & Kategori */}
+              {/* 1. Nama, Tagline, Badge & Kategori */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
-                    Nama Kue *
+                    Nama Produk *
                   </label>
                   <input
                     type="text"
@@ -640,6 +738,32 @@ export default function AdminProductsPage() {
                     value={editModal.name}
                     onChange={(e) => setEditModal((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full border-b border-[#BFAE9F] bg-transparent py-1.5 text-base font-semibold text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
+                    Tagline / Sub-Judul Singkat
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.tagline}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, tagline: e.target.value }))}
+                    placeholder="Contoh: 100% katun combed / Batch terbatas"
+                    className="w-full border-b border-[#BFAE9F] bg-transparent py-1.5 text-sm text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
+                    Badge Sorotan (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.badge}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, badge: e.target.value }))}
+                    placeholder="Contoh: Best Seller, Baru, Limited"
+                    className="w-full border-b border-[#BFAE9F] bg-transparent py-1.5 text-sm text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:text-white"
                   />
                 </div>
 
@@ -661,40 +785,61 @@ export default function AdminProductsPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
-                    Harga Dasar (Rp) *
-                  </label>
-                  <input
-                    type="number"
-                    min="1000"
-                    step="5000"
-                    required
-                    value={editModal.basePrice || ""}
-                    onChange={(e) =>
-                      setEditModal((prev) => ({ ...prev, basePrice: Math.max(0, Number(e.target.value)) }))
-                    }
-                    className="w-full border-b border-[#BFAE9F] bg-transparent py-2 text-sm font-semibold tabular-nums text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:text-white"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
+                      Harga Dasar ({currencySymbol}) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1000"
+                      step="1000"
+                      required
+                      value={editModal.basePrice || ""}
+                      onChange={(e) =>
+                        setEditModal((prev) => ({ ...prev, basePrice: Math.max(0, Number(e.target.value)) }))
+                      }
+                      className="w-full border-b border-[#BFAE9F] bg-transparent py-2 text-sm font-semibold tabular-nums text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
+                      Harga Coret (Promo)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1000"
+                      placeholder="Opsional"
+                      value={editModal.compareAtPrice}
+                      onChange={(e) =>
+                        setEditModal((prev) => ({
+                          ...prev,
+                          compareAtPrice: e.target.value === "" ? "" : Math.max(0, Number(e.target.value)),
+                        }))
+                      }
+                      className="w-full border-b border-[#BFAE9F] bg-transparent py-2 text-sm tabular-nums text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:text-white"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* 2. Deskripsi */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
-                  Deskripsi Kue *
+                  Deskripsi Produk *
                 </label>
                 <textarea
                   rows={3}
                   required
                   value={editModal.description}
                   onChange={(e) => setEditModal((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Deskripsi cita rasa kue, bahan pilihan, dan keistimewaannya..."
+                  placeholder="Jelaskan keunggulan produk, bahan/material, spesifikasi, dan keunikannya..."
                   className="w-full border-b border-[#BFAE9F] bg-transparent py-2 text-sm leading-relaxed text-[#33262A] outline-none focus:border-[#4D3040] dark:border-white/20 dark:text-white"
                 />
               </div>
 
-              {/* 3. Lead Time & Rasa */}
+              {/* 3. Lead Time & Tag Produk */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
@@ -719,16 +864,81 @@ export default function AdminProductsPage() {
 
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
-                    Catatan Rasa (Pisahkan koma)
+                    Tag / Keunggulan Utama (Pisahkan koma)
                   </label>
                   <input
                     type="text"
                     value={editModal.flavorNotesStr}
                     onChange={(e) => setEditModal((prev) => ({ ...prev, flavorNotesStr: e.target.value }))}
-                    placeholder="Contoh: Dark Chocolate, Espresso, Creamy"
+                    placeholder="Contoh: Best Seller, Handmade, Premium Material"
                     className="w-full border-b border-[#BFAE9F] bg-transparent py-1.5 text-sm text-[#33262A] outline-none dark:border-white/20 dark:text-white"
                   />
                 </div>
+              </div>
+
+              {/* 3b. Spesifikasi Produk (Key-Value) */}
+              <div className="space-y-2.5 pt-2 border-t border-[#DBD0C5]/40 dark:border-white/10">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686]">
+                    Spesifikasi Produk ({editModal.specs.length})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditModal((prev) => ({
+                        ...prev,
+                        specs: [...prev.specs, { label: "", value: "" }],
+                      }))
+                    }
+                    className="text-xs font-semibold text-[#B8794A] hover:underline"
+                  >
+                    + Tambah Spesifikasi
+                  </button>
+                </div>
+                {editModal.specs.map((spec, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={spec.label}
+                      onChange={(e) =>
+                        setEditModal((prev) => ({
+                          ...prev,
+                          specs: prev.specs.map((item, i) =>
+                            i === idx ? { ...item, label: e.target.value } : item
+                          ),
+                        }))
+                      }
+                      placeholder="Label (cth: Material / Isi / Garansi)"
+                      className="w-1/3 border-b border-[#BFAE9F] bg-transparent py-1 text-xs text-[#33262A] dark:text-white"
+                    />
+                    <input
+                      type="text"
+                      value={spec.value}
+                      onChange={(e) =>
+                        setEditModal((prev) => ({
+                          ...prev,
+                          specs: prev.specs.map((item, i) =>
+                            i === idx ? { ...item, value: e.target.value } : item
+                          ),
+                        }))
+                      }
+                      placeholder="Nilai (cth: Linen 100% / 1 Tahun)"
+                      className="flex-1 border-b border-[#BFAE9F] bg-transparent py-1 text-xs text-[#33262A] dark:text-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditModal((prev) => ({
+                          ...prev,
+                          specs: prev.specs.filter((_, i) => i !== idx),
+                        }))
+                      }
+                      className="text-rose-600 p-1 hover:text-rose-800"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
               </div>
 
               {/* 4. Toggles: Tayang di Toko / Sembunyikan */}
@@ -758,11 +968,11 @@ export default function AdminProductsPage() {
                 </label>
               </div>
 
-              {/* 5. Foto Kue */}
+              {/* 5. Foto Produk */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686]">
-                    Foto Kue ({editModal.images.length})
+                    Foto Produk ({editModal.images.length})
                   </label>
                   <label className="cursor-pointer text-xs font-semibold text-[#B8794A] hover:underline flex items-center gap-1">
                     <UploadCloud size={14} /> + Upload Foto Baru
@@ -786,7 +996,7 @@ export default function AdminProductsPage() {
                     >
                       <Image
                         src={img.storage_path}
-                        alt="Foto kue"
+                        alt="Foto produk"
                         fill
                         className="object-cover"
                       />
@@ -829,11 +1039,11 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* 6. Varian Ukuran & Harga */}
+              {/* 6. Varian & Harga */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686]">
-                    Varian Ukuran & Harga ({editModal.variants.length})
+                    Varian &amp; Harga ({editModal.variants.length})
                   </label>
                   <button
                     type="button"
@@ -843,7 +1053,7 @@ export default function AdminProductsPage() {
                         variants: [
                           ...prev.variants,
                           {
-                            name: `Ukuran ${prev.variants.length + 1}`,
+                            name: `Varian ${prev.variants.length + 1}`,
                             price: prev.basePrice || 0,
                             is_default: prev.variants.length === 0,
                           },
@@ -852,7 +1062,7 @@ export default function AdminProductsPage() {
                     }
                     className="text-xs font-semibold text-[#B8794A] hover:underline"
                   >
-                    + Tambah Ukuran
+                    + Tambah Varian
                   </button>
                 </div>
 
@@ -869,7 +1079,7 @@ export default function AdminProductsPage() {
                           ),
                         }))
                       }
-                      placeholder="Nama Varian (misal: 16cm)"
+                      placeholder="Nama Varian (cth: Standar / M / Biru / Paket A)"
                       className="flex-1 border-b border-[#BFAE9F] bg-transparent py-1 text-xs text-[#33262A] dark:text-white"
                     />
                     <input
@@ -923,7 +1133,7 @@ export default function AdminProductsPage() {
                   onClick={() => handleDeleteProduct(editModal.product!)}
                   className="text-xs font-semibold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer"
                 >
-                  <Trash2 size={14} /> Hapus Kue Ini
+                  <Trash2 size={14} /> Hapus Produk Ini
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -956,10 +1166,10 @@ export default function AdminProductsPage() {
             <div className="flex items-center justify-between border-b border-[#DBD0C5] pb-4 dark:border-white/10">
               <div>
                 <h2 className="font-serif text-xl font-bold text-[#4D3040] dark:text-white">
-                  Kelola Kategori Kue
+                  Kelola Kategori Produk
                 </h2>
                 <p className="text-xs text-[#67575B] dark:text-stone-300 mt-1">
-                  Buat kategori bebas baru atau hapus yang tidak dipakai.
+                  Buat kategori baru sesuai usaha Anda atau hapus yang tidak dipakai.
                 </p>
               </div>
               <button
@@ -976,7 +1186,7 @@ export default function AdminProductsPage() {
                 type="text"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="Contoh: Tart Ulang Tahun, Bento, Brownies..."
+                placeholder="Contoh: Koleksi Utama, Best Seller, Bundling..."
                 className="flex-1 border-b border-[#BFAE9F] bg-transparent px-3 py-2 text-xs text-[#33262A] dark:text-white dark:border-white/20 focus:outline-none focus:border-[#4D3040]"
               />
               <button
@@ -991,7 +1201,7 @@ export default function AdminProductsPage() {
             <div className="mt-5 max-h-60 overflow-y-auto divide-y divide-[#DBD0C5] dark:divide-white/10 border-y border-[#DBD0C5] dark:border-white/10">
               {categories.length === 0 ? (
                 <p className="py-6 text-center text-xs text-[#806C71] dark:text-stone-400">
-                  Belum ada kategori. Kategori kue bebas, silakan buat baru di atas!
+                  Belum ada kategori. Kategori produk bebas, silakan buat baru di atas!
                 </p>
               ) : (
                 categories.map((cat) => (

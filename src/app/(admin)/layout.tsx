@@ -4,9 +4,10 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminBottomNav } from "@/components/admin/AdminBottomNav";
-import { Cake, ExternalLink, Plus, ShoppingBag, Calendar, ListOrdered, Settings2, LogOut } from "lucide-react";
+import { Store, ExternalLink, Plus, ShoppingBag, Calendar, ListOrdered, Settings2, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { authService } from "@/lib/services/auth-service";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 export default function AdminLayout({
   children,
@@ -14,6 +15,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const settings = useBusinessSettings();
   const isLoginPage = pathname === "/admin/login";
 
   if (isLoginPage) {
@@ -28,10 +30,10 @@ export default function AdminLayout({
           <div className="flex items-center gap-3">
             <Link href="/admin" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-caramel-600 flex items-center justify-center text-white">
-                <Cake className="w-4 h-4" />
+                <Store className="w-4 h-4" />
               </div>
               <span className="font-serif font-bold text-lg text-cocoa-950 dark:text-[#FAF4EE]">
-                SofizCake Admin
+                {settings.store_name || "Catalove Studio"}
               </span>
             </Link>
 
@@ -57,7 +59,7 @@ export default function AdminLayout({
                 }`}
               >
                 <ListOrdered className="w-3.5 h-3.5" />
-                <span>Katalog Kue</span>
+                <span>Katalog Produk</span>
               </Link>
               <Link
                 href="/admin/availability"
@@ -79,7 +81,7 @@ export default function AdminLayout({
                 }`}
               >
                 <Settings2 className="w-3.5 h-3.5" />
-                <span>Identitas toko</span>
+                <span>Desain & Pengaturan</span>
               </Link>
             </nav>
           </div>
@@ -92,7 +94,7 @@ export default function AdminLayout({
               className="touch-target inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-caramel-600 text-white hover:bg-caramel-700 text-xs font-semibold shadow-soft"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Tambah Kue Baru</span>
+              <span className="hidden sm:inline">Tambah Produk Baru</span>
               <span className="sm:hidden">Tambah</span>
             </Link>
 

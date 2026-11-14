@@ -14,10 +14,12 @@ import {
 } from "lucide-react";
 import { orderService } from "@/lib/services/order-service";
 import { OrderRequest, OrderStatus } from "@/types/bakery";
-import { formatIDR, formatDateIndonesian } from "@/lib/utils/formatters";
+import { formatPrice, formatDateIndonesian } from "@/lib/utils/formatters";
 import { buildWhatsAppUrl } from "@/lib/utils/whatsapp";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 function AdminOrdersContent() {
+  const settings = useBusinessSettings();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as OrderStatus | "all") || "all";
 
@@ -59,8 +61,8 @@ function AdminOrdersContent() {
         <h1 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 mt-0.5">
           Daftar Permintaan Pesanan
         </h1>
-        <p className="text-xs text-cocoa-600 mt-1">
-          Tinjau pesanan masuk, chat langsung ke nomor WhatsApp pelanggan, dan ubah status pembuatan kue.
+        <p className="text-xs text-cocoa-600 dark:text-[#C5B5A8] mt-1">
+          Tinjau pesanan masuk, chat langsung ke nomor WhatsApp pelanggan, dan ubah status proses pesanan.
         </p>
       </div>
 
@@ -92,8 +94,8 @@ function AdminOrdersContent() {
       <div className="space-y-4">
         {orders.length > 0 ? (
           orders.map((order) => {
-            const item = order.items[0];
             const waChatUrl = buildWhatsAppUrl(order, order.customer_whatsapp);
+            const currencySymbol = settings.currency_symbol || "Rp";
 
             const statusBadgeColors = {
               pending: "bg-amber-100 text-amber-900 border-amber-300",
@@ -106,15 +108,15 @@ function AdminOrdersContent() {
             return (
               <div
                 key={order.id}
-                className="p-5 sm:p-6 rounded-3xl bg-white border border-caramel-200/80 shadow-soft space-y-4 hover:border-caramel-300 transition-all"
+                className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#211B19] border border-caramel-200/80 dark:border-white/10 shadow-soft space-y-4 hover:border-caramel-300 transition-all"
               >
                 {/* Top Row: Ref ID, Status & Time */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-caramel-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-caramel-100 dark:border-white/10">
                   <div className="flex items-center gap-2.5">
                     <span className="font-mono text-xs font-bold text-caramel-800 bg-butter-100 border border-butter-300 px-2.5 py-0.5 rounded-lg">
                       {order.reference_code}
                     </span>
-                    <span className="font-bold text-sm text-cocoa-950">
+                    <span className="font-bold text-sm text-cocoa-950 dark:text-[#FAF4EE]">
                       {order.customer_name}
                     </span>
                   </div>
@@ -128,32 +130,36 @@ function AdminOrdersContent() {
                   </div>
                 </div>
 
-                {/* Main Content: Item, Date, Customization */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs text-cocoa-700">
+                {/* Main Content: Items, Date, Customization */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs text-cocoa-700 dark:text-[#D8CBC0]">
                   <div className="md:col-span-7 space-y-1.5">
-                    <div className="font-serif font-bold text-base text-cocoa-900">
-                      {item?.product_name_snapshot}
-                    </div>
-                    {item?.variant_name_snapshot && (
-                      <p className="text-cocoa-600">
-                        Varian: {item.variant_name_snapshot} (x{item.quantity})
-                      </p>
-                    )}
+                    {order.items.map((item, idx) => (
+                      <div key={item.id || idx} className="space-y-0.5">
+                        <div className="font-serif font-bold text-base text-cocoa-900 dark:text-[#FAF4EE]">
+                          {item.product_name_snapshot}
+                        </div>
+                        {item.variant_name_snapshot && (
+                          <p className="text-cocoa-600 dark:text-[#C5B5A8]">
+                            Varian: {item.variant_name_snapshot} (x{item.quantity})
+                          </p>
+                        )}
+                      </div>
+                    ))}
                     {order.cake_inscription && (
-                      <p className="text-caramel-800 italic bg-vanilla-100 p-2 rounded-xl">
-                        Tulisan kue: “{order.cake_inscription}”
-                        {order.candle_count ? ` (${order.candle_count} lilin)` : ""}
+                      <p className="text-caramel-800 dark:text-amber-200 italic bg-vanilla-100 dark:bg-white/5 p-2 rounded-xl">
+                        Catatan / Custom: “{order.cake_inscription}”
+                        {order.candle_count ? ` (+${order.candle_count} item tambahan)` : ""}
                       </p>
                     )}
                   </div>
 
-                  <div className="md:col-span-5 space-y-1.5 border-t md:border-t-0 md:border-l border-caramel-100 pt-3 md:pt-0 md:pl-4">
-                    <div className="flex items-center gap-1.5 font-semibold text-cocoa-900">
+                  <div className="md:col-span-5 space-y-1.5 border-t md:border-t-0 md:border-l border-caramel-100 dark:border-white/10 pt-3 md:pt-0 md:pl-4">
+                    <div className="flex items-center gap-1.5 font-semibold text-cocoa-900 dark:text-[#FAF4EE]">
                       <Clock className="w-3.5 h-3.5 text-caramel-600" />
                       <span>{formatDateIndonesian(order.requested_date)}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-cocoa-600">
+                    <div className="flex items-center gap-1.5 text-cocoa-600 dark:text-[#C5B5A8]">
                       {order.fulfillment_method === "pickup" ? (
                         <MapPin className="w-3.5 h-3.5 text-caramel-600" />
                       ) : (
@@ -161,19 +167,21 @@ function AdminOrdersContent() {
                       )}
                       <span>
                         {order.fulfillment_method === "pickup"
-                          ? "Ambil Sendiri di Dapur"
+                          ? "Ambil Sendiri di Toko"
+                          : order.fulfillment_method === "shipping"
+                          ? `Ekspedisi / Kirim: ${order.delivery_address || "-"}`
                           : `Pengantaran: ${order.delivery_address || "-"}`}
                       </span>
                     </div>
 
-                    <div className="font-bold text-sm text-caramel-800 pt-1">
-                      Total: {formatIDR(order.subtotal)}
+                    <div className="font-bold text-sm text-caramel-800 dark:text-[#D1A686] pt-1">
+                      Total: {formatPrice(order.subtotal, currencySymbol)}
                     </div>
                   </div>
                 </div>
 
                 {/* Action Row: WhatsApp & Status Stepper */}
-                <div className="pt-3 border-t border-caramel-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="pt-3 border-t border-caramel-100 dark:border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <a
                     href={waChatUrl}
                     target="_blank"
@@ -186,7 +194,7 @@ function AdminOrdersContent() {
 
                   {/* Status Dropdown */}
                   <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <span className="text-xs font-semibold text-cocoa-600">
+                    <span className="text-xs font-semibold text-cocoa-600 dark:text-[#C5B5A8]">
                       Ubah Status:
                     </span>
                     <select
@@ -194,11 +202,11 @@ function AdminOrdersContent() {
                       onChange={(e) =>
                         handleStatusChange(order.id, e.target.value as OrderStatus)
                       }
-                      className="px-3 py-1.5 rounded-xl bg-vanilla-100 border border-caramel-300 text-xs font-bold text-cocoa-900 focus:outline-none focus:border-caramel-600 cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-vanilla-100 dark:bg-[#2C2421] border border-caramel-300 dark:border-white/15 text-xs font-bold text-cocoa-900 dark:text-[#FAF4EE] focus:outline-none focus:border-caramel-600 cursor-pointer"
                     >
                       <option value="pending">Menunggu Review</option>
                       <option value="contacted">Sudah Dihubungi</option>
-                      <option value="confirmed">Dikonfirmasi (Siap Buat)</option>
+                      <option value="confirmed">Dikonfirmasi (Siap Proses)</option>
                       <option value="completed">Selesai</option>
                       <option value="cancelled">Dibatalkan</option>
                     </select>

@@ -9,24 +9,51 @@ import { OrderSteps } from "@/components/storefront/OrderSteps";
 import { BakeryStory } from "@/components/storefront/BakeryStory";
 import { Footer } from "@/components/storefront/Footer";
 import { RecommendationDrawer } from "@/components/ai/RecommendationDrawer";
+import { DiscoveryFeed } from "@/components/storefront/DiscoveryFeed";
 import { StickyCard002 } from "@/components/ui/skiper-ui/skiper17";
 import { Skiper8 } from "@/components/ui/skiper-ui/skiper8";
-import { Product } from "@/types/bakery";
-import { INITIAL_PRODUCTS } from "@/lib/data/seed-cakes";
+import { Category, Product } from "@/types/bakery";
 import { cakeService } from "@/lib/services/cake-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 export default function HomePage() {
   const settings = useBusinessSettings();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>(() => INITIAL_PRODUCTS.filter((product) => product.is_active));
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    cakeService.getProducts({ includeInactive: false }).then((prods) => {
-      if (prods && prods.length > 0) {
+    let active = true;
+    const loadCatalog = async () => {
+      const [prods, cats] = await Promise.all([
+        cakeService.getProducts({ includeInactive: false }),
+        cakeService.getCategories(),
+      ]);
+      if (!active) return;
+      if (prods) {
         setProducts(prods.filter((p) => p.is_active));
       }
-    });
+      if (cats) {
+        setCategories(cats);
+      }
+    };
+
+    loadCatalog();
+
+    const handleCatalogUpdate = () => {
+      loadCatalog();
+    };
+
+    window.addEventListener("catalove-catalog-updated", handleCatalogUpdate);
+    window.addEventListener("catalove-settings-change", handleCatalogUpdate);
+    window.addEventListener("storage", handleCatalogUpdate);
+
+    return () => {
+      active = false;
+      window.removeEventListener("catalove-catalog-updated", handleCatalogUpdate);
+      window.removeEventListener("catalove-settings-change", handleCatalogUpdate);
+      window.removeEventListener("storage", handleCatalogUpdate);
+    };
   }, []);
 
   const stickyCards = useMemo(() => {
@@ -53,6 +80,9 @@ export default function HomePage() {
       <Navbar onOpenQuiz={() => setIsQuizOpen(true)} />
       <main className="flex-1">
         <Hero products={products} onOpenQuiz={() => setIsQuizOpen(true)} />
+
+        {/* Interactive Discovery Feed (Pinterest Waterfall / TikTok Snap / Editorial Grid) */}
+        <DiscoveryFeed products={products} categories={categories} />
 
         {/* Skiper17 Stacked Sticky Cards Section */}
         {stickyCards.length > 1 && (
