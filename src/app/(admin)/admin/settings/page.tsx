@@ -19,8 +19,8 @@ import {
   RotateCcw,
   ArrowUp,
   ArrowDown,
-  Eye,
-  EyeOff,
+  Plus,
+  Trash2,
   Sliders,
   ExternalLink,
 } from "lucide-react";
@@ -36,13 +36,18 @@ import {
   fetchBusinessSettings,
 } from "@/lib/business-settings";
 import { THEME_COLOR_MAP } from "@/components/theme/ThemeProvider";
-import { DEFAULT_SECTION_ORDER } from "@/components/storefront/PricingSection";
+import {
+  ALL_CANVAS_SECTIONS,
+  DEFAULT_SECTION_ORDER,
+} from "@/components/storefront/PricingSection";
 import type {
+  BodyScaleOption,
   BusinessSettings,
   IndustryPreset,
   WorkflowMode,
   FontHeadingOption,
   FontBodyOption,
+  HeadingScaleOption,
   ColorThemeOption,
   CardStyleOption,
   HeroStyleOption,
@@ -51,15 +56,15 @@ import type {
   CustomColorPalette,
 } from "@/types/catalove";
 
-const SECTION_LABELS: Record<CanvasSectionId, { title: string; desc: string }> = {
-  hero: { title: "Hero Utama", desc: "Banner pembuka, headline & tombol aksi" },
-  feed: { title: "Katalog Produk", desc: "Daftar item, filter & mode tampilan" },
-  pricing: { title: "Paket & Harga", desc: "Mandiri vs Terima Jadi & tombol pesan" },
-  lookbook: { title: "Lookbook Koleksi", desc: "Grid editorial & tautan cepat kategori" },
-  showcase: { title: "Galeri Foto", desc: "Sorotan visual 2x2 produk pilihan" },
-  carousel: { title: "Sorotan Produk", desc: "Carousel interaktif produk unggulan" },
-  cta: { title: "Ajakan Pesan (CTA)", desc: "Banner WhatsApp & penutup halaman" },
-};
+const VALID_SECTION_IDS = new Set<CanvasSectionId>(
+  ALL_CANVAS_SECTIONS.map((s) => s.id)
+);
+
+const SECTION_LABELS: Record<CanvasSectionId, { title: string; desc: string }> =
+  ALL_CANVAS_SECTIONS.reduce((acc, item) => {
+    acc[item.id] = { title: item.title, desc: item.desc };
+    return acc;
+  }, {} as Record<CanvasSectionId, { title: string; desc: string }>);
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<BusinessSettings>(INITIAL_SETTINGS);
@@ -671,6 +676,93 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
+            {/* Scale Typography & Hero Alignment */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200">
+                  Ukuran Judul Hero
+                </h3>
+                <div className="mt-2 grid grid-cols-4 gap-1.5">
+                  {(
+                    [
+                      { id: "sm", label: "S" },
+                      { id: "md", label: "M" },
+                      { id: "lg", label: "L" },
+                      { id: "xl", label: "XL" },
+                    ] as { id: HeadingScaleOption; label: string }[]
+                  ).map((sc) => (
+                    <button
+                      key={sc.id}
+                      type="button"
+                      onClick={() => updateTheme("heading_scale", sc.id)}
+                      className={`rounded-lg border py-2 text-xs font-bold transition-all ${
+                        (currentTheme.heading_scale || "lg") === sc.id
+                          ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                          : "border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-900"
+                      }`}
+                    >
+                      {sc.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200">
+                  Ukuran Teks Body
+                </h3>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {(
+                    [
+                      { id: "sm", label: "Kecil" },
+                      { id: "md", label: "Sedang" },
+                      { id: "lg", label: "Besar" },
+                    ] as { id: BodyScaleOption; label: string }[]
+                  ).map((sc) => (
+                    <button
+                      key={sc.id}
+                      type="button"
+                      onClick={() => updateTheme("body_scale", sc.id)}
+                      className={`rounded-lg border py-2 text-xs font-bold transition-all ${
+                        (currentTheme.body_scale || "md") === sc.id
+                          ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                          : "border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-900"
+                      }`}
+                    >
+                      {sc.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200">
+                  Perataan Teks Hero
+                </h3>
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  {(
+                    [
+                      { id: "left", label: "Rata Kiri" },
+                      { id: "center", label: "Rata Tengah" },
+                    ] as const
+                  ).map((al) => (
+                    <button
+                      key={al.id}
+                      type="button"
+                      onClick={() => updateTheme("hero_align", al.id)}
+                      className={`rounded-lg border py-2 text-xs font-bold transition-all ${
+                        (currentTheme.hero_align || "left") === al.id
+                          ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                          : "border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-900"
+                      }`}
+                    >
+                      {al.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Color Palette */}
             <div>
               <h2 className="font-serif text-xl font-medium text-[#4D3040] dark:text-white">
@@ -950,83 +1042,149 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Urutan & Visibilitas Section Kanvas */}
+            {/* Manajemen Section Kanvas (Model Aditif: Mulai dari Hero) */}
             {(() => {
-              const savedOrder = currentTheme.section_order || [];
-              const mergedOrder: CanvasSectionId[] = [
-                ...savedOrder.filter((id) => DEFAULT_SECTION_ORDER.includes(id)),
-                ...DEFAULT_SECTION_ORDER.filter((id) => !savedOrder.includes(id)),
-              ];
-              const hiddenSections: CanvasSectionId[] = currentTheme.hidden_sections || [];
+              const saved = currentTheme.section_order;
+              const hidden = new Set(currentTheme.hidden_sections || []);
+              const base =
+                saved && saved.length > 0 ? saved : DEFAULT_SECTION_ORDER;
+              const activeOrder: CanvasSectionId[] = [];
+              for (const id of base) {
+                if (
+                  VALID_SECTION_IDS.has(id) &&
+                  !activeOrder.includes(id) &&
+                  !hidden.has(id)
+                ) {
+                  activeOrder.push(id);
+                }
+              }
+              if (activeOrder.length === 0) {
+                activeOrder.push("hero");
+              }
+
+              const availableToAdd = ALL_CANVAS_SECTIONS.filter(
+                (s) => !activeOrder.includes(s.id)
+              );
 
               const moveSection = (idx: number, delta: -1 | 1) => {
                 const target = idx + delta;
-                if (target < 0 || target >= mergedOrder.length) return;
-                const next = [...mergedOrder];
+                if (target < 0 || target >= activeOrder.length) return;
+                const next = [...activeOrder];
                 [next[idx], next[target]] = [next[target], next[idx]];
                 updateTheme("section_order", next);
               };
 
-              const toggleSectionVisibility = (id: CanvasSectionId) => {
-                const isHidden = hiddenSections.includes(id);
-                if (!isHidden && mergedOrder.length - hiddenSections.length <= 1) {
-                  return;
-                }
-                const nextHidden = isHidden
-                  ? hiddenSections.filter((s) => s !== id)
-                  : [...hiddenSections, id];
-                updateTheme("hidden_sections", nextHidden);
+              const addSection = (id: CanvasSectionId) => {
+                setSaved(false);
+                setStatusMessage("");
+                setSettings((current) => {
+                  const tc = current.theme_config || DEFAULT_THEME_CONFIG;
+                  const nextHidden = (tc.hidden_sections || []).filter(
+                    (h) => h !== id
+                  );
+                  const nextOrder = activeOrder.includes(id)
+                    ? activeOrder
+                    : [...activeOrder, id];
+                  return {
+                    ...current,
+                    theme_config: {
+                      ...tc,
+                      section_order: nextOrder,
+                      hidden_sections: nextHidden,
+                    },
+                  };
+                });
+              };
+
+              const removeSection = (id: CanvasSectionId) => {
+                if (activeOrder.length <= 1) return;
+                const nextOrder = activeOrder.filter((s) => s !== id);
+                updateTheme(
+                  "section_order",
+                  nextOrder.length > 0 ? nextOrder : ["hero"]
+                );
+              };
+
+              const loadFullPreset = () => {
+                setSaved(false);
+                setStatusMessage("");
+                setSettings((current) => ({
+                  ...current,
+                  theme_config: {
+                    ...(current.theme_config || DEFAULT_THEME_CONFIG),
+                    section_order: [
+                      "hero",
+                      "feed",
+                      "featured_split",
+                      "collection_index",
+                      "statement_banner",
+                      "faq_minimal",
+                      "pricing",
+                      "cta",
+                    ],
+                    hidden_sections: [],
+                  },
+                }));
+              };
+
+              const resetHeroOnly = () => {
+                setSaved(false);
+                setStatusMessage("");
+                setSettings((current) => ({
+                  ...current,
+                  theme_config: {
+                    ...(current.theme_config || DEFAULT_THEME_CONFIG),
+                    section_order: ["hero"],
+                    hidden_sections: [],
+                  },
+                }));
               };
 
               return (
-                <div className="rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 space-y-3">
+                <div className="rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-sm font-bold text-[#4D3040] dark:text-white">
-                        Urutan &amp; Visibilitas Section Kanvas
+                        Susunan Section Halaman ({activeOrder.length} Aktif)
                       </h3>
                       <p className="text-xs text-stone-500 mt-0.5">
-                        Atur urutan blok di halaman depan atau sembunyikan section tertentu.
+                        Mulai eksklusif dari Hero saja, lalu tambahkan section lain sesuai kebutuhan.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSaved(false);
-                        setStatusMessage("");
-                        setSettings((current) => ({
-                          ...current,
-                          theme_config: {
-                            ...(current.theme_config || DEFAULT_THEME_CONFIG),
-                            section_order: DEFAULT_SECTION_ORDER,
-                            hidden_sections: [],
-                          },
-                        }));
-                      }}
-                      className="rounded-lg border border-stone-200 dark:border-white/15 px-3 py-1 text-[11px] font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10"
-                    >
-                      Reset Urutan
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={loadFullPreset}
+                        className="rounded-lg border border-stone-200 dark:border-white/15 px-3 py-1 text-[11px] font-semibold text-stone-700 dark:text-stone-200 hover:border-[var(--storefront-accent)]"
+                      >
+                        Muat Preset 8 Section
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetHeroOnly}
+                        className="rounded-lg border border-stone-200 dark:border-white/15 px-3 py-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                      >
+                        Reset ke Hero Saja
+                      </button>
+                    </div>
                   </div>
 
+                  {/* Active Sections List */}
                   <div className="space-y-2">
-                    {mergedOrder.map((secId, idx) => {
+                    {activeOrder.map((secId, idx) => {
                       const info = SECTION_LABELS[secId];
-                      const isHidden = hiddenSections.includes(secId);
                       return (
                         <div
                           key={secId}
-                          className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 transition-opacity ${
-                            isHidden
-                              ? "border-dashed border-stone-200 dark:border-white/10 opacity-55"
-                              : "border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-950"
-                          }`}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-950 px-3 py-2.5"
                         >
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-stone-800 dark:text-stone-100">
                               {idx + 1}. {info.title}
                             </p>
-                            <p className="text-[11px] text-stone-500 truncate">{info.desc}</p>
+                            <p className="text-[11px] text-stone-500 truncate">
+                              {info.desc}
+                            </p>
                           </div>
 
                           <div className="flex items-center gap-1 shrink-0">
@@ -1041,7 +1199,7 @@ export default function AdminSettingsPage() {
                             </button>
                             <button
                               type="button"
-                              disabled={idx === mergedOrder.length - 1}
+                              disabled={idx === activeOrder.length - 1}
                               onClick={() => moveSection(idx, 1)}
                               aria-label={`Turunkan ${info.title}`}
                               className="rounded-md border border-stone-200 dark:border-white/15 p-1.5 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10 disabled:opacity-30"
@@ -1050,31 +1208,48 @@ export default function AdminSettingsPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => toggleSectionVisibility(secId)}
-                              aria-label={isHidden ? `Tampilkan ${info.title}` : `Sembunyikan ${info.title}`}
-                              className={`ml-1 inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
-                                isHidden
-                                  ? "bg-stone-200 text-stone-600 dark:bg-white/10 dark:text-stone-400"
-                                  : "bg-[var(--storefront-accent)] text-white"
-                              }`}
+                              disabled={activeOrder.length <= 1}
+                              onClick={() => removeSection(secId)}
+                              aria-label={`Hapus ${info.title}`}
+                              className="ml-1 inline-flex items-center gap-1 rounded-md border border-stone-200 dark:border-white/15 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-30"
                             >
-                              {isHidden ? (
-                                <>
-                                  <EyeOff className="h-3.5 w-3.5" />
-                                  <span>Tersembunyi</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Eye className="h-3.5 w-3.5" />
-                                  <span>Tampil</span>
-                                </>
-                              )}
+                              <Trash2 className="h-3.5 w-3.5" />
+                              <span>Hapus</span>
                             </button>
                           </div>
                         </div>
                       );
                     })}
                   </div>
+
+                  {/* Available Sections to Add */}
+                  {availableToAdd.length > 0 && (
+                    <div className="pt-2 border-t border-stone-200/70 dark:border-white/10 space-y-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                        + Tambah Section Baru
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {availableToAdd.map((sec) => (
+                          <button
+                            key={sec.id}
+                            type="button"
+                            onClick={() => addSection(sec.id)}
+                            className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/80 dark:bg-stone-950 px-3 py-2 text-left hover:bg-[var(--color-surface-tint)] transition-colors"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-stone-800 dark:text-stone-100 truncate">
+                                {sec.title}
+                              </p>
+                              <p className="text-[10px] text-stone-500 truncate">
+                                {sec.desc}
+                              </p>
+                            </div>
+                            <Plus className="h-4 w-4 shrink-0 text-[var(--storefront-accent)]" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}

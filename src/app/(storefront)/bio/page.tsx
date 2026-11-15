@@ -325,9 +325,9 @@ export default function BioLinkPage() {
                 return (
                   <div
                     key={product.id}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200/80 dark:border-white/15 bg-white/90 dark:bg-white/5 shadow-sm"
+                    className="group flex flex-col space-y-2.5"
                   >
-                    <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-900">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-[var(--storefront-surface)]">
                       <Link href={`/product/${product.slug}`} className="block h-full w-full">
                         <ProductImage
                           src={img}
@@ -336,16 +336,17 @@ export default function BioLinkPage() {
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </Link>
-                      {product.badge && (
-                        <span className="absolute left-2 top-2 rounded-full bg-[var(--storefront-accent)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm">
-                          {product.badge}
-                        </span>
-                      )}
+                      {product.badge &&
+                        product.badge.trim().toLowerCase() !== "sample" && (
+                          <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">
+                            {product.badge}
+                          </span>
+                        )}
                       <button
                         type="button"
                         onClick={() => toggleLike(product.id)}
                         aria-label={`Sukai ${product.name}`}
-                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-stone-900/80 shadow-md backdrop-blur-sm transition-transform active:scale-90"
+                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-stone-900/80 transition-transform active:scale-90"
                       >
                         <Heart
                           className={`h-4 w-4 ${
@@ -357,15 +358,15 @@ export default function BioLinkPage() {
                       </button>
                     </div>
 
-                    <div className="flex flex-1 flex-col justify-between p-3 space-y-2.5">
+                    <div className="flex flex-1 flex-col justify-between space-y-2">
                       <div>
                         <Link
                           href={`/product/${product.slug}`}
-                          className="font-serif text-sm font-bold leading-snug line-clamp-2 hover:text-[var(--storefront-accent)]"
+                          className="font-serif text-sm font-semibold leading-snug line-clamp-2 text-[var(--storefront-ink)] hover:text-[var(--storefront-accent)]"
                         >
                           {product.name}
                         </Link>
-                        <p className="mt-1 text-xs font-bold text-[var(--storefront-accent)]">
+                        <p className="mt-0.5 text-xs font-semibold tabular-nums text-[var(--storefront-accent)]">
                           {formatPrice(product.base_price, currency)}
                         </p>
                       </div>
@@ -379,7 +380,7 @@ export default function BioLinkPage() {
                           addItem(product, defaultVariant, 1);
                           openCart();
                         }}
-                        className="inline-flex w-full items-center justify-center gap-1 rounded-xl bg-stone-900 dark:bg-[var(--storefront-accent)] py-2 text-[11px] font-bold text-white hover:opacity-95 transition-opacity"
+                        className="inline-flex w-full items-center justify-center gap-1 rounded-full bg-stone-900 dark:bg-[var(--storefront-accent)] py-2 text-[11px] font-bold text-white hover:opacity-95 transition-opacity"
                       >
                         <ShoppingBag className="h-3.5 w-3.5" />
                         <span>+ Bag</span>

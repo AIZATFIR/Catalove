@@ -57,11 +57,32 @@ export type CatalogLayoutOption =
 export type CanvasSectionId =
   | "hero"
   | "feed"
-  | "pricing"
+  | "featured_split"
+  | "collection_index"
+  | "statement_banner"
   | "lookbook"
   | "showcase"
   | "carousel"
+  | "faq_minimal"
+  | "pricing"
   | "cta";
+
+export type HeadingScaleOption = "sm" | "md" | "lg" | "xl";
+export type BodyScaleOption = "sm" | "md" | "lg";
+export type SectionToneOption = "default" | "surface" | "accent" | "ink";
+export type SectionSpacingOption = "compact" | "normal" | "spacious";
+
+export interface SectionCustomConfig {
+  title?: string;
+  subtitle?: string;
+  eyebrow?: string;
+  cta_text?: string;
+  image_url?: string;
+  tone?: SectionToneOption;
+  spacing?: SectionSpacingOption;
+  featured_product_id?: string;
+  faq_items?: { q: string; a: string }[];
+}
 
 export interface CustomColorPalette {
   enabled: boolean;
@@ -80,9 +101,13 @@ export interface ThemeConfig {
   catalog_layout?: CatalogLayoutOption;
   catalog_columns_desktop: 2 | 3 | 4;
   catalog_columns_mobile: 1 | 2;
+  heading_scale?: HeadingScaleOption;
+  body_scale?: BodyScaleOption;
+  hero_align?: "left" | "center";
   custom_colors?: CustomColorPalette;
   section_order?: CanvasSectionId[];
   hidden_sections?: CanvasSectionId[];
+  section_configs?: Partial<Record<CanvasSectionId, SectionCustomConfig>>;
 }
 
 export interface MarqueeAnnouncement {

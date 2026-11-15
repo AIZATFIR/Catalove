@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRef } from "react";
-import { gsap, ScrollSmoother, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
+import { gsap, ScrollSmoother, ScrollTrigger, useGSAP } from "@/lib/gsap";
 import { Skiper19 } from "@/components/ui/skiper-ui/skiper19";
 
 export function StorefrontMotion({ children }: { children: React.ReactNode }) {
@@ -32,16 +32,13 @@ export function StorefrontMotion({ children }: { children: React.ReactNode }) {
   useGSAP(() => {
     const media = gsap.matchMedia();
     media.add("(prefers-reduced-motion: no-preference)", () => {
-      const splitTexts: Array<{ revert: () => void }> = [];
       rootRef.current?.querySelectorAll<HTMLElement>("[data-gsap-title]").forEach((title) => {
-        const split = SplitText.create(title, { type: "lines", mask: "lines" });
-        splitTexts.push(split);
-        gsap.from(split.lines, {
-          yPercent: 115,
+        gsap.from(title, {
+          y: 18,
           autoAlpha: 0,
-          duration: 0.85,
+          duration: 0.7,
           ease: "power3.out",
-          stagger: 0.12,
+          clearProps: "transform",
         });
       });
 
@@ -91,7 +88,6 @@ export function StorefrontMotion({ children }: { children: React.ReactNode }) {
       });
 
       ScrollTrigger.refresh();
-      return () => splitTexts.forEach((split) => split.revert());
     });
 
     return () => media.revert();

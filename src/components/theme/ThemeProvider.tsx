@@ -101,6 +101,27 @@ function DynamicThemeBridge() {
     root.style.setProperty("--font-active-body", bodyFont);
     root.style.setProperty("--font-sans", bodyFont);
 
+    // Dynamic Typography Scale CSS Variables
+    const headingScales: Record<string, string> = {
+      sm: "0.82",
+      md: "1",
+      lg: "1.14",
+      xl: "1.28",
+    };
+    const bodyScales: Record<string, string> = {
+      sm: "0.94",
+      md: "1",
+      lg: "1.08",
+    };
+    root.style.setProperty(
+      "--heading-scale",
+      headingScales[themeConfig.heading_scale || "lg"] || "1.14"
+    );
+    root.style.setProperty(
+      "--body-scale",
+      bodyScales[themeConfig.body_scale || "md"] || "1"
+    );
+
     // Apply Dynamic Color Palette (custom hex overrides or curated presets)
     const palette = THEME_COLOR_MAP[themeConfig.color_theme] || THEME_COLOR_MAP.warm_oat;
     const custom = themeConfig.custom_colors;

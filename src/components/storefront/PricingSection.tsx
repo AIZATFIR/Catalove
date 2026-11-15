@@ -1,21 +1,32 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Check, Layers, MessageCircle, Sliders, X } from "lucide-react";
+import { Check, MessageCircle, X } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { saveBusinessSettings } from "@/lib/business-settings";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
 import type { CanvasSectionId } from "@/types/catalove";
 
 export type CatalovePlanId = "mandiri" | "terima_jadi";
 
-export const DEFAULT_SECTION_ORDER: CanvasSectionId[] = [
-  "hero",
-  "feed",
-  "pricing",
-  "lookbook",
-  "showcase",
-  "carousel",
-  "cta",
+export const DEFAULT_SECTION_ORDER: CanvasSectionId[] = ["hero"];
+
+export const ALL_CANVAS_SECTIONS: {
+  id: CanvasSectionId;
+  title: string;
+  desc: string;
+}[] = [
+  { id: "hero", title: "Hero Utama", desc: "Banner pembuka, tipografi & tombol aksi" },
+  { id: "feed", title: "Katalog Produk", desc: "Grid/Waterfall/Snap + editor kartu produk" },
+  { id: "featured_split", title: "Sorotan Produk", desc: "Foto besar 1 produk + cerita & pesan cepat" },
+  { id: "collection_index", title: "Daftar Menu & Harga", desc: "Indeks tipografi nama & harga bersih" },
+  { id: "statement_banner", title: "Banner Pernyataan", desc: "Teks besar penegas konsep brand" },
+  { id: "lookbook", title: "Lookbook Koleksi", desc: "Kartu visual bertumpuk interaktif" },
+  { id: "showcase", title: "Showcase Scroll", desc: "Foto penuh melebar saat di-scroll" },
+  { id: "carousel", title: "Galeri Carousel", desc: "Carousel putar koleksi produk" },
+  { id: "faq_minimal", title: "Tanya Jawab (FAQ)", desc: "2 kolom pertanyaan & jawaban ringkas" },
+  { id: "pricing", title: "Paket & Skema", desc: "Mandiri Rp 299rb & Terima Jadi Rp 799rb" },
+  { id: "cta", title: "Ajakan Pesan", desc: "Banner split + tautan langsung ke WA" },
 ];
 
 const PRODUCT_CATEGORIES = [
@@ -87,6 +98,30 @@ export function PricingSection({
   isCanvasMode = false,
   onEnableCanvasMode,
 }: PricingSectionProps) {
+  const settings = useBusinessSettings();
+  const pricingCfg = settings.theme_config?.section_configs?.pricing;
+  const headingText = pricingCfg?.title ?? "Pilih cara bangun katalog brandmu.";
+  const subtitleText =
+    pricingCfg?.subtitle ??
+    "Coba susun sendiri di Mode Kanvas, atau serahkan setup penuh ke tim kami.";
+
+  const updatePricingConfig = (field: "title" | "subtitle", value: string) => {
+    const activeTheme = settings.theme_config || DEFAULT_THEME_CONFIG;
+    saveBusinessSettings({
+      ...settings,
+      theme_config: {
+        ...activeTheme,
+        section_configs: {
+          ...(activeTheme.section_configs || {}),
+          pricing: {
+            ...(activeTheme.section_configs?.pricing || {}),
+            [field]: value,
+          },
+        },
+      },
+    });
+  };
+
   const handleStartCanvas = () => {
     if (onEnableCanvasMode) {
       onEnableCanvasMode();
@@ -101,84 +136,58 @@ export function PricingSection({
   };
 
   return (
-    <section
-      id="harga"
-      aria-labelledby="pricing-heading"
-      className="border-y border-[#DBD0C5]/40 py-14 sm:py-20 dark:border-white/10 transition-colors"
-    >
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-12 space-y-12">
-        {/* Bagian 1 — Alur 3 Langkah */}
-        <div className="space-y-8">
-          <div className="max-w-2xl space-y-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[.22em] text-[var(--storefront-accent)]">
-              Alur &amp; Skema
-            </p>
+    <section id="harga" aria-labelledby="pricing-heading">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-12 space-y-10">
+        <div className="max-w-2xl space-y-3">
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={headingText}
+              onChange={(e) => updatePricingConfig("title", e.target.value)}
+              aria-label="Edit judul paket harga"
+              className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 font-serif text-3xl sm:text-5xl font-medium leading-[1.12] tracking-tight text-[var(--storefront-ink)] focus:outline-none"
+            />
+          ) : (
             <h2
               id="pricing-heading"
-              className="font-serif text-3xl sm:text-5xl font-medium leading-[1.08] tracking-tight text-[var(--storefront-ink)]"
+              className="font-serif text-3xl sm:text-5xl font-medium leading-[1.12] tracking-tight text-[var(--storefront-ink)]"
             >
-              Pilih cara bangun katalog brandmu.
+              {headingText}
             </h2>
-            <p className="text-sm sm:text-base text-[var(--storefront-ink)] opacity-75">
-              Coba kustom sendiri langsung di kanvas web ini, atau serahkan penuh ke
-              tim kami.
-            </p>
-          </div>
+          )}
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              {
-                step: "01 · Coba di Kanvas",
-                desc: "Geser posisi section, ganti warna palet, font, dan model katalog langsung di layar ini.",
-              },
-              {
-                step: "02 · Pilih Paket",
-                desc: "Paket Mandiri (lebih hemat, atur sendiri) atau Paket Terima Jadi (kami setup & branding penuh).",
-              },
-              {
-                step: "03 · Aktif via WhatsApp",
-                desc: "Kirim format order + desain kanvasmu ke WhatsApp kami, katalog siap online.",
-              },
-            ].map((item) => (
-              <div
-                key={item.step}
-                className="rounded-2xl border border-[#DBD0C5]/60 dark:border-white/10 bg-[var(--storefront-surface)] p-5 space-y-2"
-              >
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--storefront-accent)]">
-                  {item.step}
-                </p>
-                <p className="text-sm leading-relaxed text-[var(--storefront-ink)] opacity-80">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={subtitleText}
+              onChange={(e) => updatePricingConfig("subtitle", e.target.value)}
+              aria-label="Edit subjudul paket harga"
+              className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 text-sm sm:text-base text-[var(--storefront-ink)] focus:outline-none"
+            />
+          ) : (
+            <p className="text-sm sm:text-base text-[var(--storefront-ink)] opacity-75">
+              {subtitleText}
+            </p>
+          )}
         </div>
 
-        {/* Bagian 2 — 2 Paket Utama */}
-        <div className="grid gap-6 lg:grid-cols-2 items-stretch">
+        {/* 2-Column Architectural Plan Comparison */}
+        <div className="grid gap-8 lg:grid-cols-2 items-stretch">
           {/* Paket 1: Mandiri */}
-          <div className="flex flex-col justify-between rounded-3xl border border-[#DBD0C5]/80 dark:border-white/15 bg-white/80 dark:bg-white/[0.04] p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col justify-between rounded-xl bg-[var(--storefront-surface)] p-6 sm:p-10">
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="inline-flex items-center rounded-full border border-[#DBD0C5] dark:border-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--storefront-ink)] opacity-80">
-                  {PLAN_DETAILS.mandiri.badge}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--storefront-ink)] opacity-70">
-                  <Sliders className="h-3.5 w-3.5 text-[var(--storefront-accent)]" />
-                  <span>DIY Canvas</span>
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-[var(--storefront-ink)]">
+              <div className="space-y-2 border-b border-[var(--storefront-line)] pb-6">
+                <p className="text-xs font-semibold text-[var(--storefront-accent)]">
+                  Setup Sendiri · Hemat
+                </p>
+                <h3 className="font-serif text-2xl sm:text-3xl font-medium text-[var(--storefront-ink)]">
                   {PLAN_DETAILS.mandiri.name}
                 </h3>
-                <div className="flex items-baseline gap-2 pt-1">
-                  <span className="font-serif text-4xl sm:text-5xl font-bold text-[var(--storefront-ink)]">
+                <div className="flex items-baseline gap-2 pt-2">
+                  <span className="font-serif text-4xl sm:text-5xl font-semibold tabular-nums text-[var(--storefront-ink)]">
                     {PLAN_DETAILS.mandiri.price}
                   </span>
-                  <span className="text-xs font-medium text-[var(--storefront-ink)] opacity-65">
+                  <span className="text-xs text-[var(--storefront-ink)] opacity-70">
                     {PLAN_DETAILS.mandiri.priceLabel}
                   </span>
                 </div>
@@ -187,7 +196,7 @@ export function PricingSection({
                 </p>
               </div>
 
-              <ul className="space-y-3 border-t border-[#DBD0C5]/50 dark:border-white/10 pt-5">
+              <ul className="space-y-3">
                 {PLAN_DETAILS.mandiri.features.map((feat) => (
                   <li
                     key={feat}
@@ -204,42 +213,35 @@ export function PricingSection({
               <button
                 type="button"
                 onClick={() => openOrderSchemeModal("mandiri")}
-                className="flex-1 touch-target rounded-full bg-[#33262A] dark:bg-white px-6 py-3.5 text-sm font-bold text-white dark:text-stone-950 hover:opacity-90 transition-opacity"
+                className="flex-1 touch-target rounded-full bg-stone-900 dark:bg-white px-6 py-3.5 text-sm font-bold text-white dark:text-stone-950 hover:opacity-90 transition-opacity"
               >
                 Pilih Mandiri
               </button>
               <button
                 type="button"
                 onClick={handleStartCanvas}
-                className="touch-target rounded-full border border-[#DBD0C5] dark:border-white/25 px-5 py-3.5 text-sm font-semibold text-[var(--storefront-ink)] hover:border-[var(--storefront-accent)] transition-colors"
+                className="touch-target rounded-full border border-[var(--storefront-line)] px-5 py-3.5 text-sm font-semibold text-[var(--storefront-ink)] hover:border-[var(--storefront-accent)] transition-colors"
               >
-                Coba Kanvas Sekarang
+                Coba Kanvas
               </button>
             </div>
           </div>
 
           {/* Paket 2: Terima Jadi */}
-          <div className="relative flex flex-col justify-between rounded-3xl border-2 border-[var(--storefront-accent)] bg-white/95 dark:bg-white/[0.06] p-6 sm:p-8 shadow-xl">
+          <div className="flex flex-col justify-between rounded-xl border-2 border-[var(--storefront-accent)] bg-[var(--storefront-background)] p-6 sm:p-10">
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="inline-flex items-center rounded-full bg-[var(--storefront-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-                  {PLAN_DETAILS.terima_jadi.badge}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--storefront-accent)]">
-                  <Layers className="h-3.5 w-3.5" />
-                  <span>Full Custom Service</span>
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-[var(--storefront-ink)]">
+              <div className="space-y-2 border-b border-[var(--storefront-line)] pb-6">
+                <p className="text-xs font-semibold text-[var(--storefront-accent)]">
+                  Terima Beres · Full Custom
+                </p>
+                <h3 className="font-serif text-2xl sm:text-3xl font-medium text-[var(--storefront-ink)]">
                   {PLAN_DETAILS.terima_jadi.name}
                 </h3>
-                <div className="flex items-baseline gap-2 pt-1">
-                  <span className="font-serif text-4xl sm:text-5xl font-bold text-[var(--storefront-ink)]">
+                <div className="flex items-baseline gap-2 pt-2">
+                  <span className="font-serif text-4xl sm:text-5xl font-semibold tabular-nums text-[var(--storefront-ink)]">
                     {PLAN_DETAILS.terima_jadi.price}
                   </span>
-                  <span className="text-xs font-medium text-[var(--storefront-ink)] opacity-65">
+                  <span className="text-xs text-[var(--storefront-ink)] opacity-70">
                     {PLAN_DETAILS.terima_jadi.priceLabel}
                   </span>
                 </div>
@@ -248,7 +250,7 @@ export function PricingSection({
                 </p>
               </div>
 
-              <ul className="space-y-3 border-t border-[#DBD0C5]/50 dark:border-white/10 pt-5">
+              <ul className="space-y-3">
                 {PLAN_DETAILS.terima_jadi.features.map((feat) => (
                   <li
                     key={feat}
@@ -265,7 +267,7 @@ export function PricingSection({
               <button
                 type="button"
                 onClick={() => openOrderSchemeModal("terima_jadi")}
-                className="w-full touch-target rounded-full bg-[var(--storefront-accent)] px-6 py-3.5 text-sm font-bold text-white shadow-md hover:opacity-95 transition-opacity"
+                className="w-full touch-target rounded-full bg-[var(--storefront-accent)] px-6 py-3.5 text-sm font-bold text-white hover:opacity-95 transition-opacity"
               >
                 Pesan Terima Jadi
               </button>

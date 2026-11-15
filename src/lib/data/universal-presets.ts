@@ -10,11 +10,16 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
   font_heading: "playfair",
   font_body: "jakarta",
   color_theme: "warm_oat",
-  card_style: "modern_glass",
+  card_style: "clean_flat",
   hero_style: "split_dynamic",
   catalog_layout: "pinterest_masonry",
   catalog_columns_desktop: 3,
   catalog_columns_mobile: 2,
+  heading_scale: "lg",
+  body_scale: "md",
+  hero_align: "left",
+  section_order: ["hero"],
+  hidden_sections: [],
 };
 
 export const INITIAL_SETTINGS: BusinessSettings = {

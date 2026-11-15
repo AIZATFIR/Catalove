@@ -8,14 +8,14 @@ import {
   ArrowRight,
   ArrowUp,
   Check,
-  Eye,
-  EyeOff,
   LayoutGrid,
   Loader2,
   Palette,
+  Plus,
   QrCode,
   RotateCcw,
   Sliders,
+  Trash2,
   Type,
   X,
 } from "lucide-react";
@@ -28,38 +28,43 @@ import {
 import { cakeService } from "@/lib/services/cake-service";
 import { THEME_COLOR_MAP } from "@/components/theme/ThemeProvider";
 import {
+  ALL_CANVAS_SECTIONS,
   DEFAULT_SECTION_ORDER,
   openOrderSchemeModal,
 } from "@/components/storefront/PricingSection";
 import type {
+  BodyScaleOption,
   BusinessSettings,
   CanvasSectionId,
   CardStyleOption,
   CatalogLayoutOption,
   ColorThemeOption,
   CustomColorPalette,
+  FontBodyOption,
   FontHeadingOption,
+  HeadingScaleOption,
   HeroStyleOption,
   IndustryPreset,
 } from "@/types/catalove";
 
 type DockTab = "posisi" | "warna" | "model" | "brand";
 
-const SECTION_LABELS: Record<CanvasSectionId, string> = {
-  hero: "Hero",
-  feed: "Katalog Feed",
-  pricing: "Harga & Skema",
-  lookbook: "Lookbook Sticky",
-  showcase: "Showcase Scroll",
-  carousel: "Galeri Carousel",
-  cta: "Banner CTA",
-};
+const VALID_SECTION_IDS = new Set<CanvasSectionId>(
+  ALL_CANVAS_SECTIONS.map((s) => s.id)
+);
+
+const SECTION_LABELS: Record<CanvasSectionId, string> =
+  ALL_CANVAS_SECTIONS.reduce((acc, item) => {
+    acc[item.id] = item.title;
+    return acc;
+  }, {} as Record<CanvasSectionId, string>);
 
 const HERO_STYLES: { id: HeroStyleOption; label: string }[] = [
   { id: "split_dynamic", label: "Split Kanan" },
   { id: "split_reverse", label: "Split Kiri" },
   { id: "minimal_center", label: "Center" },
   { id: "bento_grid", label: "Bento" },
+  { id: "rotating_showcase", label: "Showcase" },
 ];
 
 const SCROLL_MODES: {
@@ -75,10 +80,29 @@ const SCROLL_MODES: {
 ];
 
 const CARD_STYLES: { id: CardStyleOption; label: string }[] = [
-  { id: "modern_glass", label: "Glass" },
   { id: "clean_flat", label: "Flat" },
-  { id: "bordered_clay", label: "Clay" },
   { id: "minimal_mono", label: "Mono" },
+  { id: "modern_glass", label: "Surface" },
+  { id: "bordered_clay", label: "Border" },
+];
+
+const BODY_FONTS: { id: FontBodyOption; label: string }[] = [
+  { id: "jakarta", label: "Jakarta" },
+  { id: "inter", label: "Inter" },
+  { id: "outfit", label: "Outfit" },
+];
+
+const HEADING_SCALES: { id: HeadingScaleOption; label: string }[] = [
+  { id: "sm", label: "S" },
+  { id: "md", label: "M" },
+  { id: "lg", label: "L" },
+  { id: "xl", label: "XL" },
+];
+
+const BODY_SCALES: { id: BodyScaleOption; label: string }[] = [
+  { id: "sm", label: "S" },
+  { id: "md", label: "M" },
+  { id: "lg", label: "L" },
 ];
 
 const PRESET_OPTIONS: { id: IndustryPreset; label: string }[] = [
@@ -148,25 +172,24 @@ export function LiveCustomizerDock() {
   );
 
   const sectionOrder: CanvasSectionId[] = useMemo(() => {
-    const saved = activeTheme.section_order || [];
-    const seen = new Set<CanvasSectionId>();
+    const saved = activeTheme.section_order;
+    const base = saved && saved.length > 0 ? saved : DEFAULT_SECTION_ORDER;
+    const hidden = new Set(activeTheme.hidden_sections || []);
     const out: CanvasSectionId[] = [];
-    for (const id of saved) {
-      if (DEFAULT_SECTION_ORDER.includes(id) && !seen.has(id)) {
-        seen.add(id);
+    for (const id of base) {
+      if (VALID_SECTION_IDS.has(id) && !out.includes(id) && !hidden.has(id)) {
         out.push(id);
       }
     }
-    for (const id of DEFAULT_SECTION_ORDER) {
-      if (!seen.has(id)) {
-        seen.add(id);
-        out.push(id);
-      }
-    }
-    return out;
-  }, [activeTheme.section_order]);
+    return out.length > 0 ? out : ["hero"];
+  }, [activeTheme.section_order, activeTheme.hidden_sections]);
 
   const hiddenSections: CanvasSectionId[] = activeTheme.hidden_sections || [];
+
+  const availableToAdd = useMemo(
+    () => ALL_CANVAS_SECTIONS.filter((sec) => !sectionOrder.includes(sec.id)),
+    [sectionOrder]
+  );
 
   const presetBasePalette =
     (THEME_COLOR_MAP[activeTheme.color_theme] || THEME_COLOR_MAP.warm_oat).light;
@@ -207,12 +230,22 @@ export function LiveCustomizerDock() {
     updateTheme({ section_order: copy });
   };
 
-  const handleToggleVisibility = (id: CanvasSectionId) => {
-    const exists = hiddenSections.includes(id);
-    const nextHidden = exists
-      ? hiddenSections.filter((s) => s !== id)
-      : [...hiddenSections, id];
-    updateTheme({ hidden_sections: nextHidden });
+  const handleAddSection = (id: CanvasSectionId) => {
+    const nextHidden = hiddenSections.filter((s) => s !== id);
+    if (sectionOrder.includes(id)) {
+      updateTheme({ hidden_sections: nextHidden });
+      return;
+    }
+    updateTheme({
+      section_order: [...sectionOrder, id],
+      hidden_sections: nextHidden,
+    });
+  };
+
+  const handleRemoveSection = (id: CanvasSectionId) => {
+    if (sectionOrder.length <= 1) return;
+    const nextOrder = sectionOrder.filter((s) => s !== id);
+    updateTheme({ section_order: nextOrder.length > 0 ? nextOrder : ["hero"] });
   };
 
   const handleApplyPreset = async (presetKey: IndustryPreset) => {
@@ -337,9 +370,9 @@ export function LiveCustomizerDock() {
           <div className="grid grid-cols-4 gap-1 rounded-2xl bg-stone-100 dark:bg-white/5 p-1">
             {(
               [
-                { id: "posisi", label: "Posisi" },
+                { id: "posisi", label: "Section" },
                 { id: "warna", label: "Warna" },
-                { id: "model", label: "Model" },
+                { id: "model", label: "Tipografi" },
                 { id: "brand", label: "Brand" },
               ] as { id: DockTab; label: string }[]
             ).map((tab) => (
@@ -358,7 +391,7 @@ export function LiveCustomizerDock() {
             ))}
           </div>
 
-          {/* TAB 1: POSISI */}
+          {/* TAB 1: SECTION & POSISI */}
           {activeTab === "posisi" && (
             <div className="space-y-3.5">
               <button
@@ -382,74 +415,96 @@ export function LiveCustomizerDock() {
                 </span>
               </button>
 
-              {/* Section Order & Visibility */}
+              {/* Active Sections */}
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                  Urutan &amp; Posisi Section
-                </p>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                  <span>Section Aktif ({sectionOrder.length})</span>
+                  {sectionOrder.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateTheme({
+                          section_order: ["hero"],
+                          hidden_sections: [],
+                        })
+                      }
+                      className="text-[10px] font-semibold text-rose-500 hover:underline normal-case"
+                    >
+                      Hero Saja
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-1.5">
-                  {sectionOrder.map((secId, idx) => {
-                    const isHidden = hiddenSections.includes(secId);
-                    return (
-                      <div
-                        key={secId}
-                        className={`flex items-center justify-between gap-2 rounded-xl border border-stone-200 dark:border-white/10 px-3 py-1.5 text-xs ${
-                          isHidden
-                            ? "opacity-50 bg-stone-100/60 dark:bg-white/[0.02]"
-                            : "bg-stone-50/70 dark:bg-white/5"
-                        }`}
-                      >
-                        <span className="font-semibold truncate">
-                          {idx + 1}. {SECTION_LABELS[secId]}
-                        </span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            disabled={idx === 0}
-                            onClick={() => handleMoveSection(secId, -1)}
-                            aria-label={`Geser atas ${SECTION_LABELS[secId]}`}
-                            className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
-                          >
-                            <ArrowUp className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={idx === sectionOrder.length - 1}
-                            onClick={() => handleMoveSection(secId, 1)}
-                            aria-label={`Geser bawah ${SECTION_LABELS[secId]}`}
-                            className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
-                          >
-                            <ArrowDown className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleVisibility(secId)}
-                            aria-label={
-                              isHidden
-                                ? `Tampilkan ${SECTION_LABELS[secId]}`
-                                : `Sembunyikan ${SECTION_LABELS[secId]}`
-                            }
-                            className="rounded-lg p-1 border border-stone-200 dark:border-white/15 hover:border-[var(--storefront-accent)]"
-                          >
-                            {isHidden ? (
-                              <EyeOff className="h-3 w-3 text-rose-500" />
-                            ) : (
-                              <Eye className="h-3 w-3 text-emerald-600" />
-                            )}
-                          </button>
-                        </div>
+                  {sectionOrder.map((secId, idx) => (
+                    <div
+                      key={secId}
+                      className="flex items-center justify-between gap-2 rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50/70 dark:bg-white/5 px-3 py-1.5 text-xs"
+                    >
+                      <span className="font-semibold truncate">
+                        {idx + 1}. {SECTION_LABELS[secId]}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveSection(secId, -1)}
+                          aria-label={`Geser atas ${SECTION_LABELS[secId]}`}
+                          className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === sectionOrder.length - 1}
+                          onClick={() => handleMoveSection(secId, 1)}
+                          aria-label={`Geser bawah ${SECTION_LABELS[secId]}`}
+                          className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={sectionOrder.length <= 1}
+                          onClick={() => handleRemoveSection(secId)}
+                          aria-label={`Hapus ${SECTION_LABELS[secId]}`}
+                          className="rounded-lg p-1 border border-stone-200 dark:border-white/15 text-rose-500 disabled:opacity-30 hover:border-rose-400"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {/* Add Section Pills */}
+              {availableToAdd.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                    + Tambah Section Baru
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableToAdd.map((sec) => (
+                      <button
+                        key={sec.id}
+                        type="button"
+                        onClick={() => handleAddSection(sec.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-dashed border-[var(--storefront-accent)] bg-white/80 dark:bg-stone-900 px-2.5 py-1 text-[10px] font-bold text-[var(--storefront-accent)] hover:bg-[var(--color-surface-tint)] transition-colors"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>{sec.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Hero Positioning & Model */}
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                  Posisi &amp; Model Hero
+                  Model Hero
                 </p>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
                   {HERO_STYLES.map((hero) => {
                     const active = activeTheme.hero_style === hero.id;
                     return (
@@ -457,7 +512,7 @@ export function LiveCustomizerDock() {
                         key={hero.id}
                         type="button"
                         onClick={() => updateTheme({ hero_style: hero.id })}
-                        className={`rounded-xl px-2.5 py-2 text-[11px] font-bold border text-center transition-all ${
+                        className={`rounded-xl px-2 py-1.5 text-[10px] font-bold border text-center transition-all ${
                           active
                             ? "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
                             : "border-stone-200 dark:border-white/10 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5"
@@ -656,6 +711,117 @@ export function LiveCustomizerDock() {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Font Body & Typography Scale + Align */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                    Font Teks
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {BODY_FONTS.map((font) => {
+                      const active = activeTheme.font_body === font.id;
+                      return (
+                        <button
+                          key={font.id}
+                          type="button"
+                          onClick={() => updateTheme({ font_body: font.id })}
+                          className={`rounded-lg px-2 py-1 text-[10px] font-bold border transition-all ${
+                            active
+                              ? "border-[var(--storefront-accent)] bg-stone-900 text-white dark:bg-white dark:text-stone-900"
+                              : "border-stone-200 dark:border-white/15 hover:bg-stone-100 dark:hover:bg-white/5"
+                          }`}
+                        >
+                          {font.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                    Rata Hero
+                  </p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {(
+                      [
+                        { id: "left", label: "Kiri" },
+                        { id: "center", label: "Tengah" },
+                      ] as const
+                    ).map((al) => {
+                      const active = (activeTheme.hero_align || "left") === al.id;
+                      return (
+                        <button
+                          key={al.id}
+                          type="button"
+                          onClick={() => updateTheme({ hero_align: al.id })}
+                          className={`rounded-lg px-2 py-1 text-[10px] font-bold border transition-all ${
+                            active
+                              ? "border-[var(--storefront-accent)] bg-stone-900 text-white dark:bg-white dark:text-stone-900"
+                              : "border-stone-200 dark:border-white/15 hover:bg-stone-100 dark:hover:bg-white/5"
+                          }`}
+                        >
+                          {al.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                    Ukuran Judul
+                  </p>
+                  <div className="grid grid-cols-4 gap-1">
+                    {HEADING_SCALES.map((sc) => {
+                      const active =
+                        (activeTheme.heading_scale || "lg") === sc.id;
+                      return (
+                        <button
+                          key={sc.id}
+                          type="button"
+                          onClick={() => updateTheme({ heading_scale: sc.id })}
+                          className={`rounded-lg py-1 text-[10px] font-bold border text-center transition-all ${
+                            active
+                              ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                              : "border-stone-200 dark:border-white/15 hover:bg-stone-100 dark:hover:bg-white/5"
+                          }`}
+                        >
+                          {sc.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                    Ukuran Teks
+                  </p>
+                  <div className="grid grid-cols-3 gap-1">
+                    {BODY_SCALES.map((sc) => {
+                      const active = (activeTheme.body_scale || "md") === sc.id;
+                      return (
+                        <button
+                          key={sc.id}
+                          type="button"
+                          onClick={() => updateTheme({ body_scale: sc.id })}
+                          className={`rounded-lg py-1 text-[10px] font-bold border text-center transition-all ${
+                            active
+                              ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                              : "border-stone-200 dark:border-white/15 hover:bg-stone-100 dark:hover:bg-white/5"
+                          }`}
+                        >
+                          {sc.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 

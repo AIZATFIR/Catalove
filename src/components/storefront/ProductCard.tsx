@@ -116,10 +116,12 @@ export function ProductCard({
     }
   }, [isCanvasMode]);
   const currency = settings.currency_symbol || "Rp";
-  const cardStyle = settings.theme_config?.card_style || "modern_glass";
+  const cardStyle = settings.theme_config?.card_style || "clean_flat";
+  const isFlushCard = cardStyle === "modern_glass" || cardStyle === "bordered_clay";
 
   const liked = isLiked(product.id);
-  const badgeText = product.badge || "Sample";
+  const rawBadge = (product.badge || "").trim();
+  const badgeText = rawBadge && rawBadge.toLowerCase() !== "sample" ? rawBadge : "";
 
   const hasDiscount =
     product.compare_at_price && product.compare_at_price > product.base_price;
@@ -136,17 +138,17 @@ export function ProductCard({
     (masonryMode ? MASONRY_RATIOS[index % MASONRY_RATIOS.length] : "aspect-[4/5]");
 
   const cardContainerClasses: Record<string, string> = {
-    modern_glass:
-      "rounded-2xl p-2 bg-white/65 dark:bg-white/[0.04] backdrop-blur-md border border-stone-200/70 dark:border-white/10 shadow-sm hover:shadow-xl transition-all duration-300",
-    clean_flat:
-      "rounded-2xl p-1.5 bg-white dark:bg-[#241E1B] hover:shadow-lg transition-all duration-300",
-    bordered_clay:
-      "rounded-2xl p-2.5 bg-[#FAF6F0] dark:bg-[#221B18] border-2 border-stone-900/15 dark:border-white/20 shadow-[4px_4px_0px_rgba(0,0,0,0.08)] hover:shadow-[6px_6px_0px_var(--storefront-accent)] transition-all duration-300",
+    clean_flat: "transition-colors",
     minimal_mono:
-      "rounded-none border-b border-stone-300 dark:border-white/15 pb-3 transition-all duration-300",
+      "rounded-none border-b border-[var(--storefront-line)] pb-3 transition-colors",
+    modern_glass:
+      "rounded-xl overflow-hidden bg-[var(--storefront-surface)] transition-colors",
+    bordered_clay:
+      "rounded-xl overflow-hidden border border-[var(--storefront-line)] bg-[var(--storefront-background)] transition-colors",
   };
 
-  const frameRoundedClass = cardStyle === "minimal_mono" ? "rounded-lg" : "rounded-xl";
+  const frameRoundedClass =
+    cardStyle === "clean_flat" ? "rounded-lg" : "rounded-none";
 
   const triggerHeartBurst = () => {
     if (!liked) {
@@ -385,17 +387,21 @@ export function ProductCard({
           )}
         </AnimatePresence>
 
-        {/* Top-Left Minimal Badge */}
-        <div className="pointer-events-none absolute top-2.5 left-2.5 flex flex-col gap-1 items-start z-10">
-          <span className="rounded-full border border-white/25 bg-black/65 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-md">
-            {badgeText}
-          </span>
-          {hasDiscount && (
-            <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold text-white shadow-sm">
-              -{discountPct}%
-            </span>
-          )}
-        </div>
+        {/* Top-Left Minimal Badge (only for intentional custom labels or discounts) */}
+        {(badgeText || hasDiscount) && (
+          <div className="pointer-events-none absolute top-2.5 left-2.5 flex flex-col gap-1 items-start z-10">
+            {badgeText && (
+              <span className="rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+                {badgeText}
+              </span>
+            )}
+            {hasDiscount && (
+              <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                -{discountPct}%
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Top-Right Icon-Only Like */}
         {!isCanvasMode && (
@@ -459,7 +465,7 @@ export function ProductCard({
       {isCanvasMode ? (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="pt-2.5 px-1 space-y-1.5"
+          className={`${isFlushCard ? "px-3 pb-3 pt-2.5" : "pt-2.5"} space-y-1.5`}
         >
           <div className="flex items-center gap-1.5">
             <input
@@ -486,7 +492,7 @@ export function ProductCard({
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
                 aria-label="Harga produk"
-                className="w-full min-w-0 bg-transparent text-xs font-bold text-[#4D3040] dark:text-[#FAF4EE] focus:outline-none"
+                className="w-full min-w-0 bg-transparent text-xs font-bold text-[var(--storefront-ink)] focus:outline-none"
               />
             </div>
           </div>
@@ -501,16 +507,19 @@ export function ProductCard({
             }}
             aria-label="Nama produk"
             placeholder="Nama produk..."
-            className="w-full rounded-lg border border-stone-200 dark:border-white/15 bg-white dark:bg-stone-900 px-2.5 py-1.5 font-serif text-sm font-medium text-[#4D3040] dark:text-[#FAF4EE] focus:border-[var(--storefront-accent)] focus:outline-none"
+            className="w-full rounded-lg border border-stone-200 dark:border-white/15 bg-white dark:bg-stone-900 px-2.5 py-1.5 font-serif text-sm font-medium text-[var(--storefront-ink)] focus:border-[var(--storefront-accent)] focus:outline-none"
           />
         </div>
       ) : (
-        <Link href={`/product/${product.slug}`} className="block pt-2.5 px-1">
+        <Link
+          href={`/product/${product.slug}`}
+          className={`block ${isFlushCard ? "px-3 pb-3 pt-2.5" : "pt-2.5"}`}
+        >
           <div className="flex items-baseline justify-between gap-2">
-            <h3 className="font-serif text-sm sm:text-base font-medium leading-snug text-[#4D3040] transition-colors group-hover:text-[var(--storefront-accent)] dark:text-[#FAF4EE] line-clamp-1">
+            <h3 className="font-serif text-sm sm:text-base font-medium leading-snug text-[var(--storefront-ink)] transition-colors group-hover:text-[var(--storefront-accent)] line-clamp-1">
               {product.name}
             </h3>
-            <span className="shrink-0 text-xs sm:text-sm font-bold text-[#4D3040] dark:text-[#FAF4EE]">
+            <span className="shrink-0 text-xs sm:text-sm font-semibold tabular-nums text-[var(--storefront-ink)]">
               {formatPrice(product.base_price, currency)}
             </span>
           </div>
