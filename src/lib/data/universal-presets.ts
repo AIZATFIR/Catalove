@@ -25,6 +25,7 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
     "lookbook",
     "showcase",
     "carousel",
+    "process_steps",
     "pricing",
     "faq_minimal",
     "cta",

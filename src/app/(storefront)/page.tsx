@@ -22,7 +22,10 @@ import { DiscoveryFeed } from "@/components/storefront/DiscoveryFeed";
 import {
   CollectionIndexSection,
   FaqMinimalSection,
+  FeatureComparisonSection,
   FeaturedSplitSection,
+  ProcessStepsSection,
+  SponsorSlotSection,
   StatementBannerSection,
 } from "@/components/storefront/CustomCanvasSections";
 import {
@@ -504,6 +507,12 @@ export default function HomePage() {
             <CakeCircularCarousel products={products} variant="gallery" />
           </section>
         );
+      case "process_steps":
+        return <ProcessStepsSection isCanvasMode={isCanvasMode} />;
+      case "feature_comparison":
+        return <FeatureComparisonSection isCanvasMode={isCanvasMode} />;
+      case "sponsor_slot":
+        return <SponsorSlotSection isCanvasMode={isCanvasMode} />;
       case "faq_minimal":
         return <FaqMinimalSection isCanvasMode={isCanvasMode} />;
       case "cta":

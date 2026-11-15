@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import type { Product } from "@/types/bakery";
 import type { CanvasSectionId, SectionCustomConfig } from "@/types/catalove";
 import { ProductImage } from "@/components/storefront/ProductImage";
@@ -519,6 +519,451 @@ export function FaqMinimalSection({
               <span>Tambah Pertanyaan</span>
             </button>
           )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================================
+ * 5. PROCESS STEPS (Alur Pesan 01-03)
+ * ========================================================================== */
+const DEFAULT_PROCESS_STEPS = [
+  {
+    title: "Pilih Produk & Varian",
+    desc: "Pelanggan menelusuri katalog visual dan memilih item atau ukuran yang diinginkan.",
+  },
+  {
+    title: "Atur Tampilan Sesuai Brand",
+    desc: "Ubah warna, tipografi, dan susunan section langsung dari Mode Kanvas tanpa coding.",
+  },
+  {
+    title: "Order Masuk ke WhatsApp",
+    desc: "Rekap pesanan otomatis terkirim rapi ke WhatsApp admin tanpa potongan komisi.",
+  },
+];
+
+export function ProcessStepsSection({
+  isCanvasMode = false,
+}: {
+  isCanvasMode?: boolean;
+}) {
+  const { config, updateConfig } = useSectionConfig("process_steps");
+  const eyebrowText = config.eyebrow ?? "Alur Kerja";
+  const titleText = config.title ?? "Dari Katalog ke WhatsApp dalam 3 Langkah";
+  const subtitleText =
+    config.subtitle ??
+    "Dirancang agar calon pembeli paham produkmu dan langsung checkout tanpa ribet.";
+  const items =
+    config.steps_items && config.steps_items.length > 0
+      ? config.steps_items
+      : DEFAULT_PROCESS_STEPS;
+
+  const updateItem = (idx: number, field: "title" | "desc", value: string) => {
+    const next = items.map((item, i) =>
+      i === idx ? { ...item, [field]: value } : item
+    );
+    updateConfig({ steps_items: next });
+  };
+
+  const addItem = () => {
+    updateConfig({
+      steps_items: [
+        ...items,
+        { title: "Langkah Baru", desc: "Penjelasan singkat langkah ini." },
+      ],
+    });
+  };
+
+  const removeItem = (idx: number) => {
+    if (items.length <= 1) return;
+    updateConfig({ steps_items: items.filter((_, i) => i !== idx) });
+  };
+
+  return (
+    <section aria-label={titleText}>
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-16 lg:px-12">
+        <div className="lg:col-span-5 space-y-3">
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={eyebrowText}
+              onChange={(e) => updateConfig({ eyebrow: e.target.value })}
+              aria-label="Edit label alur pesan"
+              className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)] focus:outline-none"
+            />
+          ) : (
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)]">
+              {eyebrowText}
+            </p>
+          )}
+
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={titleText}
+              onChange={(e) => updateConfig({ title: e.target.value })}
+              aria-label="Edit judul alur pesan"
+              className="w-full rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 font-serif text-3xl sm:text-4xl font-medium text-[var(--storefront-ink)] focus:outline-none"
+            />
+          ) : (
+            <h2 className="font-serif text-3xl sm:text-4xl font-medium leading-[1.15] tracking-tight text-[var(--storefront-ink)]">
+              {titleText}
+            </h2>
+          )}
+
+          {isCanvasMode ? (
+            <textarea
+              rows={2}
+              value={subtitleText}
+              onChange={(e) => updateConfig({ subtitle: e.target.value })}
+              aria-label="Edit deskripsi alur pesan"
+              className="w-full resize-none rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 text-sm text-[var(--storefront-ink)] focus:outline-none"
+            />
+          ) : (
+            <p className="text-sm sm:text-base text-[var(--storefront-ink)] opacity-75">
+              {subtitleText}
+            </p>
+          )}
+        </div>
+
+        <div className="lg:col-span-7 space-y-4">
+          <ol className="divide-y divide-[var(--storefront-line)] border-y border-[var(--storefront-line)]">
+            {items.map((item, idx) => {
+              const num = String(idx + 1).padStart(2, "0");
+              return (
+                <li key={idx} className="py-5 flex items-start gap-5">
+                  <span className="font-mono text-xs font-bold tracking-widest text-[var(--storefront-accent)] pt-1 shrink-0">
+                    {num}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    {isCanvasMode ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => updateItem(idx, "title", e.target.value)}
+                            aria-label={`Judul langkah ${idx + 1}`}
+                            className="flex-1 rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-2.5 py-1.5 font-serif text-base font-medium text-[var(--storefront-ink)] focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            disabled={items.length <= 1}
+                            onClick={() => removeItem(idx)}
+                            aria-label="Hapus langkah"
+                            className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-500/10 disabled:opacity-30"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={item.desc}
+                          onChange={(e) => updateItem(idx, "desc", e.target.value)}
+                          aria-label={`Deskripsi langkah ${idx + 1}`}
+                          className="w-full resize-none rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-2.5 py-1.5 text-sm text-[var(--storefront-ink)] focus:outline-none"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="font-serif text-lg sm:text-xl font-medium text-[var(--storefront-ink)]">
+                          {item.title}
+                        </h3>
+                        <p className="mt-1 text-sm leading-relaxed text-[var(--storefront-ink)] opacity-75">
+                          {item.desc}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+
+          {isCanvasMode && (
+            <button
+              type="button"
+              onClick={addItem}
+              className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--storefront-accent)] px-4 py-2 text-xs font-bold text-[var(--storefront-accent)] hover:bg-[var(--color-surface-tint)]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Langkah</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================================
+ * 6. FEATURE COMPARISON / KEUNGGULAN BRAND
+ * ========================================================================== */
+const DEFAULT_COMPARISON_ITEMS = [
+  {
+    label: "Bebas Komisi Transaksi",
+    detail: "100% omzet masuk ke rekeningmu karena order langsung menuju WhatsApp.",
+  },
+  {
+    label: "Mode Kanvas Fleksibel",
+    detail: "Geser urutan section, ubah palet warna, dan pilih font tanpa menyentuh kode.",
+  },
+  {
+    label: "Ringan di Semua HP",
+    detail: "Terbuka cepat dari bio Instagram, TikTok, maupun QR code meja toko.",
+  },
+];
+
+export function FeatureComparisonSection({
+  isCanvasMode = false,
+}: {
+  isCanvasMode?: boolean;
+}) {
+  const { config, updateConfig } = useSectionConfig("feature_comparison");
+  const eyebrowText = config.eyebrow ?? "Keunggulan";
+  const titleText = config.title ?? "Kenapa Brand Memilih Catalove";
+  const subtitleText =
+    config.subtitle ?? "Fokus pada visual produk yang menjual, tanpa biaya langganan berat.";
+  const items =
+    config.comparison_items && config.comparison_items.length > 0
+      ? config.comparison_items
+      : DEFAULT_COMPARISON_ITEMS;
+
+  const updateItem = (idx: number, field: "label" | "detail", value: string) => {
+    const next = items.map((item, i) =>
+      i === idx ? { ...item, [field]: value } : item
+    );
+    updateConfig({ comparison_items: next });
+  };
+
+  const addItem = () => {
+    updateConfig({
+      comparison_items: [
+        ...items,
+        { label: "Keunggulan Baru", detail: "Deskripsi singkat nilai tambah brandmu." },
+      ],
+    });
+  };
+
+  const removeItem = (idx: number) => {
+    if (items.length <= 1) return;
+    updateConfig({ comparison_items: items.filter((_, i) => i !== idx) });
+  };
+
+  return (
+    <section aria-label={titleText}>
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-16 lg:px-12">
+        <div className="lg:col-span-5 space-y-3">
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={eyebrowText}
+              onChange={(e) => updateConfig({ eyebrow: e.target.value })}
+              aria-label="Edit label keunggulan"
+              className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)] focus:outline-none"
+            />
+          ) : (
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)]">
+              {eyebrowText}
+            </p>
+          )}
+
+          {isCanvasMode ? (
+            <input
+              type="text"
+              value={titleText}
+              onChange={(e) => updateConfig({ title: e.target.value })}
+              aria-label="Edit judul keunggulan"
+              className="w-full rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 font-serif text-3xl sm:text-4xl font-medium text-[var(--storefront-ink)] focus:outline-none"
+            />
+          ) : (
+            <h2 className="font-serif text-3xl sm:text-4xl font-medium leading-[1.15] tracking-tight text-[var(--storefront-ink)]">
+              {titleText}
+            </h2>
+          )}
+
+          {isCanvasMode ? (
+            <textarea
+              rows={2}
+              value={subtitleText}
+              onChange={(e) => updateConfig({ subtitle: e.target.value })}
+              aria-label="Edit subjudul keunggulan"
+              className="w-full resize-none rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 text-sm text-[var(--storefront-ink)] focus:outline-none"
+            />
+          ) : (
+            <p className="text-sm sm:text-base text-[var(--storefront-ink)] opacity-75">
+              {subtitleText}
+            </p>
+          )}
+        </div>
+
+        <div className="lg:col-span-7 space-y-4">
+          <ul className="divide-y divide-[var(--storefront-line)] border-y border-[var(--storefront-line)]">
+            {items.map((item, idx) => (
+              <li key={idx} className="py-4 flex items-start gap-4">
+                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]">
+                  <Check className="h-3.5 w-3.5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  {isCanvasMode ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={item.label}
+                          onChange={(e) => updateItem(idx, "label", e.target.value)}
+                          aria-label={`Judul keunggulan ${idx + 1}`}
+                          className="flex-1 rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-2.5 py-1.5 font-serif text-base font-medium text-[var(--storefront-ink)] focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          disabled={items.length <= 1}
+                          onClick={() => removeItem(idx)}
+                          aria-label="Hapus keunggulan"
+                          className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-500/10 disabled:opacity-30"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={item.detail}
+                        onChange={(e) => updateItem(idx, "detail", e.target.value)}
+                        aria-label={`Detail keunggulan ${idx + 1}`}
+                        className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-2.5 py-1.5 text-sm text-[var(--storefront-ink)] focus:outline-none"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-serif text-lg font-medium text-[var(--storefront-ink)]">
+                        {item.label}
+                      </p>
+                      <p className="mt-0.5 text-sm text-[var(--storefront-ink)] opacity-75">
+                        {item.detail}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {isCanvasMode && (
+            <button
+              type="button"
+              onClick={addItem}
+              className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--storefront-accent)] px-4 py-2 text-xs font-bold text-[var(--storefront-accent)] hover:bg-[var(--color-surface-tint)]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Keunggulan</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================================
+ * 7. SPONSOR SLOT / LINK PROMO NATIVE
+ * ========================================================================== */
+export function SponsorSlotSection({
+  isCanvasMode = false,
+}: {
+  isCanvasMode?: boolean;
+}) {
+  const { config, updateConfig } = useSectionConfig("sponsor_slot");
+  const eyebrowText = config.eyebrow ?? "Partner & Promo";
+  const titleText =
+    config.title ?? "Pasang Link Eksternal, Promo Marketplace, atau Slot Sponsor";
+  const subtitleText =
+    config.subtitle ??
+    "Bisa dipakai sebagai banner affiliate, tautan Shopee/Tokopedia, atau slot iklan native di versi gratis.";
+  const ctaText = config.cta_text ?? "Kunjungi Tautan";
+  const ctaUrl = config.cta_url ?? "https://wa.me/6285946689168";
+  const safeHref = /^https?:\/\//i.test(ctaUrl) || ctaUrl.startsWith("/") ? ctaUrl : "/catalog";
+
+  return (
+    <section aria-label={titleText}>
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-12">
+        <div className="border-y border-[var(--storefront-line)] py-8 sm:py-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl space-y-2 flex-1">
+            {isCanvasMode ? (
+              <input
+                type="text"
+                value={eyebrowText}
+                onChange={(e) => updateConfig({ eyebrow: e.target.value })}
+                aria-label="Edit label sponsor atau promo"
+                className="w-full max-w-xs rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)] focus:outline-none"
+              />
+            ) : (
+              <span className="inline-block text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)]">
+                {eyebrowText}
+              </span>
+            )}
+
+            {isCanvasMode ? (
+              <input
+                type="text"
+                value={titleText}
+                onChange={(e) => updateConfig({ title: e.target.value })}
+                aria-label="Edit judul slot sponsor"
+                className="w-full rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 font-serif text-2xl sm:text-3xl font-medium text-[var(--storefront-ink)] focus:outline-none"
+              />
+            ) : (
+              <h2 className="font-serif text-2xl sm:text-3xl font-medium leading-snug text-[var(--storefront-ink)]">
+                {titleText}
+              </h2>
+            )}
+
+            {isCanvasMode ? (
+              <textarea
+                rows={2}
+                value={subtitleText}
+                onChange={(e) => updateConfig({ subtitle: e.target.value })}
+                aria-label="Edit keterangan slot sponsor"
+                className="w-full resize-none rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 text-sm text-[var(--storefront-ink)] focus:outline-none"
+              />
+            ) : (
+              <p className="text-sm text-[var(--storefront-ink)] opacity-75">
+                {subtitleText}
+              </p>
+            )}
+          </div>
+
+          <div className="shrink-0 space-y-2">
+            {isCanvasMode ? (
+              <div className="flex flex-col gap-2 sm:w-72">
+                <input
+                  type="text"
+                  value={ctaText}
+                  onChange={(e) => updateConfig({ cta_text: e.target.value })}
+                  placeholder="Teks tombol"
+                  aria-label="Edit teks tombol sponsor"
+                  className="rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-[var(--storefront-ink)] focus:outline-none"
+                />
+                <input
+                  type="url"
+                  value={ctaUrl}
+                  onChange={(e) => updateConfig({ cta_url: e.target.value })}
+                  placeholder="https://..."
+                  aria-label="Edit URL tujuan sponsor"
+                  className="rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 dark:bg-white/5 px-3 py-1.5 text-xs text-[var(--storefront-ink)] focus:outline-none"
+                />
+              </div>
+            ) : (
+              <a
+                href={safeHref}
+                target={safeHref.startsWith("http") ? "_blank" : undefined}
+                rel={safeHref.startsWith("http") ? "noopener noreferrer" : undefined}
+                className="touch-target inline-flex items-center gap-2 rounded-full bg-[var(--storefront-accent)] px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                <span>{ctaText}</span>
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </section>

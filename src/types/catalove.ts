@@ -63,6 +63,9 @@ export type CanvasSectionId =
   | "lookbook"
   | "showcase"
   | "carousel"
+  | "process_steps"
+  | "feature_comparison"
+  | "sponsor_slot"
   | "faq_minimal"
   | "pricing"
   | "cta";
@@ -77,11 +80,14 @@ export interface SectionCustomConfig {
   subtitle?: string;
   eyebrow?: string;
   cta_text?: string;
+  cta_url?: string;
   image_url?: string;
   tone?: SectionToneOption;
   spacing?: SectionSpacingOption;
   featured_product_id?: string;
   faq_items?: { q: string; a: string }[];
+  steps_items?: { title: string; desc: string }[];
+  comparison_items?: { label: string; detail: string }[];
 }
 
 export interface CustomColorPalette {
