@@ -349,11 +349,10 @@ export default function BioLinkPage() {
                         className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-stone-900/80 transition-transform active:scale-90"
                       >
                         <Heart
-                          className={`h-4 w-4 ${
-                            liked
+                          className={`h-4 w-4 ${liked
                               ? "fill-rose-500 text-rose-500"
                               : "text-stone-700 dark:text-stone-200"
-                          }`}
+                            }`}
                         />
                       </button>
                     </div>

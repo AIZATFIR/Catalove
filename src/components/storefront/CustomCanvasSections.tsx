@@ -293,10 +293,10 @@ export function StatementBannerSection({
   const { config, updateConfig } = useSectionConfig("statement_banner");
   const titleText =
     config.title ??
-    "Desain katalog bersih yang membuat pelanggan langsung paham dan percaya.";
+    "Satu engine katalog, bebas ubah gaya sesuai karakter brandmu.";
   const subtitleText =
     config.subtitle ??
-    "Sesuaikan warna, font, dan struktur halaman tanpa perlu coding.";
+    "Ganti tampilan Waterfall, Snap Feed, Grid, palet warna, hingga link Bio QR tanpa coding.";
   const ctaText = config.cta_text ?? "Pesan Catalove";
 
   return (

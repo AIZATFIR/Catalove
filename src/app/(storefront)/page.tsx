@@ -27,7 +27,8 @@ import {
 } from "@/components/storefront/CustomCanvasSections";
 import {
   ALL_CANVAS_SECTIONS,
-  DEFAULT_SECTION_ORDER,
+  DEFAULT_CANVAS_ORDER,
+  DEFAULT_SHOWCASE_ORDER,
   PricingSection,
   openOrderSchemeModal,
 } from "@/components/storefront/PricingSection";
@@ -265,10 +266,15 @@ export default function HomePage() {
     [settings.theme_config]
   );
 
-  // Additive Canvas model: starts with Hero only unless user adds sections
+  // Beranda uses full showcase order; Mode Kanvas starts clean from Hero only (canvas_draft_order)
   const activeSections: CanvasSectionId[] = useMemo(() => {
-    const saved = activeTheme.section_order;
-    const base = saved && saved.length > 0 ? saved : DEFAULT_SECTION_ORDER;
+    const saved = isCanvasMode
+      ? activeTheme.canvas_draft_order
+      : activeTheme.section_order;
+    const fallback = isCanvasMode
+      ? DEFAULT_CANVAS_ORDER
+      : DEFAULT_SHOWCASE_ORDER;
+    const base = saved && saved.length > 0 ? saved : fallback;
     const hidden = new Set(activeTheme.hidden_sections || []);
     const list: CanvasSectionId[] = [];
     for (const id of base) {
@@ -276,8 +282,15 @@ export default function HomePage() {
         list.push(id);
       }
     }
-    return list.length > 0 ? list : ["hero"];
-  }, [activeTheme.section_order, activeTheme.hidden_sections]);
+    return list.length > 0 ? list : fallback;
+  }, [
+    isCanvasMode,
+    activeTheme.canvas_draft_order,
+    activeTheme.section_order,
+    activeTheme.hidden_sections,
+  ]);
+
+  const orderField = isCanvasMode ? "canvas_draft_order" : "section_order";
 
   const updateTheme = (patch: Partial<typeof activeTheme>) => {
     saveBusinessSettings({
@@ -326,7 +339,7 @@ export default function HomePage() {
     }
 
     updateTheme({
-      section_order: nextOrder,
+      [orderField]: nextOrder,
       hidden_sections: nextHidden,
     });
   };
@@ -335,7 +348,7 @@ export default function HomePage() {
     if (activeSections.length <= 1) return;
     const nextOrder = activeSections.filter((item) => item !== id);
     updateTheme({
-      section_order: nextOrder.length > 0 ? nextOrder : ["hero"],
+      [orderField]: nextOrder.length > 0 ? nextOrder : ["hero"],
     });
   };
 
@@ -346,7 +359,7 @@ export default function HomePage() {
     const copy = [...activeSections];
     const [item] = copy.splice(idx, 1);
     copy.splice(nextIdx, 0, item);
-    updateTheme({ section_order: copy });
+    updateTheme({ [orderField]: copy });
   };
 
   const reorderSectionToTarget = (
@@ -360,23 +373,22 @@ export default function HomePage() {
     if (fromIdx === -1 || toIdx === -1) return;
     const [moved] = copy.splice(fromIdx, 1);
     copy.splice(toIdx, 0, moved);
-    updateTheme({ section_order: copy });
+    updateTheme({ [orderField]: copy });
   };
 
   const loadFullPresetSections = () => {
     updateTheme({
-      section_order: [
-        "hero",
-        "feed",
-        "featured_split",
-        "collection_index",
-        "statement_banner",
-        "faq_minimal",
-        "pricing",
-        "cta",
-      ],
+      [orderField]: [...DEFAULT_SHOWCASE_ORDER],
       hidden_sections: [],
     });
+  };
+
+  const applyCanvasToStorefront = () => {
+    updateTheme({
+      section_order: [...activeSections],
+      hidden_sections: [],
+    });
+    setIsCanvasMode(false);
   };
 
   const resetCanvasToHeroOnly = () => {
@@ -395,7 +407,7 @@ export default function HomePage() {
         catalog_columns_desktop: 3,
         card_style: "clean_flat",
         custom_colors: undefined,
-        section_order: ["hero"],
+        canvas_draft_order: ["hero"],
         hidden_sections: [],
         section_configs: {},
       },
@@ -523,6 +535,13 @@ export default function HomePage() {
               >
                 <RotateCcw className="h-3 w-3" />
                 <span>Reset ke Hero Saja</span>
+              </button>
+              <button
+                type="button"
+                onClick={applyCanvasToStorefront}
+                className="rounded-full border border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] px-3 py-1 text-[11px] font-bold text-[var(--storefront-accent)] hover:opacity-90"
+              >
+                Terapkan ke Beranda
               </button>
               <button
                 type="button"

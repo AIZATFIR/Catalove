@@ -29,7 +29,8 @@ import { cakeService } from "@/lib/services/cake-service";
 import { THEME_COLOR_MAP } from "@/components/theme/ThemeProvider";
 import {
   ALL_CANVAS_SECTIONS,
-  DEFAULT_SECTION_ORDER,
+  DEFAULT_CANVAS_ORDER,
+  DEFAULT_SHOWCASE_ORDER,
   openOrderSchemeModal,
 } from "@/components/storefront/PricingSection";
 import type {
@@ -171,9 +172,16 @@ export function LiveCustomizerDock() {
     [settings.theme_config]
   );
 
+  const orderField = isCanvasMode ? "canvas_draft_order" : "section_order";
+
   const sectionOrder: CanvasSectionId[] = useMemo(() => {
-    const saved = activeTheme.section_order;
-    const base = saved && saved.length > 0 ? saved : DEFAULT_SECTION_ORDER;
+    const saved = isCanvasMode
+      ? activeTheme.canvas_draft_order
+      : activeTheme.section_order;
+    const fallback = isCanvasMode
+      ? DEFAULT_CANVAS_ORDER
+      : DEFAULT_SHOWCASE_ORDER;
+    const base = saved && saved.length > 0 ? saved : fallback;
     const hidden = new Set(activeTheme.hidden_sections || []);
     const out: CanvasSectionId[] = [];
     for (const id of base) {
@@ -181,8 +189,13 @@ export function LiveCustomizerDock() {
         out.push(id);
       }
     }
-    return out.length > 0 ? out : ["hero"];
-  }, [activeTheme.section_order, activeTheme.hidden_sections]);
+    return out.length > 0 ? out : fallback;
+  }, [
+    isCanvasMode,
+    activeTheme.canvas_draft_order,
+    activeTheme.section_order,
+    activeTheme.hidden_sections,
+  ]);
 
   const hiddenSections: CanvasSectionId[] = activeTheme.hidden_sections || [];
 
@@ -227,7 +240,7 @@ export function LiveCustomizerDock() {
     const copy = [...sectionOrder];
     const [item] = copy.splice(idx, 1);
     copy.splice(nextIdx, 0, item);
-    updateTheme({ section_order: copy });
+    updateTheme({ [orderField]: copy });
   };
 
   const handleAddSection = (id: CanvasSectionId) => {
@@ -237,7 +250,7 @@ export function LiveCustomizerDock() {
       return;
     }
     updateTheme({
-      section_order: [...sectionOrder, id],
+      [orderField]: [...sectionOrder, id],
       hidden_sections: nextHidden,
     });
   };
@@ -245,7 +258,7 @@ export function LiveCustomizerDock() {
   const handleRemoveSection = (id: CanvasSectionId) => {
     if (sectionOrder.length <= 1) return;
     const nextOrder = sectionOrder.filter((s) => s !== id);
-    updateTheme({ section_order: nextOrder.length > 0 ? nextOrder : ["hero"] });
+    updateTheme({ [orderField]: nextOrder.length > 0 ? nextOrder : ["hero"] });
   };
 
   const handleApplyPreset = async (presetKey: IndustryPreset) => {
@@ -424,7 +437,7 @@ export function LiveCustomizerDock() {
                       type="button"
                       onClick={() =>
                         updateTheme({
-                          section_order: ["hero"],
+                          [orderField]: ["hero"],
                           hidden_sections: [],
                         })
                       }

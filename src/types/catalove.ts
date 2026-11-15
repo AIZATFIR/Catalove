@@ -106,6 +106,7 @@ export interface ThemeConfig {
   hero_align?: "left" | "center";
   custom_colors?: CustomColorPalette;
   section_order?: CanvasSectionId[];
+  canvas_draft_order?: CanvasSectionId[];
   hidden_sections?: CanvasSectionId[];
   section_configs?: Partial<Record<CanvasSectionId, SectionCustomConfig>>;
 }

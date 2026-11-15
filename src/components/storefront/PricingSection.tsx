@@ -9,7 +9,21 @@ import type { CanvasSectionId } from "@/types/catalove";
 
 export type CatalovePlanId = "mandiri" | "terima_jadi";
 
-export const DEFAULT_SECTION_ORDER: CanvasSectionId[] = ["hero"];
+export const DEFAULT_CANVAS_ORDER: CanvasSectionId[] = ["hero"];
+
+export const DEFAULT_SHOWCASE_ORDER: CanvasSectionId[] = [
+  "hero",
+  "statement_banner",
+  "feed",
+  "lookbook",
+  "showcase",
+  "carousel",
+  "pricing",
+  "faq_minimal",
+  "cta",
+];
+
+export const DEFAULT_SECTION_ORDER: CanvasSectionId[] = DEFAULT_SHOWCASE_ORDER;
 
 export const ALL_CANVAS_SECTIONS: {
   id: CanvasSectionId;

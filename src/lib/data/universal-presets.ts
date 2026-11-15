@@ -18,7 +18,18 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
   heading_scale: "lg",
   body_scale: "md",
   hero_align: "left",
-  section_order: ["hero"],
+  section_order: [
+    "hero",
+    "statement_banner",
+    "feed",
+    "lookbook",
+    "showcase",
+    "carousel",
+    "pricing",
+    "faq_minimal",
+    "cta",
+  ],
+  canvas_draft_order: ["hero"],
   hidden_sections: [],
 };
 
@@ -51,9 +62,10 @@ export const INITIAL_SETTINGS: BusinessSettings = {
 
   hero_eyebrow: "Web Template",
   hero_title: "Simple yet interesting catalog for your brand.",
-  hero_subtitle: "Pesan Catalove mu untuk brand mu sendiri.",
+  hero_subtitle:
+    "Template web katalog siap pakai untuk brandmu — atur layout, warna, dan order langsung ke WhatsApp.",
   hero_primary_cta: "Pesan Catalove",
-  hero_secondary_cta: "Sample",
+  hero_secondary_cta: "Lihat Demo",
   hero_badge_1: "Template Web",
   hero_badge_2: "Siap Pakai",
   hero_badge_3: "Order WA",
@@ -80,12 +92,12 @@ export const INITIAL_SETTINGS: BusinessSettings = {
   step_3_desc: "Langsung chat.",
 
   showcase_eyebrow: "Lookbook",
-  showcase_title: "Lookbook",
+  showcase_title: "Galeri Putar",
   showcase_desc: "",
   showcase_link_text: "Katalog",
 
-  catalog_eyebrow: "Sample",
-  catalog_title: "Sample",
+  catalog_eyebrow: "Demo",
+  catalog_title: "Demo Katalog",
   catalog_desc: "",
 
   footer_tagline: "Simple yet interesting catalog for your brand.",
