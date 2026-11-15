@@ -31,8 +31,10 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils/formatters";
 import { buildQuickProductWhatsAppUrl } from "@/lib/utils/whatsapp";
-import { ProductCard } from "@/components/storefront/ProductCard";
+import { ProductCard, type CanvasProductPatch } from "@/components/storefront/ProductCard";
 import { ProductImage } from "@/components/storefront/ProductImage";
+import { cakeService } from "@/lib/services/cake-service";
+import type { ProductInput } from "@/lib/validators/product";
 
 type ViewMode = "pinterest" | "tiktok" | "grid";
 type QuickFilter = "all" | "popular" | "promo" | "ready" | "liked";
@@ -45,6 +47,7 @@ interface DiscoveryFeedProps {
   title?: string;
   subtitle?: string;
   hideHeader?: boolean;
+  isCanvasMode?: boolean;
 }
 
 export function DiscoveryFeed({
@@ -55,9 +58,113 @@ export function DiscoveryFeed({
   title,
   subtitle,
   hideHeader = false,
+  isCanvasMode = false,
 }: DiscoveryFeedProps) {
   const settings = useBusinessSettings();
   const { addItem, openCart, toggleLike, isLiked, getLikeCount, savedIds } = useCart();
+  const [isAddingSample, setIsAddingSample] = useState(false);
+
+  const handleAddSampleProduct = async () => {
+    if (isAddingSample) return;
+    setIsAddingSample(true);
+    try {
+      const sampleNumber = products.length + 1;
+      await cakeService.createProduct({
+        name: `Sample Produk #${sampleNumber}`,
+        category_id:
+          selectedCategoryId !== "all"
+            ? selectedCategoryId
+            : categories[0]?.id || undefined,
+        badge: "Sample",
+        description:
+          "Template produk siap pakai — klik di Mode Kanvas untuk ubah foto, nama, dan harga.",
+        flavor_notes: [],
+        specs: [],
+        base_price: 125000,
+        minimum_lead_time_days: 1,
+        is_active: true,
+        is_featured: true,
+        variants: [],
+        images: [
+          {
+            storage_path:
+              "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1000&q=80",
+            alt_text: `Sample Produk #${sampleNumber}`,
+            is_primary: true,
+            display_order: 1,
+          },
+        ],
+      });
+    } finally {
+      setIsAddingSample(false);
+    }
+  };
+
+  const handleUpdateProduct = async (
+    productId: string,
+    updates: CanvasProductPatch
+  ) => {
+    const existing = products.find((item) => item.id === productId);
+    if (!existing) return;
+
+    const payload: Partial<ProductInput> = {};
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.base_price !== undefined) payload.base_price = updates.base_price;
+    if (updates.badge !== undefined) payload.badge = updates.badge;
+
+    if (updates.imageUrl) {
+      const otherImages = (existing.images || [])
+        .filter((img) => !img.is_primary)
+        .slice(0, 4)
+        .map((img, i) => ({
+          storage_path: img.storage_path,
+          alt_text: img.alt_text || updates.name || existing.name,
+          is_primary: false,
+          display_order: i + 2,
+        }));
+      payload.images = [
+        {
+          storage_path: updates.imageUrl,
+          alt_text: updates.name || existing.name,
+          is_primary: true,
+          display_order: 1,
+        },
+        ...otherImages,
+      ];
+    }
+
+    await cakeService.updateProduct(productId, payload);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    await cakeService.deleteProduct(productId);
+  };
+
+  const handleMoveProduct = async (
+    productId: string,
+    direction: "left" | "right"
+  ) => {
+    const visibleIds = filteredProducts.map((p) => p.id);
+    const currentIdx = visibleIds.indexOf(productId);
+    const targetIdx = direction === "left" ? currentIdx - 1 : currentIdx + 1;
+    if (currentIdx < 0 || targetIdx < 0 || targetIdx >= visibleIds.length) {
+      return;
+    }
+
+    const reorderedVisible = [...visibleIds];
+    [reorderedVisible[currentIdx], reorderedVisible[targetIdx]] = [
+      reorderedVisible[targetIdx],
+      reorderedVisible[currentIdx],
+    ];
+
+    const visibleSet = new Set(visibleIds);
+    let visibleCursor = 0;
+    const mergedOrder = products.map((p) =>
+      visibleSet.has(p.id) ? reorderedVisible[visibleCursor++] : p.id
+    );
+
+    await cakeService.reorderProducts(mergedOrder);
+  };
 
   const resolvedDefaultMode: ViewMode = useMemo(() => {
     if (defaultMode) return defaultMode;
@@ -114,9 +221,22 @@ export function DiscoveryFeed({
         {/* Section Heading + View Mode Bar */}
         {!hideHeader && (
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#4D3040] dark:text-[#FAF4EE]">
-              {title || settings.catalog_title || "Sample"}
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#4D3040] dark:text-[#FAF4EE]">
+                {title || settings.catalog_title || "Sample"}
+              </h2>
+              {isCanvasMode && (
+                <button
+                  type="button"
+                  onClick={handleAddSampleProduct}
+                  disabled={isAddingSample}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--storefront-accent)] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:opacity-95 disabled:opacity-60 transition-all"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>{isAddingSample ? "Menambahkan..." : "Tambah Produk Sample"}</span>
+                </button>
+              )}
+            </div>
 
             {/* View Mode Switcher */}
             <div className="inline-flex items-center p-1 rounded-full bg-stone-200/70 dark:bg-white/10 backdrop-blur-md border border-stone-300/60 dark:border-white/10 self-start sm:self-auto">
@@ -289,6 +409,12 @@ export function DiscoveryFeed({
                 index={idx}
                 masonryMode={true}
                 onQuickView={(p) => setQuickViewProduct(p)}
+                isCanvasMode={isCanvasMode}
+                canMoveLeft={idx > 0}
+                canMoveRight={idx < filteredProducts.length - 1}
+                onMoveProduct={handleMoveProduct}
+                onUpdateProduct={handleUpdateProduct}
+                onDeleteProduct={handleDeleteProduct}
               />
             ))}
           </div>
@@ -303,6 +429,12 @@ export function DiscoveryFeed({
                 masonryMode={false}
                 aspectRatioClass="aspect-[4/5]"
                 onQuickView={(p) => setQuickViewProduct(p)}
+                isCanvasMode={isCanvasMode}
+                canMoveLeft={idx > 0}
+                canMoveRight={idx < filteredProducts.length - 1}
+                onMoveProduct={handleMoveProduct}
+                onUpdateProduct={handleUpdateProduct}
+                onDeleteProduct={handleDeleteProduct}
               />
             ))}
           </div>

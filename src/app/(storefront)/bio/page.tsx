@@ -15,6 +15,7 @@ import {
   QrCode,
   Share2,
   ShoppingBag,
+  Sliders,
   X,
 } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -22,6 +23,7 @@ import { useCart } from "@/context/CartContext";
 import { cakeService } from "@/lib/services/cake-service";
 import { formatPrice } from "@/lib/utils/formatters";
 import { ProductImage } from "@/components/storefront/ProductImage";
+import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
 import type { Product } from "@/types/catalove";
 
 export default function BioLinkPage() {
@@ -163,6 +165,39 @@ export default function BioLinkPage() {
 
         {/* Primary Bio Action Links */}
         <section aria-label="Tautan Utama" className="space-y-2.5">
+          <button
+            type="button"
+            onClick={() => openOrderSchemeModal()}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-[var(--storefront-accent)] px-4 py-3.5 text-left text-white shadow-md hover:opacity-95 active:scale-[0.99] transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                <ShoppingBag className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">Pilih Paket &amp; Pesan Catalove</p>
+                <p className="text-[11px] text-white/85">Mandiri atau Terima Jadi</p>
+              </div>
+            </div>
+            <ExternalLink className="h-4 w-4 shrink-0 opacity-85" />
+          </button>
+
+          <Link
+            href="/?canvas=1"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--storefront-line)] bg-[var(--storefront-surface)] px-4 py-3.5 shadow-sm hover:border-[var(--storefront-accent)] active:scale-[0.99] transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]">
+                <Sliders className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">Coba Mode Kanvas</p>
+                <p className="text-[11px] opacity-65">Geser blok &amp; ubah warna langsung</p>
+              </div>
+            </div>
+            <ExternalLink className="h-4 w-4 shrink-0 opacity-60" />
+          </Link>
+
           <a
             href={whatsappUrl}
             target="_blank"
@@ -262,19 +297,12 @@ export default function BioLinkPage() {
         {/* Interactive Mini-Catalog Spotlight */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)]">
-                Quick-Buy Spotlight
-              </p>
-              <h2 className="font-serif text-xl font-bold">
-                Produk Unggulan Hari Ini
-              </h2>
-            </div>
+            <h2 className="font-serif text-xl font-bold">Sample</h2>
             <Link
               href="/catalog"
               className="text-xs font-bold underline decoration-[var(--storefront-accent)] underline-offset-4"
             >
-              Lihat Semua
+              Semua
             </Link>
           </div>
 
@@ -354,7 +382,7 @@ export default function BioLinkPage() {
                         className="inline-flex w-full items-center justify-center gap-1 rounded-xl bg-stone-900 dark:bg-[var(--storefront-accent)] py-2 text-[11px] font-bold text-white hover:opacity-95 transition-opacity"
                       >
                         <ShoppingBag className="h-3.5 w-3.5" />
-                        <span>+ Keranjang</span>
+                        <span>+ Bag</span>
                       </button>
                     </div>
                   </div>
@@ -383,12 +411,9 @@ export default function BioLinkPage() {
             </button>
 
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--storefront-accent)]">
-                Scan untuk Buka Katalog
-              </p>
               <h2 className="font-serif text-xl font-bold mt-1">{storeName}</h2>
               <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                Cocok dicetak di kemasan, kartu nama, atau standee meja kasir UMKM
+                Scan QR untuk membuka katalog
               </p>
             </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Check,
   Save,
@@ -16,6 +17,12 @@ import {
   Download,
   Upload,
   RotateCcw,
+  ArrowUp,
+  ArrowDown,
+  Eye,
+  EyeOff,
+  Sliders,
+  ExternalLink,
 } from "lucide-react";
 import {
   INITIAL_SETTINGS,
@@ -28,6 +35,8 @@ import {
   saveBusinessSettings,
   fetchBusinessSettings,
 } from "@/lib/business-settings";
+import { THEME_COLOR_MAP } from "@/components/theme/ThemeProvider";
+import { DEFAULT_SECTION_ORDER } from "@/components/storefront/PricingSection";
 import type {
   BusinessSettings,
   IndustryPreset,
@@ -38,7 +47,19 @@ import type {
   CardStyleOption,
   HeroStyleOption,
   CatalogLayoutOption,
+  CanvasSectionId,
+  CustomColorPalette,
 } from "@/types/catalove";
+
+const SECTION_LABELS: Record<CanvasSectionId, { title: string; desc: string }> = {
+  hero: { title: "Hero Utama", desc: "Banner pembuka, headline & tombol aksi" },
+  feed: { title: "Katalog Produk", desc: "Daftar item, filter & mode tampilan" },
+  pricing: { title: "Paket & Harga", desc: "Mandiri vs Terima Jadi & tombol pesan" },
+  lookbook: { title: "Lookbook Koleksi", desc: "Grid editorial & tautan cepat kategori" },
+  showcase: { title: "Galeri Foto", desc: "Sorotan visual 2x2 produk pilihan" },
+  carousel: { title: "Sorotan Produk", desc: "Carousel interaktif produk unggulan" },
+  cta: { title: "Ajakan Pesan (CTA)", desc: "Banner WhatsApp & penutup halaman" },
+};
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<BusinessSettings>(INITIAL_SETTINGS);
@@ -297,6 +318,15 @@ export default function AdminSettingsPage() {
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Reset Default</span>
           </button>
+
+          <Link
+            href="/?canvas=1"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--storefront-accent)] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity"
+          >
+            <Sliders className="h-3.5 w-3.5" />
+            <span>Buka Mode Kanvas Live</span>
+            <ExternalLink className="h-3 w-3 opacity-80" />
+          </Link>
 
           {isSyncing && (
             <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 ml-auto">
@@ -679,6 +709,104 @@ export default function AdminSettingsPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Kustom Warna Hex Brand */}
+              {(() => {
+                const presetBase =
+                  THEME_COLOR_MAP[currentTheme.color_theme || "warm_oat"]?.light ||
+                  THEME_COLOR_MAP.warm_oat.light;
+                const customColors: CustomColorPalette = {
+                  enabled: currentTheme.custom_colors?.enabled ?? false,
+                  accent: currentTheme.custom_colors?.accent || presetBase.accent,
+                  bg: currentTheme.custom_colors?.bg || presetBase.bg,
+                  surface: currentTheme.custom_colors?.surface || presetBase.surface,
+                  ink: currentTheme.custom_colors?.ink || presetBase.ink,
+                };
+                const colorFields: {
+                  key: Exclude<keyof CustomColorPalette, "enabled">;
+                  label: string;
+                }[] = [
+                  { key: "accent", label: "Aksen & Tombol" },
+                  { key: "bg", label: "Latar Halaman" },
+                  { key: "surface", label: "Kartu & Permukaan" },
+                  { key: "ink", label: "Teks Utama" },
+                ];
+
+                return (
+                  <div className="mt-4 rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-[#4D3040] dark:text-white">
+                          Kustom Warna Hex Brand
+                        </h3>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          Sesuaikan persis 4 warna utama brand (sinkron dengan Mode Kanvas).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateTheme("custom_colors", {
+                            ...customColors,
+                            enabled: !customColors.enabled,
+                          })
+                        }
+                        className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
+                          customColors.enabled
+                            ? "bg-[var(--storefront-accent)] text-white"
+                            : "bg-stone-200 text-stone-700 dark:bg-white/10 dark:text-stone-300"
+                        }`}
+                      >
+                        {customColors.enabled ? "Kustom Aktif" : "Pakai Warna Kustom"}
+                      </button>
+                    </div>
+
+                    <div
+                      className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 transition-opacity ${
+                        customColors.enabled ? "opacity-100" : "opacity-60"
+                      }`}
+                    >
+                      {colorFields.map((field) => (
+                        <label
+                          key={field.key}
+                          className="flex items-center gap-2.5 rounded-lg border border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-950 p-2.5"
+                        >
+                          <input
+                            type="color"
+                            value={customColors[field.key]}
+                            onChange={(e) =>
+                              updateTheme("custom_colors", {
+                                ...customColors,
+                                enabled: true,
+                                [field.key]: e.target.value,
+                              })
+                            }
+                            aria-label={field.label}
+                            className="h-8 w-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="block text-[11px] font-semibold text-stone-600 dark:text-stone-300">
+                              {field.label}
+                            </span>
+                            <input
+                              type="text"
+                              value={customColors[field.key]}
+                              onChange={(e) =>
+                                updateTheme("custom_colors", {
+                                  ...customColors,
+                                  enabled: true,
+                                  [field.key]: e.target.value,
+                                })
+                              }
+                              className="mt-0.5 w-full bg-transparent font-mono text-xs font-bold uppercase text-stone-900 dark:text-white focus:outline-none"
+                            />
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Product Card Style */}
@@ -720,6 +848,7 @@ export default function AdminSettingsPage() {
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { id: "split_dynamic" as HeroStyleOption, label: "Split Editorial", desc: "Teks kiri + Showcase kanan" },
+                  { id: "split_reverse" as HeroStyleOption, label: "Split Kiri", desc: "Showcase kiri + Teks kanan" },
                   { id: "bento_grid" as HeroStyleOption, label: "Bento Grid", desc: "Mozaik multi-produk visual" },
                   { id: "minimal_center" as HeroStyleOption, label: "Minimal Center", desc: "Fokus tipografi besar di tengah" },
                   { id: "rotating_showcase" as HeroStyleOption, label: "Rotating Gallery", desc: "Sorotan foto berputar" },
@@ -820,6 +949,135 @@ export default function AdminSettingsPage() {
                 ))}
               </div>
             </div>
+
+            {/* Urutan & Visibilitas Section Kanvas */}
+            {(() => {
+              const savedOrder = currentTheme.section_order || [];
+              const mergedOrder: CanvasSectionId[] = [
+                ...savedOrder.filter((id) => DEFAULT_SECTION_ORDER.includes(id)),
+                ...DEFAULT_SECTION_ORDER.filter((id) => !savedOrder.includes(id)),
+              ];
+              const hiddenSections: CanvasSectionId[] = currentTheme.hidden_sections || [];
+
+              const moveSection = (idx: number, delta: -1 | 1) => {
+                const target = idx + delta;
+                if (target < 0 || target >= mergedOrder.length) return;
+                const next = [...mergedOrder];
+                [next[idx], next[target]] = [next[target], next[idx]];
+                updateTheme("section_order", next);
+              };
+
+              const toggleSectionVisibility = (id: CanvasSectionId) => {
+                const isHidden = hiddenSections.includes(id);
+                if (!isHidden && mergedOrder.length - hiddenSections.length <= 1) {
+                  return;
+                }
+                const nextHidden = isHidden
+                  ? hiddenSections.filter((s) => s !== id)
+                  : [...hiddenSections, id];
+                updateTheme("hidden_sections", nextHidden);
+              };
+
+              return (
+                <div className="rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#4D3040] dark:text-white">
+                        Urutan &amp; Visibilitas Section Kanvas
+                      </h3>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Atur urutan blok di halaman depan atau sembunyikan section tertentu.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSaved(false);
+                        setStatusMessage("");
+                        setSettings((current) => ({
+                          ...current,
+                          theme_config: {
+                            ...(current.theme_config || DEFAULT_THEME_CONFIG),
+                            section_order: DEFAULT_SECTION_ORDER,
+                            hidden_sections: [],
+                          },
+                        }));
+                      }}
+                      className="rounded-lg border border-stone-200 dark:border-white/15 px-3 py-1 text-[11px] font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10"
+                    >
+                      Reset Urutan
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {mergedOrder.map((secId, idx) => {
+                      const info = SECTION_LABELS[secId];
+                      const isHidden = hiddenSections.includes(secId);
+                      return (
+                        <div
+                          key={secId}
+                          className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 transition-opacity ${
+                            isHidden
+                              ? "border-dashed border-stone-200 dark:border-white/10 opacity-55"
+                              : "border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-950"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-stone-800 dark:text-stone-100">
+                              {idx + 1}. {info.title}
+                            </p>
+                            <p className="text-[11px] text-stone-500 truncate">{info.desc}</p>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => moveSection(idx, -1)}
+                              aria-label={`Naikkan ${info.title}`}
+                              className="rounded-md border border-stone-200 dark:border-white/15 p-1.5 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10 disabled:opacity-30"
+                            >
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === mergedOrder.length - 1}
+                              onClick={() => moveSection(idx, 1)}
+                              aria-label={`Turunkan ${info.title}`}
+                              className="rounded-md border border-stone-200 dark:border-white/15 p-1.5 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10 disabled:opacity-30"
+                            >
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionVisibility(secId)}
+                              aria-label={isHidden ? `Tampilkan ${info.title}` : `Sembunyikan ${info.title}`}
+                              className={`ml-1 inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                                isHidden
+                                  ? "bg-stone-200 text-stone-600 dark:bg-white/10 dark:text-stone-400"
+                                  : "bg-[var(--storefront-accent)] text-white"
+                              }`}
+                            >
+                              {isHidden ? (
+                                <>
+                                  <EyeOff className="h-3.5 w-3.5" />
+                                  <span>Tersembunyi</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3.5 w-3.5" />
+                                  <span>Tampil</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Preloader Toggle */}
             <div className="rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 flex items-center justify-between gap-4">

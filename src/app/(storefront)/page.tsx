@@ -274,7 +274,13 @@ export default function HomePage() {
           />
         );
       case "feed":
-        return <DiscoveryFeed products={products} categories={categories} />;
+        return (
+          <DiscoveryFeed
+            products={products}
+            categories={categories}
+            isCanvasMode={isCanvasMode}
+          />
+        );
       case "pricing":
         return (
           <PricingSection
