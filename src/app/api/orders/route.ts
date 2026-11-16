@@ -41,9 +41,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  // Enforce server-side seller authentication (honors demo/owner studio session cookie first, then Supabase Auth)
-  const cookieToken = req.cookies.get("admin_session")?.value;
-  const session = await verifyServerSession(cookieToken);
+  // Enforce server-side seller authentication.
+  const session = await verifyServerSession();
 
   if (!session) {
     return NextResponse.json(

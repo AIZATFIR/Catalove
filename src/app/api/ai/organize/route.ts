@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyServerSession } from "@/lib/services/server-auth";
 
 export async function POST(req: NextRequest) {
-  // 1. Verify seller session (honors demo/owner studio session cookie first, then Supabase Auth)
-  const cookieToken = req.cookies.get("admin_session")?.value;
-  const session = await verifyServerSession(cookieToken);
+  // Verify seller session with Supabase Auth.
+  const session = await verifyServerSession();
 
   if (!session) {
     return NextResponse.json(

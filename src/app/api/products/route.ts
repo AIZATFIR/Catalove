@@ -10,16 +10,27 @@ export async function GET(req: NextRequest) {
     const id = searchParams.get("id");
     const slug = searchParams.get("slug");
     const includeInactive = searchParams.get("includeInactive") === "true";
+    const sellerSession = includeInactive || id || slug
+      ? await verifyServerSession()
+      : null;
+
+    if (includeInactive && !sellerSession) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     if (id) {
       const product = await cakeService.getProductById(id);
-      if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      if (!product || (!product.is_active && !sellerSession)) {
+        return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      }
       return NextResponse.json({ success: true, product });
     }
 
     if (slug) {
       const product = await cakeService.getProductBySlug(slug);
-      if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      if (!product || (!product.is_active && !sellerSession)) {
+        return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      }
       return NextResponse.json({ success: true, product });
     }
 
@@ -33,8 +44,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieToken = req.cookies.get("admin_session")?.value;
-    const isSeller = await verifyServerSession(cookieToken);
+    const isSeller = await verifyServerSession();
     if (!isSeller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -54,8 +64,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const cookieToken = req.cookies.get("admin_session")?.value;
-    const isSeller = await verifyServerSession(cookieToken);
+    const isSeller = await verifyServerSession();
     if (!isSeller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -82,8 +91,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const cookieToken = req.cookies.get("admin_session")?.value;
-    const isSeller = await verifyServerSession(cookieToken);
+    const isSeller = await verifyServerSession();
     if (!isSeller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

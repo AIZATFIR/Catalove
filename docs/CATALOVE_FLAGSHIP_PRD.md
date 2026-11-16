@@ -64,9 +64,9 @@ Most UMKM (SMEs & independent brands) face an impossible choice online:
 - **Live Social Proof Micro-Toast (`src/components/storefront/LiveSocialProofToast.tsx`)**:
   - Floating bottom-right notification cycling subtly every 24 seconds (first appearance after 5s) across active catalog items to create organic social proof (*"🔥 16 orang sedang melihat ..."*, *"💖 ... baru saja disukai pengunjung"*, *"⚡ Stok ... siap dipesan via WhatsApp"*), clickable directly to `/product/[slug]` and dismissible for the session.
 
-### Pillar 5: Zero-Friction Auth & Dual-Driver Persistence (`localStorage` + Supabase)
-- **Zero-Friction Admin Access (`src/middleware.ts`, `src/lib/services/auth-service.ts`, `src/app/(admin)/admin/login/page.tsx`)**:
-  - Evaluates the `admin_session` demo/owner cookie before Supabase checks so owners can enter `/admin` cleanly with a 1-click **"⚡ Masuk Instan ke Studio (Mode Demo / Owner)"** button (`owner@catalove.id`) even when Supabase environment variables are configured, while preserving full Supabase Auth login when using real credentials.
+### Pillar 5: Supabase Auth & Dual-Driver Persistence (`localStorage` + Supabase)
+- **Protected Admin Access (`src/middleware.ts`, `src/lib/services/auth-service.ts`, `src/app/(admin)/admin/login/page.tsx`)**:
+  - Admin pages and write APIs require a real Supabase Auth session and an authorized seller account. Public demo cookies and hardcoded shared passwords are never accepted.
 - **Offline-First Resilience**: Products, categories, business settings, orders, cart items, and liked items all operate smoothly via `localStorage` fallback alongside Supabase PostgreSQL & Storage.
 
 ---

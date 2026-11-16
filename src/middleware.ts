@@ -10,13 +10,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 1. Always allow valid demo/owner studio session cookie first
-  const demoCookie = request.cookies.get("admin_session")?.value;
-  if (demoCookie === "demo_seller_session_valid" || demoCookie === "logged_in") {
-    return NextResponse.next();
-  }
-
-  // 2. If Supabase is configured, verify session via Supabase Auth
+  // Verify admin access only with a Supabase Auth session.
   if (isSupabaseConfigured()) {
     let response = NextResponse.next({
       request: {
@@ -65,7 +59,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 3. Otherwise redirect to admin login
+  // Without Supabase Auth, keep admin routes inaccessible.
   const loginUrl = new URL("/admin/login", request.url);
   loginUrl.searchParams.set("next", pathname);
   return NextResponse.redirect(loginUrl);

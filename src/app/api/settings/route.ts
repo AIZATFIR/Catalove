@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { INITIAL_SETTINGS } from "@/lib/data/seed-cakes";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { getAdminSupabase, getServerSupabase } from "@/lib/supabase/server";
-import { isSellerUser, verifyServerSession } from "@/lib/services/server-auth";
+import { getAdminSupabase } from "@/lib/supabase/server";
+import { verifyServerSession } from "@/lib/services/server-auth";
 import type { BusinessSettings } from "@/types/catalove";
 
 const TEXT_KEYS = [
@@ -147,27 +147,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Verify seller session via Supabase Auth
-  const serverSupabase = await getServerSupabase();
-  let isAuthorized = false;
-
-  if (serverSupabase) {
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
-    if (user && (await isSellerUser(user.id))) {
-      isAuthorized = true;
-    }
-  }
-
-  // 2. Also check admin_session cookie
-  if (!isAuthorized) {
-    const authHeader = req.cookies.get("admin_session")?.value;
-    const session = await verifyServerSession(authHeader);
-    if (session) isAuthorized = true;
-  }
-
-  if (!isAuthorized) {
+  if (!(await verifyServerSession())) {
     return NextResponse.json(
       { error: "Akses ditolak. Silakan masuk sebagai pengelola toko." },
       { status: 401 }

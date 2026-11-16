@@ -228,6 +228,8 @@ export function LiveCustomizerDock() {
     ink: activeTheme.custom_colors?.ink || presetBasePalette.ink,
   };
 
+  if (pathname === "/privacy" || pathname === "/contact") return null;
+
   const handleToggleCanvas = () => {
     if (pathname !== "/") {
       router.push("/?canvas=1");
@@ -369,7 +371,6 @@ export function LiveCustomizerDock() {
           <button
             type="button"
             onClick={handleToggleCanvas}
-            aria-label="Toggle Mode Kanvas"
             className={`touch-target inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-bold shadow-xl backdrop-blur-xl transition-all ${
               isCanvasMode
                 ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"

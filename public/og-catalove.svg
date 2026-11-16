@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f8f3ec"/>
+  <circle cx="1010" cy="115" r="230" fill="#eddfd3"/>
+  <circle cx="1065" cy="575" r="195" fill="#e7c7a4"/>
+  <rect x="84" y="78" width="72" height="72" rx="24" fill="#4d3040"/>
+  <path d="M132 103a20 20 0 1 0 0 23l-8-5a10 10 0 1 1 0-12z" fill="#f2c078"/>
+  <circle cx="136" cy="98" r="5" fill="#f2c078"/>
+  <text x="84" y="286" fill="#4d3040" font-family="Arial, sans-serif" font-size="72" font-weight="700">Catalove</text>
+  <text x="84" y="365" fill="#715b63" font-family="Arial, sans-serif" font-size="34">Katalog digital yang terasa seperti brandmu.</text>
+  <text x="84" y="438" fill="#715b63" font-family="Arial, sans-serif" font-size="25">Atur produk, tampilan, dan pesanan WhatsApp dengan mudah.</text>
+  <rect x="84" y="492" width="236" height="58" rx="29" fill="#4d3040"/>
+  <text x="118" y="530" fill="#fffaf4" font-family="Arial, sans-serif" font-size="22" font-weight="600">catalove.vercel.app</text>
+</svg>

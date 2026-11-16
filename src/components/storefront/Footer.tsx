@@ -30,6 +30,15 @@ export const Footer: React.FC = () => {
           <Link href="/bio" className="hover:text-[var(--storefront-accent)] transition-colors">
             Bio
           </Link>
+          <Link href="/contact" className="hover:text-[var(--storefront-accent)] transition-colors">
+            Kontak
+          </Link>
+          <Link href="/privacy" className="hover:text-[var(--storefront-accent)] transition-colors">
+            Privasi
+          </Link>
+          <Link href="/about" className="hover:text-[var(--storefront-accent)] transition-colors">
+            Tentang
+          </Link>
           <Link href="/admin/login" className="hover:text-[var(--storefront-accent)] transition-colors">
             Admin
           </Link>

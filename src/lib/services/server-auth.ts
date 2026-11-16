@@ -10,11 +10,11 @@ export interface AdminUser {
 const DEFAULT_ADMIN_EMAIL = "owner@catalove.id";
 
 export async function isSellerUser(userId: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return true;
+  if (!isSupabaseConfigured()) return false;
 
   try {
     const admin = await getAdminSupabase();
-    if (!admin) return true;
+    if (!admin) return false;
 
     // Check seller_users table
     const { data, error } = await admin
@@ -26,47 +26,15 @@ export async function isSellerUser(userId: string): Promise<boolean> {
 
     if (!error && data) return true;
 
-    // Check user metadata or if there are no registered sellers yet
+    // Only trusted server-managed metadata can add a seller account.
     const { data: userRecord } = await admin.auth.admin.getUserById(userId);
-    if (userRecord?.user) {
-      const u = userRecord.user;
-      if (
-        u.app_metadata?.role === "seller" ||
-        u.user_metadata?.role === "seller" ||
-        u.email?.includes("@catalove.id") ||
-        u.email?.includes("@sofizcake.com")
-      ) {
-        await admin.from("seller_users").upsert({ user_id: userId, is_active: true });
-        return true;
-      }
-
-      // If no sellers exist yet, first authenticated user is granted owner access
-      const { count } = await admin
-        .from("seller_users")
-        .select("*", { count: "exact", head: true });
-
-      if (count === 0) {
-        await admin.from("seller_users").upsert({ user_id: userId, is_active: true });
-        return true;
-      }
-    }
-
-    return false;
+    return userRecord?.user?.app_metadata?.role === "seller";
   } catch {
     return false;
   }
 }
 
-export async function verifyServerSession(cookieToken?: string | null): Promise<AdminUser | null> {
-  // If a valid seller session cookie is provided, authorize immediately
-  if (cookieToken === "demo_seller_session_valid" || cookieToken === "logged_in") {
-    return {
-      id: "owner-1",
-      email: DEFAULT_ADMIN_EMAIL,
-      role: "owner",
-    };
-  }
-
+export async function verifyServerSession(): Promise<AdminUser | null> {
   if (!isSupabaseConfigured()) {
     return null;
   }

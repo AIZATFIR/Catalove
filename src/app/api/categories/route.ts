@@ -16,8 +16,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieToken = req.cookies.get("admin_session")?.value;
-    const isSeller = await verifyServerSession(cookieToken);
+    const isSeller = await verifyServerSession();
     if (!isSeller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -42,8 +41,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const cookieToken = req.cookies.get("admin_session")?.value;
-    const isSeller = await verifyServerSession(cookieToken);
+    const isSeller = await verifyServerSession();
     if (!isSeller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

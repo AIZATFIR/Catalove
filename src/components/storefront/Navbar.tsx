@@ -187,7 +187,6 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
           <button
             type="button"
             onClick={handleToggleCanvas}
-            aria-label="Mode Kanvas"
             className={`md:hidden inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
               isCanvasMode
                 ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"

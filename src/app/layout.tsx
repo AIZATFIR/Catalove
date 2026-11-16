@@ -55,9 +55,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Catalove — Universal Modern Catalog & Storefront Engine",
+  metadataBase: new URL("https://catalove.vercel.app"),
+  title: {
+    default: "Catalove — Katalog Digital untuk Brand",
+    template: "%s | Catalove",
+  },
   description:
-    "Universal catalog and digital storefront engine with award-winning design aesthetics, customizable workflows, and instant WhatsApp ordering for any business.",
+    "Buat katalog digital yang menarik, mudah diatur, dan terhubung langsung ke WhatsApp untuk bisnismu.",
+  alternates: { canonical: "/" },
   keywords: [
     "Catalove",
     "Digital Catalog",
@@ -67,11 +72,13 @@ export const metadata: Metadata = {
     "Online Catalog",
   ],
   openGraph: {
-    title: "Catalove — Universal Modern Catalog & Storefront Engine",
-    description:
-      "Transform any business into an award-winning digital storefront in minutes.",
+    title: "Catalove — Katalog Digital untuk Brand",
+    description: "Buat katalog digital yang menarik dan terhubung langsung ke WhatsApp.",
     type: "website",
+    siteName: "Catalove",
+    images: [{ url: "/og-catalove.svg", width: 1200, height: 630, alt: "Catalove — Katalog Digital untuk Brand" }],
   },
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({

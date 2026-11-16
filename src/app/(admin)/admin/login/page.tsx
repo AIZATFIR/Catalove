@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Store, Lock, ArrowRight, Mail, Zap } from "lucide-react";
+import { Store, Lock, ArrowRight, Mail } from "lucide-react";
 import { authService } from "@/lib/services/auth-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/Button";
@@ -20,12 +20,6 @@ function LoginForm() {
 
   const storeName = settings.store_name || "Catalove Studio";
 
-  const handleInstantDemoLogin = () => {
-    document.cookie = "admin_session=demo_seller_session_valid; path=/; max-age=86400";
-    router.push(nextUrl);
-    router.refresh();
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -35,7 +29,6 @@ function LoginForm() {
     setIsLoading(false);
 
     if (res.success) {
-      document.cookie = "admin_session=demo_seller_session_valid; path=/; max-age=86400";
       router.push(nextUrl);
       router.refresh();
     } else {
@@ -50,9 +43,9 @@ function LoginForm() {
         <div className="w-14 h-14 rounded-full bg-butter-500 border border-butter-600 flex items-center justify-center text-cocoa-900 mx-auto shadow-soft">
           <Store className="w-7 h-7 text-caramel-800" />
         </div>
-        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 dark:text-white">
+        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 dark:text-white">
           {storeName}
-        </h1>
+        </h2>
         <p className="text-xs text-cocoa-600 dark:text-stone-300">
           Masuk untuk mengelola produk, tampilan brand, jadwal, dan pesanan toko Anda.
         </p>
@@ -64,25 +57,16 @@ function LoginForm() {
         </div>
       )}
 
-      {/* 1-Click Instant Studio Access */}
-      <button
-        type="button"
-        onClick={handleInstantDemoLogin}
-        className="w-full flex items-center justify-center gap-2 rounded-2xl border border-[var(--storefront-accent)]/40 bg-[var(--storefront-accent)]/10 px-4 py-3 text-xs font-bold text-[var(--storefront-accent)] hover:bg-[var(--storefront-accent)] hover:text-white transition-all active:scale-[0.99]"
-      >
-        <Zap className="w-4 h-4" />
-        <span>⚡ Masuk Instan ke Studio (Mode Demo / Owner)</span>
-      </button>
-
       {/* Login Form */}
       <form onSubmit={handleLogin} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-cocoa-800 dark:text-stone-200">
+          <label htmlFor="admin-email" className="block text-xs font-bold uppercase tracking-wider text-cocoa-800 dark:text-stone-200">
             Email Pengelola
           </label>
           <div className="relative">
             <Mail className="w-4 h-4 text-cocoa-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
+              id="admin-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -94,12 +78,13 @@ function LoginForm() {
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-cocoa-800 dark:text-stone-200">
+          <label htmlFor="admin-password" className="block text-xs font-bold uppercase tracking-wider text-cocoa-800 dark:text-stone-200">
             Kata Sandi
           </label>
           <div className="relative">
             <Lock className="w-4 h-4 text-cocoa-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
+              id="admin-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -129,10 +114,11 @@ function LoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
+      <h1 className="sr-only">Masuk ke Studio Catalove</h1>
       <React.Suspense fallback={<div className="text-sm text-cocoa-600">Memuat formulir...</div>}>
         <LoginForm />
       </React.Suspense>
-    </div>
+    </main>
   );
 }

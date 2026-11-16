@@ -111,7 +111,6 @@ export default function AdminLayout({
             <button
               onClick={async () => {
                 await authService.logout();
-                document.cookie = "admin_session=; path=/; max-age=0";
                 window.location.href = "/admin/login";
               }}
               className="touch-target inline-flex items-center gap-1 p-2 rounded-full text-cocoa-700 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold dark:text-stone-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
