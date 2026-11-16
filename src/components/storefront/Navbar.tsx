@@ -9,7 +9,7 @@ import { Skiper25 } from "@/components/ui/skiper-ui/skiper25";
 import { Skiper26 } from "@/components/ui/skiper-ui/skiper26";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { saveBusinessSettings } from "@/lib/business-settings";
-import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
+import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
 import { useCart } from "@/context/CartContext";
 
 interface NavbarProps {
@@ -172,7 +172,7 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
 
           <button
             type="button"
-            onClick={() => openOrderSchemeModal()}
+            onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
             className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-bold tracking-wide text-white transition-opacity hover:opacity-90 whitespace-nowrap"
           >
             {settings.nav_cta_text || "Pesan Catalove"}
@@ -285,7 +285,7 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
-                openOrderSchemeModal();
+                openCataloveWhatsApp(settings.seller_whatsapp);
               }}
               className="touch-target flex items-center text-left text-sm font-bold text-[#25D366] py-2.5"
             >

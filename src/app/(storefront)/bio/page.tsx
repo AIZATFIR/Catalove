@@ -23,7 +23,7 @@ import { useCart } from "@/context/CartContext";
 import { cakeService } from "@/lib/services/cake-service";
 import { formatPrice } from "@/lib/utils/formatters";
 import { ProductImage } from "@/components/storefront/ProductImage";
-import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
+import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
 import type { Product } from "@/types/catalove";
 
 export default function BioLinkPage() {
@@ -167,7 +167,7 @@ export default function BioLinkPage() {
         <section aria-label="Tautan Utama" className="space-y-2.5">
           <button
             type="button"
-            onClick={() => openOrderSchemeModal()}
+            onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
             className="flex w-full items-center justify-between gap-3 rounded-2xl bg-[var(--storefront-accent)] px-4 py-3.5 text-left text-white shadow-md hover:opacity-95 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-3">

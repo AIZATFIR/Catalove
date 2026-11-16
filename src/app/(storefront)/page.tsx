@@ -2,15 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowDown,
-  ArrowUp,
-  Check,
-  GripVertical,
-  Plus,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
 import { Navbar } from "@/components/storefront/Navbar";
 import { Hero } from "@/components/storefront/Hero";
 import { CakeScrollShowcase } from "@/components/storefront/CakeScrollShowcase";
@@ -21,6 +12,7 @@ import { RecommendationDrawer } from "@/components/ai/RecommendationDrawer";
 import { DiscoveryFeed } from "@/components/storefront/DiscoveryFeed";
 import {
   CollectionIndexSection,
+  CustomContentSection,
   FaqMinimalSection,
   FeatureComparisonSection,
   FeaturedSplitSection,
@@ -33,7 +25,7 @@ import {
   DEFAULT_CANVAS_ORDER,
   DEFAULT_SHOWCASE_ORDER,
   PricingSection,
-  openOrderSchemeModal,
+  openCataloveWhatsApp,
 } from "@/components/storefront/PricingSection";
 import { StickyCard002 } from "@/components/ui/skiper-ui/skiper17";
 import { Skiper8 } from "@/components/ui/skiper-ui/skiper8";
@@ -55,6 +47,7 @@ import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
 import { saveBusinessSettings } from "@/lib/business-settings";
 import { cakeService } from "@/lib/services/cake-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { normalizeCanvasSections } from "@/lib/canvas-sections";
 
 const SECTION_TITLE_MAP: Record<CanvasSectionId, string> = ALL_CANVAS_SECTIONS.reduce(
   (acc, item) => {
@@ -167,13 +160,6 @@ export default function HomePage() {
   const settings = useBusinessSettings();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
-  const [draggedSection, setDraggedSection] = useState<CanvasSectionId | null>(
-    null
-  );
-  const [dragReadySection, setDragReadySection] =
-    useState<CanvasSectionId | null>(null);
-  const [dragOverSection, setDragOverSection] =
-    useState<CanvasSectionId | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -277,23 +263,18 @@ export default function HomePage() {
     const fallback = isCanvasMode
       ? DEFAULT_CANVAS_ORDER
       : DEFAULT_SHOWCASE_ORDER;
-    const base = saved && saved.length > 0 ? saved : fallback;
-    const hidden = new Set(activeTheme.hidden_sections || []);
-    const list: CanvasSectionId[] = [];
-    for (const id of base) {
-      if (VALID_SECTION_IDS.has(id) && !list.includes(id) && !hidden.has(id)) {
-        list.push(id);
-      }
-    }
-    return list.length > 0 ? list : fallback;
+    return normalizeCanvasSections(
+      saved,
+      VALID_SECTION_IDS,
+      fallback,
+      activeTheme.hidden_sections
+    );
   }, [
     isCanvasMode,
     activeTheme.canvas_draft_order,
     activeTheme.section_order,
     activeTheme.hidden_sections,
   ]);
-
-  const orderField = isCanvasMode ? "canvas_draft_order" : "section_order";
 
   const updateTheme = (patch: Partial<typeof activeTheme>) => {
     saveBusinessSettings({
@@ -321,100 +302,12 @@ export default function HomePage() {
     });
   };
 
-  const addSection = (id: CanvasSectionId, insertAfterIndex?: number) => {
-    const currentHidden = activeTheme.hidden_sections || [];
-    const nextHidden = currentHidden.filter((h) => h !== id);
-
-    if (activeSections.includes(id)) {
-      updateTheme({ hidden_sections: nextHidden });
-      return;
-    }
-
-    const nextOrder = [...activeSections];
-    if (
-      typeof insertAfterIndex === "number" &&
-      insertAfterIndex >= 0 &&
-      insertAfterIndex < nextOrder.length
-    ) {
-      nextOrder.splice(insertAfterIndex + 1, 0, id);
-    } else {
-      nextOrder.push(id);
-    }
-
-    updateTheme({
-      [orderField]: nextOrder,
-      hidden_sections: nextHidden,
-    });
-  };
-
-  const removeSection = (id: CanvasSectionId) => {
-    if (activeSections.length <= 1) return;
-    const nextOrder = activeSections.filter((item) => item !== id);
-    updateTheme({
-      [orderField]: nextOrder.length > 0 ? nextOrder : ["hero"],
-    });
-  };
-
-  const moveSection = (id: CanvasSectionId, direction: -1 | 1) => {
-    const idx = activeSections.indexOf(id);
-    const nextIdx = idx + direction;
-    if (idx === -1 || nextIdx < 0 || nextIdx >= activeSections.length) return;
-    const copy = [...activeSections];
-    const [item] = copy.splice(idx, 1);
-    copy.splice(nextIdx, 0, item);
-    updateTheme({ [orderField]: copy });
-  };
-
-  const reorderSectionToTarget = (
-    fromId: CanvasSectionId,
-    toId: CanvasSectionId
-  ) => {
-    if (fromId === toId) return;
-    const copy = [...activeSections];
-    const fromIdx = copy.indexOf(fromId);
-    const toIdx = copy.indexOf(toId);
-    if (fromIdx === -1 || toIdx === -1) return;
-    const [moved] = copy.splice(fromIdx, 1);
-    copy.splice(toIdx, 0, moved);
-    updateTheme({ [orderField]: copy });
-  };
-
-  const loadFullPresetSections = () => {
-    updateTheme({
-      [orderField]: [...DEFAULT_SHOWCASE_ORDER],
-      hidden_sections: [],
-    });
-  };
-
   const applyCanvasToStorefront = () => {
     updateTheme({
       section_order: [...activeSections],
       hidden_sections: [],
     });
     setIsCanvasMode(false);
-  };
-
-  const resetCanvasToHeroOnly = () => {
-    saveBusinessSettings({
-      ...settings,
-      catalog_layout: "pinterest_masonry",
-      theme_config: {
-        ...activeTheme,
-        font_heading: "playfair",
-        font_body: "jakarta",
-        heading_scale: "lg",
-        body_scale: "md",
-        hero_align: "left",
-        hero_style: "split_dynamic",
-        catalog_layout: "pinterest_masonry",
-        catalog_columns_desktop: 3,
-        card_style: "clean_flat",
-        custom_colors: undefined,
-        canvas_draft_order: ["hero"],
-        hidden_sections: [],
-        section_configs: {},
-      },
-    });
   };
 
   const activeCatalogLayout =
@@ -517,6 +410,8 @@ export default function HomePage() {
         return <FaqMinimalSection isCanvasMode={isCanvasMode} />;
       case "cta":
         return <BrandStory isCanvasMode={isCanvasMode} />;
+      case "custom_content":
+        return <CustomContentSection isCanvasMode={isCanvasMode} />;
     }
   };
 
@@ -533,18 +428,10 @@ export default function HomePage() {
             <div className="flex items-center gap-2 text-xs font-medium text-[var(--storefront-ink)]">
               <span className="inline-block h-2 w-2 rounded-full bg-[var(--storefront-accent)] animate-pulse" />
               <span>
-                <strong>Mode Kanvas</strong> ({activeSections.length} section aktif) — Edit teks langsung di layar, ubah font &amp; ukuran, lalu tambah section di bawah.
+                <strong>Mode Kanvas</strong> ({activeSections.length} section aktif) — Edit isi di preview; atur section di Canvas Studio.
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={resetCanvasToHeroOnly}
-                className="inline-flex items-center gap-1 rounded-full border border-stone-300 dark:border-white/20 bg-white/80 dark:bg-stone-900 px-3 py-1 text-[11px] font-bold hover:border-[var(--storefront-accent)]"
-              >
-                <RotateCcw className="h-3 w-3" />
-                <span>Reset ke Hero Saja</span>
-              </button>
               <button
                 type="button"
                 onClick={applyCanvasToStorefront}
@@ -554,7 +441,7 @@ export default function HomePage() {
               </button>
               <button
                 type="button"
-                onClick={() => openOrderSchemeModal()}
+                onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
                 className="rounded-full bg-[var(--storefront-accent)] px-3.5 py-1 text-[11px] font-bold text-white hover:opacity-95"
               >
                 Pilih Paket &amp; Pesan
@@ -597,86 +484,21 @@ export default function HomePage() {
             );
           }
 
-          const isDragOver = dragOverSection === sectionId;
           const stepNum = String(idx + 1).padStart(2, "0");
 
           return (
             <div
               key={sectionId}
               id={`canvas-section-${sectionId}`}
-              draggable={dragReadySection === sectionId}
-              onDragStart={(e) => {
-                setDraggedSection(sectionId);
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", sectionId);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (draggedSection && draggedSection !== sectionId) {
-                  setDragOverSection(sectionId);
-                }
-              }}
-              onDragLeave={() => {
-                if (dragOverSection === sectionId) setDragOverSection(null);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (draggedSection) {
-                  reorderSectionToTarget(draggedSection, sectionId);
-                }
-                setDraggedSection(null);
-                setDragReadySection(null);
-                setDragOverSection(null);
-              }}
-              onDragEnd={() => {
-                setDraggedSection(null);
-                setDragReadySection(null);
-                setDragOverSection(null);
-              }}
-              className={`border-b border-[var(--storefront-line)] transition-all ${
-                isDragOver ? "ring-2 ring-[var(--storefront-accent)]" : ""
-              }`}
+              className="border-b border-[var(--storefront-line)]"
             >
               {/* Slim Full-Width Canvas Control Header */}
               <div className="bg-[var(--storefront-surface)] border-y border-[var(--storefront-accent)] px-4 sm:px-8 py-2">
                 <div className="mx-auto max-w-[1600px] flex flex-wrap items-center justify-between gap-2">
-                  {/* Position + Section Title */}
                   <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onPointerDown={() => setDragReadySection(sectionId)}
-                      onPointerUp={() => setDragReadySection(null)}
-                      className="cursor-grab active:cursor-grabbing rounded p-1 text-[var(--storefront-accent)] hover:bg-[var(--color-surface-tint)]"
-                      title="Drag untuk pindah posisi"
-                      aria-label={`Drag ${SECTION_TITLE_MAP[sectionId]}`}
-                    >
-                      <GripVertical className="h-4 w-4" />
-                    </button>
-
                     <span className="rounded-full bg-[var(--storefront-accent)] px-2.5 py-0.5 text-[10px] font-bold text-white">
                       {stepNum} · {SECTION_TITLE_MAP[sectionId]}
                     </span>
-
-                    <div className="inline-flex items-center gap-1">
-                      <button
-                        type="button"
-                        disabled={idx === 0}
-                        onClick={() => moveSection(sectionId, -1)}
-                        aria-label={`Naikkan ${SECTION_TITLE_MAP[sectionId]}`}
-                        className="rounded-full border border-stone-300 dark:border-white/20 bg-white dark:bg-stone-800 p-1 disabled:opacity-35 hover:border-[var(--storefront-accent)]"
-                      >
-                        <ArrowUp className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={idx === activeSections.length - 1}
-                        onClick={() => moveSection(sectionId, 1)}
-                        aria-label={`Turunkan ${SECTION_TITLE_MAP[sectionId]}`}
-                        className="rounded-full border border-stone-300 dark:border-white/20 bg-white dark:bg-stone-800 p-1 disabled:opacity-35 hover:border-[var(--storefront-accent)]"
-                      >
-                        <ArrowDown className="h-3 w-3" />
-                      </button>
-                    </div>
                   </div>
 
                   {/* Per-Section Style & Tone Controls */}
@@ -881,16 +703,6 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    {/* Remove Section from Canvas */}
-                    <button
-                      type="button"
-                      disabled={activeSections.length <= 1}
-                      onClick={() => removeSection(sectionId)}
-                      className="inline-flex items-center gap-1 rounded-full border border-stone-300 dark:border-white/20 bg-white dark:bg-stone-800 px-2.5 py-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:border-rose-400 disabled:opacity-35"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      <span>Hapus</span>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -905,91 +717,6 @@ export default function HomePage() {
           );
         })}
 
-        {/* Additive Section Picker Tray (Canvas Mode Only) */}
-        {isCanvasMode && (
-          <section
-            aria-label="Tambah Section Baru"
-            className="border-t border-[var(--storefront-line)] bg-[var(--storefront-surface)] py-12 sm:py-16"
-          >
-            <div className="mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-12 space-y-6">
-              <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="space-y-1">
-                  <h2 className="font-serif text-2xl sm:text-3xl font-medium text-[var(--storefront-ink)]">
-                    Tambah Section ke Halaman
-                  </h2>
-                  <p className="text-sm text-[var(--storefront-ink)] opacity-75">
-                    Mulai dari Hero saja, lalu tambahkan blok sesuai kebutuhan brandmu.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={loadFullPresetSections}
-                    className="rounded-full border border-[var(--storefront-line)] bg-[var(--storefront-background)] px-4 py-2 text-xs font-bold text-[var(--storefront-ink)] hover:border-[var(--storefront-accent)]"
-                  >
-                    Tampilkan Preset Lengkap (8 Blok)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetCanvasToHeroOnly}
-                    className="rounded-full border border-[var(--storefront-line)] bg-[var(--storefront-background)] px-4 py-2 text-xs font-bold text-[var(--storefront-ink)] hover:border-rose-400"
-                  >
-                    Kosongkan ke Hero Saja
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {ALL_CANVAS_SECTIONS.map((item) => {
-                  const isActive = activeSections.includes(item.id);
-                  return (
-                    <div
-                      key={item.id}
-                      className={`flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors ${
-                        isActive
-                          ? "border-[var(--storefront-accent)] bg-[var(--storefront-background)]"
-                          : "border-[var(--storefront-line)] bg-[var(--storefront-background)]"
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p className="font-serif text-base font-medium text-[var(--storefront-ink)]">
-                          {item.title}
-                        </p>
-                        <p className="text-xs text-[var(--storefront-ink)] opacity-70 mt-0.5">
-                          {item.desc}
-                        </p>
-                      </div>
-                      {isActive ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const el = document.getElementById(
-                              `canvas-section-${item.id}`
-                            );
-                            el?.scrollIntoView({ behavior: "smooth" });
-                          }}
-                          className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-tint)] px-3 py-1.5 text-xs font-bold text-[var(--storefront-accent)]"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          <span>Aktif</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => addSection(item.id)}
-                          className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--storefront-accent)] px-3.5 py-1.5 text-xs font-bold text-white hover:opacity-95 transition-opacity"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>Tambah</span>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
       </main>
       <Footer />
 

@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "../src/lib/utils/whatsapp";
+import { buildCataloveInquiryWhatsAppUrl } from "../src/lib/utils/catalove-whatsapp";
 import { OrderRequest } from "../src/types/bakery";
 
 console.log("Running whatsapp-url.test.ts...");
@@ -41,5 +42,18 @@ assert.ok(message.includes("Mohon konfirmasi"), "Message must contain confirmati
 
 const url = buildWhatsAppUrl(mockOrder, "6281234567890");
 assert.ok(url.startsWith("https://wa.me/6281234567890?text="), "URL must format with wa.me and phone");
+
+const genericInquiry = buildCataloveInquiryWhatsAppUrl("+62 859-4668-9168");
+assert.ok(genericInquiry.startsWith("https://wa.me/6285946689168?text="), "Inquiry URL must use the configured phone digits");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("paket"), "Generic inquiry must ask about Catalove packages");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("hosting/domain"), "Generic inquiry must ask for hosting and domain details");
+
+const businessInquiry = buildCataloveInquiryWhatsAppUrl("628111222333", "business");
+assert.ok(decodeURIComponent(businessInquiry.split("?text=")[1]).includes("Business"), "Business inquiry must name the selected package");
+assert.ok(decodeURIComponent(businessInquiry.split("?text=")[1]).includes("Rp299rb"), "Business inquiry must include its starting price");
+
+const enterpriseInquiry = buildCataloveInquiryWhatsAppUrl("628111222333", "enterprise");
+assert.ok(decodeURIComponent(enterpriseInquiry.split("?text=")[1]).includes("Enterprise"), "Enterprise inquiry must name the selected package");
+assert.ok(decodeURIComponent(enterpriseInquiry.split("?text=")[1]).includes("Rp799rb"), "Enterprise inquiry must include its starting price");
 
 console.log("✅ All WhatsApp URL tests passed!");

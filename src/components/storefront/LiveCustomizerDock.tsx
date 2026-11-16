@@ -22,16 +22,23 @@ import {
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { saveBusinessSettings } from "@/lib/business-settings";
 import {
+  addCanvasSection,
+  moveCanvasSection,
+  normalizeCanvasSections,
+  removeCanvasSection,
+} from "@/lib/canvas-sections";
+import {
   DEFAULT_THEME_CONFIG,
   INDUSTRY_PRESETS,
 } from "@/lib/data/universal-presets";
 import { cakeService } from "@/lib/services/cake-service";
+import { normalizeHexColor } from "@/lib/theme-colors";
 import { THEME_COLOR_MAP } from "@/components/theme/ThemeProvider";
 import {
   ALL_CANVAS_SECTIONS,
   DEFAULT_CANVAS_ORDER,
   DEFAULT_SHOWCASE_ORDER,
-  openOrderSchemeModal,
+  openCataloveWhatsApp,
 } from "@/components/storefront/PricingSection";
 import type {
   BodyScaleOption,
@@ -150,6 +157,8 @@ export function LiveCustomizerDock() {
   const [applyingPreset, setApplyingPreset] = useState<IndustryPreset | null>(
     null
   );
+  const [colorDrafts, setColorDrafts] = useState<Record<string, string>>({});
+  const [settingsSyncError, setSettingsSyncError] = useState(false);
 
   useEffect(() => {
     const handleCanvasState = (e: Event) => {
@@ -164,6 +173,17 @@ export function LiveCustomizerDock() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleSyncError = () => setSettingsSyncError(true);
+    const handleSyncSuccess = () => setSettingsSyncError(false);
+    window.addEventListener("catalove-settings-sync-error", handleSyncError);
+    window.addEventListener("catalove-settings-sync-ok", handleSyncSuccess);
+    return () => {
+      window.removeEventListener("catalove-settings-sync-error", handleSyncError);
+      window.removeEventListener("catalove-settings-sync-ok", handleSyncSuccess);
+    };
+  }, []);
+
   const activeTheme = useMemo(
     () => ({
       ...DEFAULT_THEME_CONFIG,
@@ -172,24 +192,17 @@ export function LiveCustomizerDock() {
     [settings.theme_config]
   );
 
-  const orderField = isCanvasMode ? "canvas_draft_order" : "section_order";
+  const orderField = "canvas_draft_order" as const;
 
   const sectionOrder: CanvasSectionId[] = useMemo(() => {
-    const saved = isCanvasMode
-      ? activeTheme.canvas_draft_order
-      : activeTheme.section_order;
-    const fallback = isCanvasMode
-      ? DEFAULT_CANVAS_ORDER
-      : DEFAULT_SHOWCASE_ORDER;
-    const base = saved && saved.length > 0 ? saved : fallback;
-    const hidden = new Set(activeTheme.hidden_sections || []);
-    const out: CanvasSectionId[] = [];
-    for (const id of base) {
-      if (VALID_SECTION_IDS.has(id) && !out.includes(id) && !hidden.has(id)) {
-        out.push(id);
-      }
-    }
-    return out.length > 0 ? out : fallback;
+    const saved = activeTheme.canvas_draft_order;
+    const fallback = DEFAULT_CANVAS_ORDER;
+    return normalizeCanvasSections(
+      saved,
+      VALID_SECTION_IDS,
+      fallback,
+      activeTheme.hidden_sections
+    );
   }, [
     isCanvasMode,
     activeTheme.canvas_draft_order,
@@ -234,13 +247,7 @@ export function LiveCustomizerDock() {
   };
 
   const handleMoveSection = (id: CanvasSectionId, direction: -1 | 1) => {
-    const idx = sectionOrder.indexOf(id);
-    const nextIdx = idx + direction;
-    if (idx === -1 || nextIdx < 0 || nextIdx >= sectionOrder.length) return;
-    const copy = [...sectionOrder];
-    const [item] = copy.splice(idx, 1);
-    copy.splice(nextIdx, 0, item);
-    updateTheme({ [orderField]: copy });
+    updateTheme({ [orderField]: moveCanvasSection(sectionOrder, id, direction) });
   };
 
   const handleAddSection = (id: CanvasSectionId) => {
@@ -250,15 +257,25 @@ export function LiveCustomizerDock() {
       return;
     }
     updateTheme({
-      [orderField]: [...sectionOrder, id],
+      [orderField]: addCanvasSection(sectionOrder, id),
       hidden_sections: nextHidden,
     });
   };
 
   const handleRemoveSection = (id: CanvasSectionId) => {
     if (sectionOrder.length <= 1) return;
-    const nextOrder = sectionOrder.filter((s) => s !== id);
-    updateTheme({ [orderField]: nextOrder.length > 0 ? nextOrder : ["hero"] });
+    updateTheme({ [orderField]: removeCanvasSection(sectionOrder, id) });
+  };
+
+  const handleLoadShowcaseSections = () => {
+    updateTheme({
+      [orderField]: normalizeCanvasSections(
+        DEFAULT_SHOWCASE_ORDER,
+        VALID_SECTION_IDS,
+        DEFAULT_CANVAS_ORDER
+      ),
+      hidden_sections: [],
+    });
   };
 
   const handleApplyPreset = async (presetKey: IndustryPreset) => {
@@ -274,6 +291,7 @@ export function LiveCustomizerDock() {
           ...DEFAULT_THEME_CONFIG,
           ...(bundle.settings.theme_config || {}),
           section_order: activeTheme.section_order,
+            canvas_draft_order: activeTheme.canvas_draft_order,
           hidden_sections: activeTheme.hidden_sections,
         },
       };
@@ -300,6 +318,7 @@ export function LiveCustomizerDock() {
   };
 
   const handleUpdateColorSwatch = (color: ColorThemeOption) => {
+    setColorDrafts({});
     updateTheme({
       color_theme: color,
       custom_colors: undefined,
@@ -310,13 +329,25 @@ export function LiveCustomizerDock() {
     field: "accent" | "bg" | "surface" | "ink",
     hex: string
   ) => {
+    const normalized = normalizeHexColor(hex);
+    if (!normalized) return;
     updateTheme({
       custom_colors: {
         ...currentCustomColors,
         enabled: true,
-        [field]: hex,
+        [field]: normalized,
       },
     });
+    setColorDrafts((current) => ({ ...current, [field]: normalized }));
+  };
+
+  const handleColorDraftChange = (
+    field: "accent" | "bg" | "surface" | "ink",
+    value: string
+  ) => {
+    setColorDrafts((current) => ({ ...current, [field]: value }));
+    const normalized = normalizeHexColor(value);
+    if (normalized) handleUpdateCustomColor(field, normalized);
   };
 
   return (
@@ -379,6 +410,12 @@ export function LiveCustomizerDock() {
             </button>
           </div>
 
+          {settingsSyncError && (
+            <p role="status" className="rounded-xl bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:text-amber-200">
+              Perubahan tersimpan di perangkat ini, tetapi belum tersinkron ke server. Periksa koneksi atau akses admin, lalu ubah lagi untuk mencoba sinkronisasi.
+            </p>
+          )}
+
           {/* 4 Studio Tabs */}
           <div className="grid grid-cols-4 gap-1 rounded-2xl bg-stone-100 dark:bg-white/5 p-1">
             {(
@@ -431,21 +468,30 @@ export function LiveCustomizerDock() {
               {/* Active Sections */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                  <span>Section Aktif ({sectionOrder.length})</span>
-                  {sectionOrder.length > 1 && (
+                  <span>Section Draft ({sectionOrder.length})</span>
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        updateTheme({
-                          [orderField]: ["hero"],
-                          hidden_sections: [],
-                        })
-                      }
-                      className="text-[10px] font-semibold text-rose-500 hover:underline normal-case"
+                      onClick={handleLoadShowcaseSections}
+                      className="text-[10px] font-semibold text-[var(--storefront-accent)] hover:underline normal-case"
                     >
-                      Hero Saja
+                      Preset lengkap
                     </button>
-                  )}
+                    {sectionOrder.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateTheme({
+                            [orderField]: ["hero"],
+                            hidden_sections: [],
+                          })
+                        }
+                        className="text-[10px] font-semibold text-rose-500 hover:underline normal-case"
+                      >
+                        Hero saja
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   {sectionOrder.map((secId, idx) => (
@@ -591,7 +637,10 @@ export function LiveCustomizerDock() {
                   {activeTheme.custom_colors?.enabled && (
                     <button
                       type="button"
-                      onClick={() => updateTheme({ custom_colors: undefined })}
+                      onClick={() => {
+                        setColorDrafts({});
+                        updateTheme({ custom_colors: undefined });
+                      }}
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--storefront-accent)] hover:underline"
                     >
                       <RotateCcw className="h-2.5 w-2.5" />
@@ -630,9 +679,16 @@ export function LiveCustomizerDock() {
                           <p className="text-[10px] font-bold truncate">
                             {item.label}
                           </p>
-                          <p className="font-mono text-[9px] text-stone-500 uppercase">
-                            {hexVal}
-                          </p>
+                          <input
+                            type="text"
+                            value={colorDrafts[item.key] ?? hexVal}
+                            onChange={(e) => handleColorDraftChange(item.key, e.target.value)}
+                            onBlur={() => setColorDrafts((current) => ({ ...current, [item.key]: currentCustomColors[item.key] }))}
+                            aria-label={`${item.label} dalam hex`}
+                            maxLength={7}
+                            spellCheck={false}
+                            className="w-[5.5rem] bg-transparent font-mono text-[10px] uppercase text-stone-500 outline-none focus:text-stone-900 dark:focus:text-white"
+                          />
                         </div>
                       </label>
                     );
@@ -939,7 +995,7 @@ export function LiveCustomizerDock() {
             </Link>
             <button
               type="button"
-              onClick={() => openOrderSchemeModal()}
+              onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
               className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--storefront-accent)] py-2.5 px-3 text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity"
             >
               <span>Pesan Desain Ini</span>

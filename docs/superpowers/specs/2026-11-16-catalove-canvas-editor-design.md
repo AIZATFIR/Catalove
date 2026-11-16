@@ -6,7 +6,7 @@ Make the catalog canvas predictable to edit, easy to add useful content to, and 
 
 ## Current findings
 
-- Both the page canvas and Canvas Studio show controls to add sections; section ordering is also available in both places.
+- HomePage, Canvas Studio, and Admin Settings show controls to add and order sections; the same content structure is managed in three places.
 - Reordering can be attempted with drag, inline arrows, and Canvas Studio arrows, which makes the controls hard to understand.
 - Section order and content editing logic are split between the home page and the dock.
 - Existing section components expose different editable fields; there is no general custom content block for text, image, or button content.
@@ -16,7 +16,7 @@ Make the catalog canvas predictable to edit, easy to add useful content to, and 
 
 ### One section control surface
 
-Canvas Studio becomes the single place to add, remove, and reorder sections. Use a numbered list with clear up/down controls; do not require drag-and-drop. The live page stays as a preview and retains direct editing of the section's content. Section changes update the draft order immediately and publish only when the owner chooses “Terapkan”.
+Canvas Studio becomes the single place to add, remove, and reorder sections. Admin Settings links to Canvas Studio instead of showing a second section manager. Use a numbered list with clear up/down controls; do not require drag-and-drop. The live page stays as a preview and retains direct editing of the section's content. Section changes update the draft order immediately and publish only when the owner chooses “Terapkan”.
 
 ### Custom content blocks
 

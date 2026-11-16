@@ -1,17 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Check, ChevronDown, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpRight, Check, ChevronDown, Image as ImageIcon, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import type { Product } from "@/types/bakery";
-import type { CanvasSectionId, SectionCustomConfig } from "@/types/catalove";
+import type { CanvasSectionId, CustomContentBlock, SectionCustomConfig } from "@/types/catalove";
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { saveBusinessSettings } from "@/lib/business-settings";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils/formatters";
-import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
+import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
+import {
+  appendCustomContentBlock,
+  isSafeCustomContentUrl,
+  moveCustomContentBlock,
+  publishedCustomContentBlocks,
+  removeCustomContentBlock,
+  replaceCustomContentBlock,
+} from "@/lib/custom-content";
 
 function useSectionConfig(sectionId: CanvasSectionId) {
   const settings = useBusinessSettings();
@@ -36,6 +45,123 @@ function useSectionConfig(sectionId: CanvasSectionId) {
   };
 
   return { settings, config, updateConfig };
+}
+
+export function CustomContentSection({
+  isCanvasMode = false,
+}: {
+  isCanvasMode?: boolean;
+}) {
+  const { config, updateConfig } = useSectionConfig("custom_content");
+  const blocks = config.content_blocks || [];
+  const visibleBlocks = isCanvasMode ? blocks : publishedCustomContentBlocks(blocks);
+
+  const updateBlock = (block: CustomContentBlock) => {
+    updateConfig({ content_blocks: replaceCustomContentBlock(blocks, block) });
+  };
+
+  const addBlock = (type: CustomContentBlock["type"]) => {
+    const id = crypto.randomUUID();
+    const next: CustomContentBlock =
+      type === "text"
+        ? { id, type, title: "Judul baru", text: "Tulis sesuatu tentang brandmu." }
+        : type === "image"
+        ? { id, type, image_url: "", alt: "" }
+        : { id, type, label: "Lihat selengkapnya", url: "/catalog" };
+    updateConfig({ content_blocks: appendCustomContentBlock(blocks, next) });
+  };
+
+  const updateOrder = (id: string, direction: -1 | 1) => {
+    updateConfig({ content_blocks: moveCustomContentBlock(blocks, id, direction) });
+  };
+
+  const removeBlock = (id: string) => {
+    updateConfig({ content_blocks: removeCustomContentBlock(blocks, id) });
+  };
+
+  if (!isCanvasMode && visibleBlocks.length === 0) return null;
+
+  return (
+    <section aria-label="Konten Kustom" className="mx-auto max-w-5xl px-4 sm:px-8 lg:px-12">
+      <div className="space-y-5">
+        {visibleBlocks.map((block, index) => (
+          <article key={block.id} className="relative overflow-hidden rounded-2xl border border-[var(--storefront-line)] bg-[var(--storefront-surface)] p-5 sm:p-8">
+            {isCanvasMode && (
+              <div className="mb-4 flex items-center justify-between gap-3 border-b border-[var(--storefront-line)] pb-3">
+                <span className="text-xs font-semibold text-[var(--storefront-accent)]">
+                  {block.type === "text" ? "Blok teks" : block.type === "image" ? "Blok foto" : "Tombol / tautan"} · {index + 1}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button type="button" disabled={index === 0} onClick={() => updateOrder(block.id, -1)} aria-label="Pindahkan blok ke atas" className="rounded-lg border border-[var(--storefront-line)] p-1.5 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+                  <button type="button" disabled={index === visibleBlocks.length - 1} onClick={() => updateOrder(block.id, 1)} aria-label="Pindahkan blok ke bawah" className="rounded-lg border border-[var(--storefront-line)] p-1.5 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => removeBlock(block.id)} aria-label="Hapus blok" className="rounded-lg border border-rose-300 p-1.5 text-rose-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              </div>
+            )}
+
+            {block.type === "text" && (
+              <div className="space-y-3">
+                {isCanvasMode ? (
+                  <input value={block.title} onChange={(e) => updateBlock({ ...block, title: e.target.value })} aria-label="Judul blok teks" className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 px-3 py-2 font-serif text-2xl sm:text-3xl text-[var(--storefront-ink)] focus:outline-none" />
+                ) : (
+                  block.title && <h2 className="font-serif text-2xl sm:text-4xl font-medium text-[var(--storefront-ink)]">{block.title}</h2>
+                )}
+                {isCanvasMode ? (
+                  <textarea value={block.text} onChange={(e) => updateBlock({ ...block, text: e.target.value })} aria-label="Isi blok teks" rows={4} className="w-full resize-y rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 px-3 py-2 text-sm sm:text-base leading-relaxed text-[var(--storefront-ink)] focus:outline-none" />
+                ) : (
+                  <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-[var(--storefront-ink)] opacity-80">{block.text}</p>
+                )}
+              </div>
+            )}
+
+            {block.type === "image" && (
+              <div className="space-y-3">
+                {block.image_url && isSafeCustomContentUrl(block.image_url) ? (
+                  <div className="relative aspect-[16/8] overflow-hidden rounded-xl bg-[var(--storefront-background)]">
+                    <Image src={block.image_url} alt={block.alt || ""} fill unoptimized sizes="(max-width: 768px) 100vw, 900px" className="object-cover" />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[16/8] items-center justify-center rounded-xl bg-[var(--storefront-background)] text-[var(--storefront-ink)] opacity-60"><ImageIcon className="h-8 w-8" /></div>
+                )}
+                {isCanvasMode && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input type="url" value={block.image_url} onChange={(e) => updateBlock({ ...block, image_url: e.target.value })} aria-label="URL foto" placeholder="https://... URL foto" className="rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 px-3 py-2 text-sm focus:outline-none" />
+                    <input value={block.alt} onChange={(e) => updateBlock({ ...block, alt: e.target.value })} aria-label="Deskripsi foto" placeholder="Deskripsi foto" className="rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 px-3 py-2 text-sm focus:outline-none" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {block.type === "button" && (
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                {isCanvasMode ? (
+                  <>
+                    <input value={block.label} onChange={(e) => updateBlock({ ...block, label: e.target.value })} aria-label="Label tombol" className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 px-3 py-2 text-sm focus:outline-none sm:w-auto" />
+                    <input type="url" value={block.url} onChange={(e) => updateBlock({ ...block, url: e.target.value })} aria-label="Tautan tombol" placeholder="/catalog atau https://..." className="w-full rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/60 px-3 py-2 text-sm focus:outline-none sm:flex-1" />
+                  </>
+                ) : (
+                  isSafeCustomContentUrl(block.url) && (
+                    <a href={block.url} target={/^https?:\/\//i.test(block.url) ? "_blank" : undefined} rel={/^https?:\/\//i.test(block.url) ? "noopener noreferrer" : undefined} className="inline-flex items-center gap-2 rounded-full bg-[var(--storefront-accent)] px-6 py-3 text-sm font-semibold text-white hover:opacity-90">
+                      {block.label}<ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  )
+                )}
+              </div>
+            )}
+          </article>
+        ))}
+
+        {isCanvasMode && (
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-[var(--storefront-accent)] p-4">
+            <span className="mr-1 text-xs font-semibold text-[var(--storefront-ink)]">Tambah elemen:</span>
+            <button type="button" onClick={() => addBlock("text")} className="rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-bold text-white">+ Teks</button>
+            <button type="button" onClick={() => addBlock("image")} className="rounded-full border border-[var(--storefront-line)] px-4 py-2 text-xs font-bold text-[var(--storefront-ink)]">+ Foto</button>
+            <button type="button" onClick={() => addBlock("button")} className="rounded-full border border-[var(--storefront-line)] px-4 py-2 text-xs font-bold text-[var(--storefront-ink)]">+ Tombol / Link</button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }
 
 /* ============================================================================
@@ -290,7 +416,7 @@ export function StatementBannerSection({
 }: {
   isCanvasMode?: boolean;
 }) {
-  const { config, updateConfig } = useSectionConfig("statement_banner");
+  const { settings, config, updateConfig } = useSectionConfig("statement_banner");
   const titleText =
     config.title ??
     "Satu engine katalog, bebas ubah gaya sesuai karakter brandmu.";
@@ -347,7 +473,7 @@ export function StatementBannerSection({
           ) : (
             <button
               type="button"
-              onClick={() => openOrderSchemeModal()}
+              onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
               className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-8 py-3.5 text-sm font-bold text-white hover:opacity-90 transition-opacity"
             >
               {ctaText}

@@ -6,7 +6,7 @@ import { Image as ImageIcon } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { saveBusinessSettings } from "@/lib/business-settings";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
-import { openOrderSchemeModal } from "@/components/storefront/PricingSection";
+import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
 
 interface BrandStoryProps {
   isCanvasMode?: boolean;
@@ -140,7 +140,7 @@ export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
             ) : (
               <button
                 type="button"
-                onClick={() => openOrderSchemeModal()}
+                onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
                 className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-bold text-white hover:opacity-90 transition-opacity"
               >
                 {buttonText || "Pesan Catalove"}

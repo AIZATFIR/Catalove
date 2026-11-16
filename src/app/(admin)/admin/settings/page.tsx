@@ -17,10 +17,6 @@ import {
   Download,
   Upload,
   RotateCcw,
-  ArrowUp,
-  ArrowDown,
-  Plus,
-  Trash2,
   Sliders,
   ExternalLink,
 } from "lucide-react";
@@ -34,12 +30,9 @@ import {
   readBusinessSettings,
   saveBusinessSettings,
   fetchBusinessSettings,
+  flushBusinessSettings,
 } from "@/lib/business-settings";
 import { THEME_COLOR_MAP } from "@/components/theme/ThemeProvider";
-import {
-  ALL_CANVAS_SECTIONS,
-  DEFAULT_SECTION_ORDER,
-} from "@/components/storefront/PricingSection";
 import type {
   BodyScaleOption,
   BusinessSettings,
@@ -52,19 +45,8 @@ import type {
   CardStyleOption,
   HeroStyleOption,
   CatalogLayoutOption,
-  CanvasSectionId,
   CustomColorPalette,
 } from "@/types/catalove";
-
-const VALID_SECTION_IDS = new Set<CanvasSectionId>(
-  ALL_CANVAS_SECTIONS.map((s) => s.id)
-);
-
-const SECTION_LABELS: Record<CanvasSectionId, { title: string; desc: string }> =
-  ALL_CANVAS_SECTIONS.reduce((acc, item) => {
-    acc[item.id] = { title: item.title, desc: item.desc };
-    return acc;
-  }, {} as Record<CanvasSectionId, { title: string; desc: string }>);
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<BusinessSettings>(INITIAL_SETTINGS);
@@ -88,15 +70,7 @@ export default function AdminSettingsPage() {
 
   const persistSettingsImmediately = async (nextSettings: BusinessSettings) => {
     saveBusinessSettings(nextSettings);
-    try {
-      await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nextSettings),
-      });
-    } catch {
-      // localStorage persistence remains intact
-    }
+    await flushBusinessSettings();
   };
 
   const update = (key: keyof BusinessSettings, value: any) => {
@@ -1042,217 +1016,25 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Manajemen Section Kanvas (Model Aditif: Mulai dari Hero) */}
-            {(() => {
-              const saved = currentTheme.section_order;
-              const hidden = new Set(currentTheme.hidden_sections || []);
-              const base =
-                saved && saved.length > 0 ? saved : DEFAULT_SECTION_ORDER;
-              const activeOrder: CanvasSectionId[] = [];
-              for (const id of base) {
-                if (
-                  VALID_SECTION_IDS.has(id) &&
-                  !activeOrder.includes(id) &&
-                  !hidden.has(id)
-                ) {
-                  activeOrder.push(id);
-                }
-              }
-              if (activeOrder.length === 0) {
-                activeOrder.push("hero");
-              }
-
-              const availableToAdd = ALL_CANVAS_SECTIONS.filter(
-                (s) => !activeOrder.includes(s.id)
-              );
-
-              const moveSection = (idx: number, delta: -1 | 1) => {
-                const target = idx + delta;
-                if (target < 0 || target >= activeOrder.length) return;
-                const next = [...activeOrder];
-                [next[idx], next[target]] = [next[target], next[idx]];
-                updateTheme("section_order", next);
-              };
-
-              const addSection = (id: CanvasSectionId) => {
-                setSaved(false);
-                setStatusMessage("");
-                setSettings((current) => {
-                  const tc = current.theme_config || DEFAULT_THEME_CONFIG;
-                  const nextHidden = (tc.hidden_sections || []).filter(
-                    (h) => h !== id
-                  );
-                  const nextOrder = activeOrder.includes(id)
-                    ? activeOrder
-                    : [...activeOrder, id];
-                  return {
-                    ...current,
-                    theme_config: {
-                      ...tc,
-                      section_order: nextOrder,
-                      hidden_sections: nextHidden,
-                    },
-                  };
-                });
-              };
-
-              const removeSection = (id: CanvasSectionId) => {
-                if (activeOrder.length <= 1) return;
-                const nextOrder = activeOrder.filter((s) => s !== id);
-                updateTheme(
-                  "section_order",
-                  nextOrder.length > 0 ? nextOrder : ["hero"]
-                );
-              };
-
-              const loadFullPreset = () => {
-                setSaved(false);
-                setStatusMessage("");
-                setSettings((current) => ({
-                  ...current,
-                  theme_config: {
-                    ...(current.theme_config || DEFAULT_THEME_CONFIG),
-                    section_order: [
-                      "hero",
-                      "feed",
-                      "featured_split",
-                      "collection_index",
-                      "statement_banner",
-                      "faq_minimal",
-                      "pricing",
-                      "cta",
-                    ],
-                    hidden_sections: [],
-                  },
-                }));
-              };
-
-              const resetHeroOnly = () => {
-                setSaved(false);
-                setStatusMessage("");
-                setSettings((current) => ({
-                  ...current,
-                  theme_config: {
-                    ...(current.theme_config || DEFAULT_THEME_CONFIG),
-                    section_order: ["hero"],
-                    hidden_sections: [],
-                  },
-                }));
-              };
-
-              return (
-                <div className="rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-bold text-[#4D3040] dark:text-white">
-                        Susunan Section Halaman ({activeOrder.length} Aktif)
-                      </h3>
-                      <p className="text-xs text-stone-500 mt-0.5">
-                        Mulai eksklusif dari Hero saja, lalu tambahkan section lain sesuai kebutuhan.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={loadFullPreset}
-                        className="rounded-lg border border-stone-200 dark:border-white/15 px-3 py-1 text-[11px] font-semibold text-stone-700 dark:text-stone-200 hover:border-[var(--storefront-accent)]"
-                      >
-                        Muat Preset 8 Section
-                      </button>
-                      <button
-                        type="button"
-                        onClick={resetHeroOnly}
-                        className="rounded-lg border border-stone-200 dark:border-white/15 px-3 py-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                      >
-                        Reset ke Hero Saja
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Active Sections List */}
-                  <div className="space-y-2">
-                    {activeOrder.map((secId, idx) => {
-                      const info = SECTION_LABELS[secId];
-                      return (
-                        <div
-                          key={secId}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-[#DBD0C5]/70 bg-white dark:border-white/10 dark:bg-stone-950 px-3 py-2.5"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-stone-800 dark:text-stone-100">
-                              {idx + 1}. {info.title}
-                            </p>
-                            <p className="text-[11px] text-stone-500 truncate">
-                              {info.desc}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              disabled={idx === 0}
-                              onClick={() => moveSection(idx, -1)}
-                              aria-label={`Naikkan ${info.title}`}
-                              className="rounded-md border border-stone-200 dark:border-white/15 p-1.5 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10 disabled:opacity-30"
-                            >
-                              <ArrowUp className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={idx === activeOrder.length - 1}
-                              onClick={() => moveSection(idx, 1)}
-                              aria-label={`Turunkan ${info.title}`}
-                              className="rounded-md border border-stone-200 dark:border-white/15 p-1.5 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10 disabled:opacity-30"
-                            >
-                              <ArrowDown className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={activeOrder.length <= 1}
-                              onClick={() => removeSection(secId)}
-                              aria-label={`Hapus ${info.title}`}
-                              className="ml-1 inline-flex items-center gap-1 rounded-md border border-stone-200 dark:border-white/15 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-30"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              <span>Hapus</span>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Available Sections to Add */}
-                  {availableToAdd.length > 0 && (
-                    <div className="pt-2 border-t border-stone-200/70 dark:border-white/10 space-y-2">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
-                        + Tambah Section Baru
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {availableToAdd.map((sec) => (
-                          <button
-                            key={sec.id}
-                            type="button"
-                            onClick={() => addSection(sec.id)}
-                            className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-[var(--storefront-accent)] bg-white/80 dark:bg-stone-950 px-3 py-2 text-left hover:bg-[var(--color-surface-tint)] transition-colors"
-                          >
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-stone-800 dark:text-stone-100 truncate">
-                                {sec.title}
-                              </p>
-                              <p className="text-[10px] text-stone-500 truncate">
-                                {sec.desc}
-                              </p>
-                            </div>
-                            <Plus className="h-4 w-4 shrink-0 text-[var(--storefront-accent)]" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            {/* Canvas section ordering is managed in one place to keep the live draft in sync. */}
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50">
+              <div>
+                <h3 className="text-sm font-bold text-[#4D3040] dark:text-white">
+                  Susunan dan konten katalog
+                </h3>
+                <p className="mt-0.5 text-xs text-stone-500">
+                  Atur section dan lihat hasilnya langsung dari Canvas Studio.
+                </p>
+              </div>
+              <Link
+                href="/?canvas=1"
+                className="inline-flex items-center gap-2 rounded-lg bg-[var(--storefront-accent)] px-4 py-2.5 text-xs font-bold text-white hover:opacity-90"
+              >
+                <Layers className="h-4 w-4" />
+                Buka Canvas Studio
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </div>
 
             {/* Preloader Toggle */}
             <div className="rounded-xl border border-[#DBD0C5]/60 bg-white/50 p-4 dark:border-white/10 dark:bg-stone-900/50 flex items-center justify-between gap-4">

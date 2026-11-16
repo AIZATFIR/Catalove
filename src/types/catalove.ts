@@ -68,12 +68,18 @@ export type CanvasSectionId =
   | "sponsor_slot"
   | "faq_minimal"
   | "pricing"
-  | "cta";
+  | "cta"
+  | "custom_content";
 
 export type HeadingScaleOption = "sm" | "md" | "lg" | "xl";
 export type BodyScaleOption = "sm" | "md" | "lg";
 export type SectionToneOption = "default" | "surface" | "accent" | "ink";
 export type SectionSpacingOption = "compact" | "normal" | "spacious";
+
+export type CustomContentBlock =
+  | { id: string; type: "text"; title: string; text: string }
+  | { id: string; type: "image"; image_url: string; alt: string }
+  | { id: string; type: "button"; label: string; url: string };
 
 export interface SectionCustomConfig {
   title?: string;
@@ -88,6 +94,7 @@ export interface SectionCustomConfig {
   faq_items?: { q: string; a: string }[];
   steps_items?: { title: string; desc: string }[];
   comparison_items?: { label: string; detail: string }[];
+  content_blocks?: CustomContentBlock[];
 }
 
 export interface CustomColorPalette {
