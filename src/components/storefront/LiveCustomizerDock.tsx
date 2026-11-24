@@ -262,6 +262,11 @@ export function LiveCustomizerDock() {
         ...updatedTheme,
       },
     });
+    // The storefront owns Canvas mode state. Notify it so the new draft is
+    // rendered immediately, including when the dock was opened while OFF.
+    window.dispatchEvent(
+      new CustomEvent("catalove-toggle-canvas", { detail: { open: true } })
+    );
   };
 
   const handleRemoveSection = (id: CanvasSectionId) => {
