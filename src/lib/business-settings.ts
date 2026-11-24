@@ -3,6 +3,18 @@ import type { BusinessSettings } from "@/types/bakery";
 import { createDebouncedWriter } from "@/lib/debounced-writer";
 
 const STORAGE_KEY = "catalove-business-settings-v3";
+let inMemorySettings: BusinessSettings | null = null;
+let localEditRevision = 0;
+let memoryOnlySettings = false;
+let hasUnsyncedLocalSettings = false;
+
+function readStoredSettings(): { available: boolean; value: string | null } {
+  try {
+    return { available: true, value: window.localStorage.getItem(STORAGE_KEY) };
+  } catch {
+    return { available: false, value: null };
+  }
+}
 
 const settingsWriter = createDebouncedWriter<BusinessSettings>(
   async (settings) => {
@@ -14,6 +26,9 @@ const settingsWriter = createDebouncedWriter<BusinessSettings>(
     });
     if (!response.ok) throw new Error(`Settings sync failed (${response.status})`);
     if (typeof window !== "undefined") {
+      if (JSON.stringify(settings) === JSON.stringify(inMemorySettings)) {
+        hasUnsyncedLocalSettings = false;
+      }
       window.dispatchEvent(new Event("catalove-settings-sync-ok"));
     }
   },
@@ -31,9 +46,18 @@ if (typeof window !== "undefined") {
 
 export function readBusinessSettings(): BusinessSettings {
   if (typeof window === "undefined") return INITIAL_SETTINGS;
+  const stored = readStoredSettings();
+  if (!stored.available || memoryOnlySettings || hasUnsyncedLocalSettings) {
+    return inMemorySettings ? { ...INITIAL_SETTINGS, ...inMemorySettings } : INITIAL_SETTINGS;
+  }
+  if (!stored.value) {
+    inMemorySettings = null;
+    return INITIAL_SETTINGS;
+  }
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved ? { ...INITIAL_SETTINGS, ...JSON.parse(saved) } : INITIAL_SETTINGS;
+    const parsed = { ...INITIAL_SETTINGS, ...JSON.parse(stored.value) };
+    inMemorySettings = parsed;
+    return parsed;
   } catch {
     return INITIAL_SETTINGS;
   }
@@ -41,12 +65,16 @@ export function readBusinessSettings(): BusinessSettings {
 
 export function saveBusinessSettings(settings: BusinessSettings) {
   if (typeof window !== "undefined") {
+    inMemorySettings = { ...INITIAL_SETTINGS, ...settings };
+    hasUnsyncedLocalSettings = true;
+    localEditRevision += 1;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-      window.dispatchEvent(new Event("catalove-settings-change"));
+      memoryOnlySettings = false;
     } catch {
-      // ignore localStorage errors
+      memoryOnlySettings = true;
     }
+    window.dispatchEvent(new Event("catalove-settings-change"));
 
     // Local changes stay immediate; remote snapshots are debounced and serialized.
     settingsWriter.schedule(settings);
@@ -59,19 +87,34 @@ export async function flushBusinessSettings(): Promise<void> {
 
 export async function fetchBusinessSettings(): Promise<BusinessSettings> {
   if (typeof window === "undefined") return INITIAL_SETTINGS;
-  const localSnapshot = window.localStorage.getItem(STORAGE_KEY);
+  const startRevision = localEditRevision;
+  const localSnapshot = readStoredSettings();
   try {
     const res = await fetch("/api/settings");
     if (res.ok) {
       const data = await res.json();
       if (data?.settings) {
         // Preserve edits made while this initial request was in flight.
-        if (window.localStorage.getItem(STORAGE_KEY) !== localSnapshot) {
+        const latestSnapshot = readStoredSettings();
+        if (
+          localEditRevision !== startRevision ||
+          hasUnsyncedLocalSettings ||
+          latestSnapshot.available !== localSnapshot.available ||
+          latestSnapshot.value !== localSnapshot.value
+        ) {
           return readBusinessSettings();
         }
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data.settings));
+        const settings = { ...INITIAL_SETTINGS, ...data.settings };
+        inMemorySettings = settings;
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data.settings));
+          memoryOnlySettings = false;
+        } catch {
+          // Keep the fetched settings available for this browser session.
+          memoryOnlySettings = true;
+        }
         window.dispatchEvent(new Event("catalove-settings-change"));
-        return data.settings as BusinessSettings;
+        return settings;
       }
     }
   } catch {

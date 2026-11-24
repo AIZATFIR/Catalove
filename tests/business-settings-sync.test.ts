@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { createDebouncedWriter } from "../src/lib/debounced-writer";
 import {
+  flushBusinessSettings,
   fetchBusinessSettings,
+  readBusinessSettings,
   saveBusinessSettings,
 } from "../src/lib/business-settings";
 import { INITIAL_SETTINGS } from "../src/lib/data/seed-cakes";
@@ -69,6 +71,36 @@ async function main() {
   const result = await loading;
   assert.equal(result.hero_title, "Edit lokal terbaru", "late server fetch cannot overwrite a local edit");
   await pause(420);
+  releaseSettings({ ok: true, json: async () => ({ settings: localEdit }) });
+  await flushBusinessSettings();
+
+  (globalThis as any).window = {
+    dispatchEvent: () => true,
+    addEventListener: () => undefined,
+  };
+  (globalThis as any).fetch = async () => ({
+    ok: true,
+    json: async () => ({ settings: { ...INITIAL_SETTINGS, hero_title: "Data server lama" } }),
+  });
+  const withoutStorage = await fetchBusinessSettings();
+  assert.equal(
+    withoutStorage.hero_title,
+    "Data server lama",
+    "settings can load when browser storage is unavailable"
+  );
+  const sessionEdit = { ...INITIAL_SETTINGS, hero_title: "Edit dalam sesi" };
+  saveBusinessSettings(sessionEdit);
+  assert.equal(
+    readBusinessSettings().hero_title,
+    "Edit dalam sesi",
+    "session fallback keeps the latest edit when browser storage is unavailable"
+  );
+  await fetchBusinessSettings();
+  assert.equal(
+    readBusinessSettings().hero_title,
+    "Edit dalam sesi",
+    "a later stale server snapshot cannot overwrite an unsynced session edit"
+  );
 
   console.log("✅ All business settings sync tests passed!");
 }
