@@ -168,6 +168,10 @@ export function LiveCustomizerDock() {
       }
     };
     window.addEventListener("catalove-canvas-state", handleCanvasState);
+    const params = new URLSearchParams(window.location.search);
+    setIsCanvasMode(
+      window.location.hash === "#canvas" || params.get("canvas") === "1"
+    );
     return () => {
       window.removeEventListener("catalove-canvas-state", handleCanvasState);
     };
@@ -225,7 +229,7 @@ export function LiveCustomizerDock() {
 
   const handleToggleCanvas = () => {
     if (pathname !== "/") {
-      router.push("/?canvas=1");
+      router.push("/#canvas");
       return;
     }
     window.dispatchEvent(new CustomEvent("catalove-toggle-canvas"));

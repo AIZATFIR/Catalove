@@ -166,7 +166,7 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("canvas") === "1") {
+      if (params.get("canvas") === "1" || window.location.hash === "#canvas") {
         setIsCanvasMode(true);
       }
     }

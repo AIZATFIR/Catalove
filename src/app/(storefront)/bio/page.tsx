@@ -183,7 +183,7 @@ export default function BioLinkPage() {
           </button>
 
           <Link
-            href="/?canvas=1"
+            href="/#canvas"
             className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--storefront-line)] bg-[var(--storefront-surface)] px-4 py-3.5 shadow-sm hover:border-[var(--storefront-accent)] active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-3">

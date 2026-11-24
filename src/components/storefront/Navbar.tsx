@@ -48,7 +48,7 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
 
   const handleToggleCanvas = () => {
     if (pathname !== "/") {
-      router.push("/?canvas=1");
+      router.push("/#canvas");
       return;
     }
     window.dispatchEvent(new CustomEvent("catalove-toggle-canvas"));

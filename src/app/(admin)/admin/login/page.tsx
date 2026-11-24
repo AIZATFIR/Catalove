@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Store, Lock, ArrowRight, Mail } from "lucide-react";
 import { authService } from "@/lib/services/auth-service";
@@ -119,6 +120,9 @@ export default function AdminLoginPage() {
       <React.Suspense fallback={<div className="text-sm text-cocoa-600">Memuat formulir...</div>}>
         <LoginForm />
       </React.Suspense>
+      <Link href="/" className="text-xs font-semibold text-caramel-800 underline underline-offset-4 dark:text-amber-200">
+        Kembali ke halaman utama Catalove
+      </Link>
     </main>
   );
 }

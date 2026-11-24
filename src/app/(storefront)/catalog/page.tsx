@@ -114,6 +114,9 @@ export default function CatalogPage() {
           <h1 className="font-serif text-3xl font-medium tracking-tight text-[#4D3040] dark:text-[#FAF4EE] sm:text-5xl">
             {catalogTitle}
           </h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[#67575B] dark:text-[#D8CBC0]">
+            Jelajahi contoh produk dari berbagai koleksi, cari berdasarkan nama atau kategori, lalu gunakan filter untuk melihat produk siap dipesan atau pra-pesan. Buka kartu untuk membaca detail dan memilih varian; masukkan beberapa pilihan ke Tas sebelum meneruskan ringkasan pesanan ke WhatsApp brand.
+          </p>
         </div>
 
         {/* Filters */}

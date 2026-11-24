@@ -1,0 +1,16 @@
+# Catalove
+
+> Katalog digital yang bisa disesuaikan untuk brand dan usaha kecil di Indonesia.
+
+Catalove membantu pemilik usaha menampilkan produk dalam katalog yang mudah dijelajahi, menyesuaikan warna dan susunan konten lewat Canvas Studio, serta menerima pertanyaan dan pesanan melalui WhatsApp.
+
+## Halaman utama
+
+- [Beranda](https://catalove.vercel.app/): gambaran produk, fitur, dan pilihan paket.
+- [Katalog demo](https://catalove.vercel.app/catalog): contoh pencarian, filter, kartu produk, dan alur tas.
+- [Bio link](https://catalove.vercel.app/bio): halaman profil brand, tautan WhatsApp, dan akses katalog.
+- [Tentang Catalove](https://catalove.vercel.app/about): tujuan dan cara kerja layanan.
+- [Kontak](https://catalove.vercel.app/contact): pertanyaan paket, bantuan, dan konsultasi lewat WhatsApp.
+- [Kebijakan Privasi](https://catalove.vercel.app/privacy): data yang diproses dan penyedia layanan.
+
+Paket gratis tersedia untuk mencoba katalog. Paket Business dan Enterprise memiliki harga mulai yang dapat dibahas melalui WhatsApp. Jangan menganggap contoh produk di katalog demo sebagai daftar produk dari brand tertentu.

@@ -299,7 +299,7 @@ export default function AdminSettingsPage() {
           </button>
 
           <Link
-            href="/?canvas=1"
+            href="/#canvas"
             className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--storefront-accent)] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity"
           >
             <Sliders className="h-3.5 w-3.5" />
@@ -1027,7 +1027,7 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Link
-                href="/?canvas=1"
+                href="/#canvas"
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--storefront-accent)] px-4 py-2.5 text-xs font-bold text-white hover:opacity-90"
               >
                 <Layers className="h-4 w-4" />
