@@ -112,6 +112,7 @@
     min-height: 100vh;
     background: var(--storefront-background);
     color: var(--storefront-ink);
+    overflow-x: clip;
   }
 
   .admin-editorial {
