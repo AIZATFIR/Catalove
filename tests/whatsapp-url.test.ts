@@ -7,7 +7,7 @@ console.log("Running whatsapp-url.test.ts...");
 
 const mockOrder: OrderRequest = {
   id: "ord-test-1",
-  reference_code: "#CA-2610-8491",
+  reference_code: "#CA-2610-0123456789abcdef0123456789abcdef",
   customer_name: "Sarah Wijaya",
   customer_whatsapp: "081234567890",
   requested_date: "2026-10-31",
@@ -33,7 +33,7 @@ const mockOrder: OrderRequest = {
 };
 
 const message = buildWhatsAppMessage(mockOrder);
-assert.ok(message.includes("ID Permintaan: #CA-2610-8491"), "Message must contain ID Permintaan");
+assert.ok(message.includes(`ID Permintaan: ${mockOrder.reference_code}`), "Message must contain ID Permintaan");
 assert.ok(message.includes("Nama: Sarah Wijaya"), "Message must contain customer name");
 assert.ok(message.includes("Produk: Sample 01 — Apparel"), "Message must contain product name");
 assert.ok(message.includes("Varian: M"), "Message must contain variant");

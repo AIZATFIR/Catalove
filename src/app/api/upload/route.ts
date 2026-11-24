@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         const admin = await getAdminSupabase();
         if (admin) {
           const { error: uploadError } = await admin.storage
-            .from("cake-images")
+            .from("catalove-product-images")
             .upload(storagePath, buffer, {
               contentType: file.type,
               upsert: false,
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
           if (!uploadError) {
             const { data: publicUrlData } = admin.storage
-              .from("cake-images")
+              .from("catalove-product-images")
               .getPublicUrl(storagePath);
 
             return NextResponse.json({

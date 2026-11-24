@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx tests/validators.test.ts && tsx tests/services.test.ts && tsx tests/auth-security.test.ts && tsx tests/supabase-env-isolation.test.ts && tsx tests/whatsapp-url.test.ts && tsx tests/canvas-sections.test.ts && tsx tests/custom-content.test.ts && tsx tests/theme-colors.test.ts && tsx tests/business-settings-sync.test.ts && tsx tests/recommendation.test.ts && tsx tests/e2e-order-flow.test.ts && tsx tests/production-readiness.test.ts"
+    "test": "NODE_OPTIONS=--conditions=react-server tsx tests/validators.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/services.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/auth-security.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/supabase-env-isolation.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/database-safety.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/catalog-mode.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/whatsapp-url.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/canvas-sections.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/custom-content.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/theme-colors.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/business-settings-sync.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/recommendation.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/e2e-order-flow.test.ts && NODE_OPTIONS=--conditions=react-server tsx tests/production-readiness.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -24,15 +24,16 @@
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "@eslint/js": "^9.39.5",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
-    "@eslint/eslintrc": "^3.3.7",
-    "@eslint/js": "^9.39.5",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.29",

@@ -2,6 +2,7 @@ import { AvailabilityStatus, ProductAvailability } from "@/types/bakery";
 import { cakeService } from "./cake-service";
 import { addDays, getTodayJakarta, isDateBefore } from "@/lib/utils/formatters";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getBrowserSupabase } from "@/lib/supabase/client";
 import { createClient } from "@supabase/supabase-js";
 
 // In-memory fallback map: `${productId}_${dateStr}`
@@ -9,8 +10,10 @@ const availabilityOverrides = new Map<string, ProductAvailability>();
 
 function getDirectSupabaseClient() {
   if (!isSupabaseConfigured()) return null;
+  if (typeof window !== "undefined") return getBrowserSupabase();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return null;
   return createClient(url, key);
 }
 
@@ -72,40 +75,37 @@ export class AvailabilityService {
 
     try {
       const supabase = getDirectSupabaseClient();
-      if (!supabase) return { isAvailable: true, earliestValidDate };
+      if (!supabase) {
+        return {
+          isAvailable: false,
+          reason: "Koneksi ketersediaan sedang bermasalah. Coba lagi sebentar.",
+          earliestValidDate,
+        };
+      }
 
-      const { data, error } = await supabase
-        .from("product_availability")
-        .select("*")
-        .eq("product_id", productId)
-        .eq("availability_date", requestedDateStr)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_product_availability", {
+        p_product_id: productId,
+        p_requested_date: requestedDateStr,
+      });
 
-      if (!error && data) {
-        if (data.status === "sold_out") {
+      const record = Array.isArray(data) ? data[0] : data;
+      if (!error && record) {
+        if (record.status === "sold_out") {
           return {
             isAvailable: false,
             reason: "Kuota produk pada tanggal yang dipilih sudah penuh.",
             earliestValidDate,
           };
         }
-        if (data.status === "closed") {
+        if (record.status === "closed") {
           return {
             isAvailable: false,
             reason: "Toko tidak menerima pesanan pada tanggal ini.",
             earliestValidDate,
           };
         }
-        if (data.quota !== null && data.quota !== undefined) {
-          // Check order count against quota
-          const { count } = await supabase
-            .from("order_request_items")
-            .select("id, order:order_requests!inner(requested_date, status)", { count: "exact", head: true })
-            .eq("product_id", productId)
-            .eq("order.requested_date", requestedDateStr)
-            .neq("order.status", "cancelled");
-
-          if ((count || 0) >= data.quota) {
+        if (record.quota !== null && record.quota !== undefined) {
+          if ((record.ordered_quantity || 0) >= record.quota) {
             return {
               isAvailable: false,
               reason: "Kuota produksi untuk tanggal ini sudah penuh.",
@@ -115,9 +115,20 @@ export class AvailabilityService {
         }
       }
 
+      if (error) {
+        return {
+          isAvailable: false,
+          reason: "Ketersediaan belum dapat diperiksa. Coba lagi sebentar.",
+          earliestValidDate,
+        };
+      }
       return { isAvailable: true, earliestValidDate };
     } catch {
-      return { isAvailable: true, earliestValidDate };
+      return {
+        isAvailable: false,
+        reason: "Ketersediaan belum dapat diperiksa. Coba lagi sebentar.",
+        earliestValidDate,
+      };
     }
   }
 

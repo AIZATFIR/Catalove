@@ -32,7 +32,7 @@ async function runE2E() {
 
   assert.ok(orderRes.order, "Order request must be created and persisted");
   const createdOrder = orderRes.order!;
-  assert.match(createdOrder.reference_code, /^#CA-\d{4}-\d{4}$/, "Must have valid Catalove reference code");
+  assert.match(createdOrder.reference_code, /^#CA-\d{4}-[A-F0-9]{32}$/i, "Must have an unguessable Catalove reference code");
   assert.strictEqual(createdOrder.status, "pending", "Initial state must be 'pending'");
 
   // 4. WhatsApp handoff URL verification

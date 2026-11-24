@@ -151,6 +151,7 @@ export function CartDrawer() {
         fulfillmentMethod: deliveryType,
         deliveryAddress: deliveryType === "pickup" ? undefined : deliveryAddress.trim(),
         customerNotes: combinedNotes,
+        voucherCode: appliedVoucher?.code,
         items: items.map((it) => ({
           productId: it.product.id,
           variantId: it.variant?.id || null,
@@ -161,6 +162,11 @@ export function CartDrawer() {
           imageUrl: it.product.images?.[0]?.storage_path,
         })),
       });
+
+      if (orderRes.error) {
+        setErrorMsg(orderRes.error);
+        return;
+      }
 
       const refCode = orderRes.order?.reference_code;
       const waUrl = generateCartWhatsAppUrl({

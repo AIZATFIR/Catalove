@@ -9,6 +9,8 @@ import { INITIAL_CATEGORIES, INITIAL_PRODUCTS } from "@/lib/data/seed-catalog";
 import { INDUSTRY_PRESETS } from "@/lib/data/universal-presets";
 import { ProductInput } from "@/lib/validators/product";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getBrowserSupabase } from "@/lib/supabase/client";
+import { shouldUseLocalCatalogOverride } from "@/lib/services/catalog-mode";
 import { createClient } from "@supabase/supabase-js";
 
 const STORAGE_KEYS = {
@@ -23,10 +25,10 @@ let productsStore: Product[] = [...INITIAL_PRODUCTS];
 
 function getDirectSupabaseClient() {
   if (!isSupabaseConfigured()) return null;
+  if (typeof window !== "undefined") return getBrowserSupabase();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return null;
   return createClient(url, key);
 }
 
@@ -103,7 +105,10 @@ function writeBrowserStorage(categories: Category[], products: Product[], forceL
 function isBrowserLocalOverrideActive(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem(STORAGE_KEYS.LOCAL_MODE) !== "supabase_live";
+    return shouldUseLocalCatalogOverride(
+      isSupabaseConfigured(),
+      window.localStorage.getItem(STORAGE_KEYS.LOCAL_MODE)
+    );
   } catch {
     return true;
   }
@@ -155,10 +160,7 @@ export class CakeService {
 
     try {
       const supabase = getDirectSupabaseClient();
-      if (!supabase) {
-        const state = readBrowserStorage();
-        return [...state.categories];
-      }
+      if (!supabase) return [];
 
       const { data, error } = await supabase
         .from("categories")
@@ -167,15 +169,11 @@ export class CakeService {
         .neq("slug", "__content_config__")
         .order("display_order", { ascending: true });
 
-      if (error || !data || data.length === 0) {
-        const state = readBrowserStorage();
-        return [...state.categories].sort((a, b) => a.display_order - b.display_order);
-      }
+      if (error || !data) return [];
 
       return data as Category[];
     } catch {
-      const state = readBrowserStorage();
-      return [...state.categories].sort((a, b) => a.display_order - b.display_order);
+      return [];
     }
   }
 
@@ -190,25 +188,22 @@ export class CakeService {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    if (typeof window !== "undefined") {
-      try {
-        if (!isBrowserLocalOverrideActive()) {
-          const res = await fetch("/api/categories", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(input),
-          });
-          const data = await res.json();
-          if (res.ok && data.success && data.category) {
-            const state = readBrowserStorage();
-            writeBrowserStorage([...state.categories, data.category], state.products, false);
-            return data.category as Category;
-          }
-        }
-      } catch {
-        // Fallback cleanly to local persistence
+    if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.category) {
+        throw new Error(data.error || "Kategori belum tersimpan.");
       }
+      const state = readBrowserStorage();
+      writeBrowserStorage([...state.categories, data.category], state.products, false);
+      return data.category as Category;
+    }
 
+    if (typeof window !== "undefined") {
       const state = readBrowserStorage();
       const newCat: Category = {
         id: `cat-${Date.now()}`,
@@ -259,16 +254,23 @@ export class CakeService {
   }
 
   async deleteCategory(id: string): Promise<boolean> {
+    if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
+      const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) return false;
+      const result = await res.json();
+      if (!result.success) return false;
+      const state = readBrowserStorage();
+      writeBrowserStorage(
+        state.categories.filter((category) => category.id !== id),
+        state.products.map((product) => product.category_id === id
+          ? { ...product, category_id: null, category: null }
+          : product),
+        false
+      );
+      return true;
+    }
+
     if (typeof window !== "undefined") {
-      try {
-        if (!isBrowserLocalOverrideActive()) {
-          await fetch(`/api/categories?id=${encodeURIComponent(id)}`, {
-            method: "DELETE",
-          });
-        }
-      } catch {
-        // fallback cleanly
-      }
       const state = readBrowserStorage();
       const nextCats = state.categories.filter((c) => c.id !== id);
       const nextProds = state.products.map((p) =>
@@ -304,18 +306,13 @@ export class CakeService {
     }
 
     if (typeof window !== "undefined" && filters?.includeInactive) {
-      try {
-        const res = await fetch("/api/products?includeInactive=true");
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
-            const state = readBrowserStorage();
-            return this.filterList(data.products as Product[], state.categories, filters);
-          }
-        }
-      } catch {
-        // fallback cleanly
+      const res = await fetch("/api/products?includeInactive=true");
+      const data = await res.json();
+      if (!res.ok || !data?.success || !Array.isArray(data.products)) {
+        throw new Error(data?.error || "Gagal memuat produk katalog.");
       }
+      const state = readBrowserStorage();
+      return this.filterList(data.products as Product[], state.categories, filters);
     }
 
     if (!isSupabaseConfigured()) {
@@ -328,10 +325,7 @@ export class CakeService {
 
     try {
       const supabase = getDirectSupabaseClient();
-      if (!supabase) {
-        const state = readBrowserStorage();
-        return this.filterList(state.products, state.categories, filters);
-      }
+      if (!supabase) return [];
 
       let query = supabase.from("products").select(`
         *,
@@ -368,10 +362,7 @@ export class CakeService {
       }
 
       const { data, error } = await query;
-      if (error || !data || data.length === 0) {
-        const state = readBrowserStorage();
-        return this.filterList(state.products, state.categories, filters);
-      }
+      if (error || !data) return [];
 
       return data.map((item: any) => ({
         ...item,
@@ -383,8 +374,7 @@ export class CakeService {
         images: (item.images || []).sort((a: any, b: any) => a.display_order - b.display_order),
       })) as Product[];
     } catch {
-      const state = readBrowserStorage();
-      return this.filterList(state.products, state.categories, filters);
+      return [];
     }
   }
 
@@ -449,7 +439,7 @@ export class CakeService {
   }
 
   async getProductBySlug(slug: string): Promise<Product | null> {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isBrowserLocalOverrideActive()) {
       const state = readBrowserStorage();
       const browserMatch = state.products.find((p) => p.slug === slug);
       if (browserMatch) {
@@ -473,7 +463,7 @@ export class CakeService {
 
     try {
       const supabase = getDirectSupabaseClient();
-      if (!supabase) return this.findInAllPresetsBySlug(slug);
+      if (!supabase) return null;
 
       const { data, error } = await supabase
         .from("products")
@@ -486,16 +476,7 @@ export class CakeService {
         .eq("slug", slug)
         .single();
 
-      if (error || !data) {
-        const local = productsStore.find((p) => p.slug === slug);
-        if (local) {
-          return {
-            ...local,
-            category: categoriesStore.find((c) => c.id === local.category_id),
-          };
-        }
-        return this.findInAllPresetsBySlug(slug);
-      }
+      if (error || !data) return null;
 
       return {
         ...data,
@@ -506,19 +487,12 @@ export class CakeService {
         images: (data.images || []).sort((a: any, b: any) => a.display_order - b.display_order),
       } as Product;
     } catch {
-      const local = productsStore.find((p) => p.slug === slug);
-      if (local) {
-        return {
-          ...local,
-          category: categoriesStore.find((c) => c.id === local.category_id),
-        };
-      }
-      return this.findInAllPresetsBySlug(slug);
+      return null;
     }
   }
 
   async getProductById(id: string): Promise<Product | null> {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isBrowserLocalOverrideActive()) {
       const state = readBrowserStorage();
       const browserMatch = state.products.find((p) => p.id === id);
       if (browserMatch) {
@@ -560,13 +534,6 @@ export class CakeService {
         .single();
 
       if (error || !data) {
-        const local = productsStore.find((p) => p.id === id);
-        if (local) {
-          return {
-            ...local,
-            category: categoriesStore.find((c) => c.id === local.category_id),
-          };
-        }
         return null;
       }
 
@@ -579,12 +546,7 @@ export class CakeService {
         images: (data.images || []).sort((a: any, b: any) => a.display_order - b.display_order),
       } as Product;
     } catch {
-      const local = productsStore.find((p) => p.id === id);
-      if (!local) return null;
-      return {
-        ...local,
-        category: categoriesStore.find((c) => c.id === local.category_id),
-      };
+      return null;
     }
   }
 
@@ -595,25 +557,22 @@ export class CakeService {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") + `-${Date.now().toString().slice(-4)}`;
 
-    if (typeof window !== "undefined") {
-      try {
-        if (!isBrowserLocalOverrideActive()) {
-          const res = await fetch("/api/products", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(input),
-          });
-          const data = await res.json();
-          if (res.ok && data.success && data.product) {
-            const state = readBrowserStorage();
-            writeBrowserStorage(state.categories, [...state.products, data.product], false);
-            return data.product as Product;
-          }
-        }
-      } catch {
-        // Fallback cleanly to browser localStorage persistence
+    if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.product) {
+        throw new Error(data.error || "Produk belum tersimpan.");
       }
+      const state = readBrowserStorage();
+      writeBrowserStorage(state.categories, [...state.products, data.product], false);
+      return data.product as Product;
+    }
 
+    if (typeof window !== "undefined") {
       const state = readBrowserStorage();
       const id = `prod-${Date.now()}`;
       const newVariants: ProductVariant[] = (input.variants || []).map((v, idx) => ({
@@ -758,26 +717,23 @@ export class CakeService {
   }
 
   async updateProduct(id: string, updates: Partial<ProductInput>): Promise<Product | null> {
-    if (typeof window !== "undefined") {
-      try {
-        if (!isBrowserLocalOverrideActive()) {
-          const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updates),
-          });
-          const data = await res.json();
-          if (res.ok && data.success && data.product) {
-            const state = readBrowserStorage();
-            const replaced = state.products.map((p) => (p.id === id ? data.product : p));
-            writeBrowserStorage(state.categories, replaced, false);
-            return data.product as Product;
-          }
-        }
-      } catch {
-        // Fallback to browser localStorage persistence
+    if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
+      const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.product) {
+        throw new Error(data.error || "Perubahan produk belum tersimpan.");
       }
+      const state = readBrowserStorage();
+      const replaced = state.products.map((product) => product.id === id ? data.product : product);
+      writeBrowserStorage(state.categories, replaced, false);
+      return data.product as Product;
+    }
 
+    if (typeof window !== "undefined") {
       const state = readBrowserStorage();
       const idx = state.products.findIndex((p) => p.id === id);
       if (idx === -1) return null;
@@ -940,27 +896,23 @@ export class CakeService {
   async deleteProduct(
     id: string
   ): Promise<{ success: boolean; softDeleted?: boolean; message?: string }> {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
       try {
-        if (!isBrowserLocalOverrideActive()) {
-          const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, {
-            method: "DELETE",
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            const state = readBrowserStorage();
-            writeBrowserStorage(
-              state.categories,
-              state.products.filter((p) => p.id !== id),
-              false
-            );
-            return data;
-          }
+        const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          return { success: false, message: data.error || "Produk belum terhapus." };
         }
-      } catch {
-        // Fallback cleanly
+        const state = readBrowserStorage();
+        writeBrowserStorage(state.categories, state.products.filter((product) => product.id !== id), false);
+        return data;
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Produk belum terhapus.";
+        return { success: false, message };
       }
+    }
 
+    if (typeof window !== "undefined") {
       const state = readBrowserStorage();
       const exists = state.products.some((p) => p.id === id);
       if (!exists) return { success: false, message: "Produk tidak ditemukan." };

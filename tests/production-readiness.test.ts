@@ -59,7 +59,7 @@ async function runProductionReadinessTests() {
 
   assert.ok(orderRes.order, "Order should be created successfully");
   const ord = orderRes.order!;
-  assert.match(ord.reference_code, /^#CA-\d{4}-\d{4}$/, "Must generate valid #CA-YYMM-XXXX reference");
+  assert.match(ord.reference_code, /^#CA-\d{4}-[A-F0-9]{32}$/i, "Must generate an unguessable Catalove reference");
   assert.strictEqual(ord.status, "pending");
   assert.strictEqual(ord.items.length, 1);
   assert.strictEqual(ord.items[0].quantity, 2);

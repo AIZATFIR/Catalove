@@ -48,7 +48,7 @@ async function runTests() {
   });
 
   assert.ok(newOrderRes.order, "Order should be created successfully");
-  assert.match(newOrderRes.order!.reference_code, /^#CA-\d{4}-\d{4}$/, "Reference code must follow #CA-YYMM-XXXX");
+  assert.match(newOrderRes.order!.reference_code, /^#CA-\d{4}-[A-F0-9]{32}$/i, "Reference codes must be unguessable tokens");
   assert.strictEqual(newOrderRes.order!.status, "pending");
 
   // 5. Test Order Status Update

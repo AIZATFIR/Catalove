@@ -1,123 +1,54 @@
-# Catalove ✦ Universal Modern Catalog & Storefront Engine
+# Catalove
 
-> **Catalove** is an award-winning, universal modern catalog and storefront engine designed for any business—lifestyle, fashion, artisan bakery, florist, handmade crafts, tech gear, and creative services.
+Catalove is a customizable product catalog and storefront for small businesses. It is built with Next.js, React, TypeScript, and Tailwind CSS. WhatsApp checkout and the general sample catalog work in demo mode; shared catalog, orders, admin login, availability, and photo storage require a dedicated Catalove Supabase project.
 
-Built with Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Google Fonts typography engine, and an offline-first dual-driver architecture with Supabase.
+## Local development
 
----
-
-## ✨ Key Features
-
-1. **Award-Winning Visual Aesthetics & Dynamic Theming**
-   - Curated typography combinations: *Playfair Display*, *Cormorant Garamond*, *Syne*, *Space Grotesk*, *Outfit*, *Plus Jakarta Sans*, and *Inter*.
-   - Dynamic real-time CSS theme bridge with 7 curated color palettes (*Warm Oat*, *Noir Gold*, *Rose Velvet*, *Sunset Terracotta*, *Cyber Neo*, *Forest Sage*, *Minimal Slate*).
-   - Glassmorphic navigation, animated marquee ticker, and fluid micro-animations.
-
-2. **1-Click Industry Presets**
-   - **General Lifestyle Store**: High-end retail, essentials, and gift curation.
-   - **Boutique & Streetwear Apparel**: Editorial lookbook, size/spec selections, cart workflow.
-   - **Artisan Bakery & Cake Studio**: Pre-order H-1/H-2 calendar, lead time, custom inscriptions.
-   - **Florist Atelier**: Greeting cards, delivery calendar, premium flower arrangements.
-   - **Handmade Crafts & Ceramics**: Maker story, material badges, artisan showcase.
-   - **Tech Gear & Desk Setup**: Bento grid, technical specifications, responsive 4-column layout.
-   - **Creative Services & Studio**: Portfolio showcase with WhatsApp consultation inquiries.
-
-3. **Universal Flexible Workflows**
-   - `whatsapp_direct`: Instant 1-click order formatting sent cleanly to seller WhatsApp.
-   - `preorder_calendar`: Lead-time calculation and blackout dates calendar picker.
-   - `cart_checkout`: Multi-item shopping bag with variant options.
-   - `inquiry_only`: Consultation quote requests for custom or high-value items.
-
-4. **Interactive Storefront Grid Density**
-   - Real-time 2-column, 3-column, and 4-column layout toggle on desktop and 1-column / 2-column on mobile.
-
-5. **Resilient Dual-Driver Architecture**
-   - Works immediately out-of-the-box in offline/mock mode with zero configuration needed.
-   - Connects to Supabase seamlessly when `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are supplied.
-
-6. **Comprehensive Admin Studio (`/admin/settings`)**
-   - 6-tab studio: 1-Click Industry Presets, Workflow Engine, Typography & Color Theming, Marquee Ticker, Store Identity, and Section Copy.
-   - Full Product CRUD with image uploads, variants, and badges at `/admin/products`.
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone & Install Dependencies
 ```bash
-git clone <your-repo-url>
-cd Catalove
-npm install
-```
-
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env.local`:
-```bash
+npm ci
 cp .env.example .env.local
-```
-
-Fill in your variables:
-```env
-# Optional: Supabase Connection (Leave blank for mock mode)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Admin Secret Passphrase
-ADMIN_ACCESS_KEY=catalove_secure_admin_2026
-
-# Public App URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### 3. Run Development Server
-```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view your storefront.
-Open [http://localhost:3000/admin](http://localhost:3000/admin) to manage products and store settings.
 
-### 4. Run Test Suite
+Without Supabase values, the app uses the local demo catalog and browser storage. Those edits are local to that browser and are not shared between devices. Admin login and durable order storage are disabled in this mode.
+
+Run the automated suite and production build with:
+
 ```bash
 npm test
+npm run lint -- --quiet
+npm run build
 ```
-All unit and integration tests validate validators, services, WhatsApp messaging, and recommendation engines.
 
----
+## Dedicated Supabase setup
 
-## 🗄️ Database Setup (Supabase)
+Use a **new Supabase project only for Catalove**. Do not reuse a project that contains another business's data.
 
-To connect an independent Supabase project:
-1. Create a project at [supabase.com](https://supabase.com).
-2. Open the **SQL Editor** in your Supabase dashboard.
-3. Run the SQL script located at:
+1. Create a Supabase project and copy its project URL, anon key, project ref, and service role key.
+2. Set these variables in `.env.local` for local work and in Vercel for **Production, Preview, and Development**:
+
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+   NEXT_PUBLIC_CATALOVE_SUPABASE_PROJECT_REF=<project-ref>
+   SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
    ```
-   supabase/migrations/202610290001_catalove_core.sql
+
+   The URL host must match the explicit project ref. The service role key is server-only; never prefix it with `NEXT_PUBLIC_` or commit it.
+
+3. In the new project's SQL Editor, apply `supabase/migrations/202610290001_catalove_core.sql`. This creates Catalove's tables, seller-only write policies, order submission function, and product image bucket.
+4. In Supabase Authentication, create the owner's email/password account. Then add that account as a seller from the SQL Editor (replace the example email):
+
+   ```sql
+   insert into public.seller_users (user_id)
+   select id from auth.users where email = 'owner@example.com'
+   on conflict (user_id) do update set is_active = true;
    ```
-4. Copy the Project URL and API Keys into your `.env.local` or Vercel Environment Variables.
 
----
+5. Redeploy Catalove after adding the Vercel variables, then sign in at `/admin/login`.
 
-## 🚢 Deploy to Vercel
+The migration is for an empty, dedicated Catalove project. Do not run it against a shared or existing business database. The database project ref check intentionally disables Supabase when the URL and Catalove ref do not match.
 
-### Option A: Via GitHub Integration
-1. Push this repository to GitHub:
-   ```bash
-   git remote add origin https://github.com/<your-username>/catalove.git
-   git branch -M main
-   git push -u origin main
-   ```
-2. Import the repository in [vercel.com/new](https://vercel.com/new).
-3. Set the Environment Variables (`ADMIN_ACCESS_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, etc.).
-4. Click **Deploy**.
+## Deploy
 
-### Option B: Via Vercel CLI
-```bash
-npx vercel
-```
-Follow the CLI prompts to link to your Vercel team and deploy.
-
----
-
-## 📄 License
-MIT © 2026 Catalove Studio.
+The GitHub repository is connected to Vercel. Push changes to `main` to create a deployment. A successful frontend deployment does not enable database features until the dedicated Supabase project and environment variables are configured.

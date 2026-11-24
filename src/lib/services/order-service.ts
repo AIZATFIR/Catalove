@@ -4,39 +4,14 @@ import { cakeService } from "./cake-service";
 import { availabilityService } from "./availability-service";
 import { getTodayJakarta } from "@/lib/utils/formatters";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getBrowserSupabase } from "@/lib/supabase/client";
+import { shouldUseLocalCatalogOverride } from "@/lib/services/catalog-mode";
 import { createClient } from "@supabase/supabase-js";
 
 const ORDERS_STORAGE_KEY = "catalove-orders-v1";
 
 // In-memory orders store used ONLY when Supabase is not configured (local dev & testing)
-let localOrdersStore: OrderRequest[] = [
-  {
-    id: "ord-sample-1",
-    reference_code: "#CTL-2610-1042",
-    customer_name: "Nadya Putri",
-    customer_whatsapp: "081298765432",
-    requested_date: "2026-10-30",
-    fulfillment_method: "pickup",
-    customer_notes: "Mohon disiapkan pita pembungkus estetik.",
-    status: "pending",
-    subtotal: 245000,
-    items: [
-      {
-        id: "item-sample-1",
-        order_request_id: "ord-sample-1",
-        product_id: "prod-gen-1",
-        product_variant_id: "v-gen-1",
-        product_name_snapshot: "Noir Minimalist Ceramic Carafe",
-        variant_name_snapshot: "Matte Black (600ml)",
-        unit_price_snapshot: 245000,
-        quantity: 1,
-        subtotal_snapshot: 245000,
-      },
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-  },
-];
+let localOrdersStore: OrderRequest[] = [];
 
 function readBrowserOrders(): OrderRequest[] {
   if (typeof window === "undefined") return localOrdersStore;
@@ -44,7 +19,13 @@ function readBrowserOrders(): OrderRequest[] {
     const raw = window.localStorage.getItem(ORDERS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        const realOrders = parsed.filter((order) => order?.id !== "ord-sample-1");
+        if (realOrders.length !== parsed.length) {
+          window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(realOrders));
+        }
+        return realOrders;
+      }
     }
     window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(localOrdersStore));
     return localOrdersStore;
@@ -64,9 +45,23 @@ function writeBrowserOrders(orders: OrderRequest[]) {
 
 function getDirectSupabaseClient() {
   if (!isSupabaseConfigured()) return null;
+  if (typeof window !== "undefined") return getBrowserSupabase();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return null;
   return createClient(url, key);
+}
+
+function isLocalOrdersMode(): boolean {
+  if (typeof window === "undefined") return !isSupabaseConfigured();
+  try {
+    return shouldUseLocalCatalogOverride(
+      isSupabaseConfigured(),
+      window.localStorage.getItem("catalove-local-catalog-mode-v3")
+    );
+  } catch {
+    return true;
+  }
 }
 
 export interface CartCheckoutInput {
@@ -76,6 +71,7 @@ export interface CartCheckoutInput {
   fulfillmentMethod: FulfillmentMethod;
   deliveryAddress?: string;
   customerNotes?: string;
+  voucherCode?: string;
   items: {
     productId: string;
     variantId?: string | null;
@@ -92,8 +88,8 @@ export class OrderService {
     const today = getTodayJakarta();
     const yy = today.substring(2, 4);
     const mm = today.substring(5, 7);
-    const random = Math.floor(1000 + Math.random() * 9000);
-    return `#CA-${yy}${mm}-${random}`;
+    const token = globalThis.crypto.randomUUID().replace(/-/g, "").toUpperCase();
+    return `#CA-${yy}${mm}-${token}`;
   }
 
   async createCartOrder(input: CartCheckoutInput): Promise<{ order?: OrderRequest; error?: string }> {
@@ -101,8 +97,35 @@ export class OrderService {
       return { error: "Keranjang belanja masih kosong." };
     }
 
+    if (!isLocalOrdersMode()) {
+      try {
+        const supabase = getDirectSupabaseClient();
+        if (!supabase) return { error: "Koneksi database tidak tersedia." };
+        const { data, error } = await supabase.rpc("submit_cart_order", {
+          p_customer_name: input.customerName.trim(),
+          p_customer_whatsapp: input.customerWhatsapp.trim(),
+          p_fulfillment_method: input.fulfillmentMethod,
+          p_delivery_address: input.deliveryAddress?.trim() || null,
+          p_customer_notes: input.customerNotes?.trim() || null,
+          p_items: input.items.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId || null,
+            quantity: item.quantity,
+            imageUrl: item.imageUrl || null,
+          })),
+          p_voucher_code: input.voucherCode || null,
+        });
+        if (error) return { error: error.message };
+        if (!data) return { error: "Gagal menyimpan pesanan di database." };
+        return { order: data as OrderRequest };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Terjadi kesalahan saat menyimpan pesanan.";
+        return { error: message };
+      }
+    }
+
     const orderId = `ord-${Date.now()}`;
-    const referenceCode = `#CTL-${getTodayJakarta().substring(2, 4)}${getTodayJakarta().substring(5, 7)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const referenceCode = this.generateReferenceCode();
 
     const orderItems: OrderRequestItem[] = input.items.map((item, idx) => ({
       id: `item-${Date.now()}-${idx}`,
@@ -165,8 +188,7 @@ export class OrderService {
 
       // If supabase IS configured in browser and it's a DB product (not local preset), try DB RPC first
       if (isSupabaseConfigured() && typeof window !== "undefined") {
-        const isLocalOnly = product.id.startsWith("prod-") && window.localStorage.getItem("catalove-local-catalog-mode") === "1";
-        if (!isLocalOnly) {
+        if (!isLocalOrdersMode()) {
           try {
             const supabase = getDirectSupabaseClient();
             if (supabase) {
@@ -188,9 +210,12 @@ export class OrderService {
               if (!error && data) {
                 return { order: data as OrderRequest };
               }
+              return { error: error?.message || "Gagal menyimpan pesanan di database." };
             }
-          } catch {
-            // fallback cleanly to local order
+            return { error: "Koneksi database tidak tersedia." };
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Terjadi kesalahan saat menyimpan pesanan.";
+            return { error: message };
           }
         }
       }
@@ -301,8 +326,7 @@ export class OrderService {
         .maybeSingle();
 
       if (error || !data) {
-        const local = readBrowserOrders().find((o) => o.reference_code === referenceCode);
-        return local || null;
+        return null;
       }
 
       return {
@@ -315,13 +339,12 @@ export class OrderService {
         })),
       } as OrderRequest;
     } catch {
-      const local = readBrowserOrders().find((o) => o.reference_code === referenceCode);
-      return local || null;
+      return null;
     }
   }
 
   async listOrders(statusFilter?: OrderStatus): Promise<OrderRequest[]> {
-    if (!isSupabaseConfigured() || (typeof window !== "undefined" && window.localStorage.getItem("catalove-local-catalog-mode") === "1")) {
+    if (isLocalOrdersMode()) {
       const list = readBrowserOrders();
       if (!statusFilter) return [...list];
       return list.filter((o) => o.status === statusFilter);
@@ -329,7 +352,7 @@ export class OrderService {
 
     try {
       const supabase = getDirectSupabaseClient();
-      if (!supabase) return readBrowserOrders();
+      if (!supabase) return [];
 
       let query = supabase
         .from("order_requests")
@@ -344,7 +367,7 @@ export class OrderService {
       }
 
       const { data, error } = await query;
-      if (error || !data || data.length === 0) return readBrowserOrders();
+      if (error || !data) return [];
 
       return data.map((d: any) => ({
         ...d,
@@ -356,12 +379,12 @@ export class OrderService {
         })),
       })) as OrderRequest[];
     } catch {
-      return readBrowserOrders();
+      return [];
     }
   }
 
   async updateOrderStatus(orderId: string, newStatus: OrderStatus): Promise<OrderRequest | null> {
-    if (!isSupabaseConfigured() || (typeof window !== "undefined" && window.localStorage.getItem("catalove-local-catalog-mode") === "1")) {
+    if (isLocalOrdersMode()) {
       const list = readBrowserOrders();
       const ord = list.find((o) => o.id === orderId);
       if (ord) {
@@ -392,14 +415,6 @@ export class OrderService {
         .single();
 
       if (error || !data) {
-        const list = readBrowserOrders();
-        const ord = list.find((o) => o.id === orderId);
-        if (ord) {
-          ord.status = newStatus;
-          ord.updated_at = new Date().toISOString();
-          writeBrowserOrders(list);
-          return ord;
-        }
         return null;
       }
 

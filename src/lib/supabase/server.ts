@@ -1,3 +1,4 @@
+import "server-only";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { isSupabaseConfigured } from "./env";
@@ -46,7 +47,7 @@ export async function getServerSupabase() {
  * NEVER expose this or call this from client components.
  */
 export async function getAdminSupabase() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!isSupabaseConfigured() || !serviceKey) {
     return null;
   }
