@@ -181,13 +181,13 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
 
         {/* Mobile Quick Controls & Menu Button */}
         <div className="flex items-center gap-1.5 lg:hidden">
-          <Skiper24 />
+          <Skiper24 className="hidden sm:flex" />
           <Skiper26 />
 
           <button
             type="button"
             onClick={handleToggleCanvas}
-            className={`md:hidden inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+            className={`hidden sm:inline-flex md:hidden items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
               isCanvasMode
                 ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
                 : "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
@@ -200,7 +200,7 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
           <button
             type="button"
             onClick={openWishlist}
-            className="relative touch-target inline-flex items-center justify-center p-2"
+            className="relative touch-target hidden sm:inline-flex items-center justify-center p-2"
             aria-label="Tersimpan"
           >
             <Heart className={`w-5 h-5 ${savedIds.length > 0 ? "text-rose-500 fill-rose-500" : ""}`} />

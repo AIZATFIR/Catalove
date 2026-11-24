@@ -43,7 +43,7 @@ export function Skiper19() {
       viewBox="0 0 1920 6200"
       fill="none"
       preserveAspectRatio="none"
-      className="skiper19-background pointer-events-none absolute inset-0 z-[3] h-full w-full overflow-visible opacity-[.26]"
+      className="skiper19-background pointer-events-none absolute inset-0 z-[3] h-full w-full overflow-hidden opacity-[.26]"
     >
       <path
         ref={pathRef}
