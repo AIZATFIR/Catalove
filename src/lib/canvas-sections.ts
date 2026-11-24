@@ -20,6 +20,17 @@ export function addCanvasSection(
   return order.includes(id) ? [...order] : [...order, id];
 }
 
+export function addCanvasSectionDraft(
+  order: readonly CanvasSectionId[],
+  hidden: readonly CanvasSectionId[],
+  id: CanvasSectionId
+): { order: CanvasSectionId[]; hidden: CanvasSectionId[] } {
+  return {
+    order: addCanvasSection(order, id),
+    hidden: hidden.filter((sectionId) => sectionId !== id),
+  };
+}
+
 export function removeCanvasSection(
   order: readonly CanvasSectionId[],
   id: CanvasSectionId

@@ -20,9 +20,9 @@ import {
   X,
 } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { saveBusinessSettings } from "@/lib/business-settings";
+import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
 import {
-  addCanvasSection,
+  addCanvasSectionDraft,
   moveCanvasSection,
   normalizeCanvasSections,
   removeCanvasSection,
@@ -253,14 +253,24 @@ export function LiveCustomizerDock() {
   };
 
   const handleAddSection = (id: CanvasSectionId) => {
-    const nextHidden = hiddenSections.filter((s) => s !== id);
-    if (sectionOrder.includes(id)) {
-      updateTheme({ hidden_sections: nextHidden });
-      return;
-    }
-    updateTheme({
-      [orderField]: addCanvasSection(sectionOrder, id),
-      hidden_sections: nextHidden,
+    // Read the latest draft at click time so rapid section edits never build
+    // from an older React render and silently replace a more recent change.
+    const latest = readBusinessSettings();
+    const theme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
+    const order = normalizeCanvasSections(
+      theme.canvas_draft_order,
+      VALID_SECTION_IDS,
+      DEFAULT_CANVAS_ORDER,
+      theme.hidden_sections
+    );
+    const draft = addCanvasSectionDraft(order, theme.hidden_sections || [], id);
+    saveBusinessSettings({
+      ...latest,
+      theme_config: {
+        ...theme,
+        [orderField]: draft.order,
+        hidden_sections: draft.hidden,
+      },
     });
   };
 

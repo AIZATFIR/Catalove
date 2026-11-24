@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   addCanvasSection,
+  addCanvasSectionDraft,
   moveCanvasSection,
   normalizeCanvasSections,
   removeCanvasSection,
@@ -26,6 +27,11 @@ assert.deepEqual(
 );
 assert.deepEqual(addCanvasSection(["hero", "feed"], "feed"), ["hero", "feed"]);
 assert.deepEqual(addCanvasSection(["hero"], "pricing"), ["hero", "pricing"]);
+assert.deepEqual(
+  addCanvasSectionDraft(["hero"], ["feed", "pricing"], "feed"),
+  { order: ["hero", "feed"], hidden: ["pricing"] },
+  "adding a hidden section puts it in the draft and unhides only that section"
+);
 assert.deepEqual(removeCanvasSection(["hero", "feed"], "hero"), ["feed"]);
 assert.deepEqual(removeCanvasSection(["hero"], "hero"), ["hero"]);
 assert.deepEqual(moveCanvasSection(["hero", "feed", "pricing"], "pricing", -1), ["hero", "pricing", "feed"]);
