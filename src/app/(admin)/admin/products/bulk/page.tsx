@@ -260,10 +260,10 @@ export default function BulkProductsPage() {
           description: data.suggestions.draft_description || row?.description,
           flavorNotes: data.suggestions.flavor_notes || row?.flavorNotes,
         });
-        setFeedback(`Saran rasa dan deskripsi diterapkan untuk kue ${rows.findIndex(r => r.key === rowKey) + 1}. Mama tetap bisa mengubahnya.`);
+        setFeedback(`Saran dan deskripsi diterapkan untuk produk ${rows.findIndex(r => r.key === rowKey) + 1}. Kamu tetap bisa mengubahnya.`);
       }
     } catch {
-      setFeedback("Kendala saat menghubungi layanan AI. Mama dapat mengisi deskripsi secara manual.");
+      setFeedback("Kendala saat menghubungi layanan AI. Deskripsi bisa diisi secara manual.");
     } finally {
       setAiLoadingKey(null);
     }
@@ -323,7 +323,7 @@ export default function BulkProductsPage() {
         });
       }
 
-      setFeedback(`${filled.length} produk berhasil disimpan secara permanen di database SofizCake.`);
+      setFeedback(`${filled.length} produk berhasil ditambahkan ke katalog.`);
       window.setTimeout(() => router.push("/admin/products"), 900);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Produk belum tersimpan. Periksa data lalu coba lagi.";
@@ -339,15 +339,15 @@ export default function BulkProductsPage() {
           <ArrowLeft size={18} />
         </Link>
         <div>
-          <h1 className="font-serif text-2xl font-medium text-cocoa-950 sm:text-3xl dark:text-white">Tambah banyak kue</h1>
+          <h1 className="font-serif text-2xl font-medium text-cocoa-950 sm:text-3xl dark:text-white">Tambah banyak produk</h1>
           <p className="mt-2 max-w-xl text-sm text-cocoa-600 dark:text-stone-300">
-            Satu baris untuk satu jenis kue. Isi nama, harga, dan kategori, lalu pilih foto kue langsung dari galeri HP Mama.
+            Satu baris untuk satu produk. Isi nama, harga, dan kategori, lalu pilih foto dari galeri perangkat.
           </p>
         </div>
       </header>
 
       <aside className="border-l-2 border-caramel-500 bg-vanilla-100 px-4 py-3 text-sm leading-6 text-cocoa-700 dark:bg-stone-900 dark:border-[#C88A42] dark:text-stone-300">
-        <strong className="font-semibold text-cocoa-900 dark:text-white">Cara cepat:</strong> pilih “Pilih foto untuk kue ini” dan tandai foto kue dari HP. Foto otomatis diunggah aman ke penyimpanan cloud SofizCake. Foto pertama jadi foto sampul. Mama tetap bebas menentukan nama dan harga sendiri.
+        <strong className="font-semibold text-cocoa-900 dark:text-white">Cara cepat:</strong> pilih foto untuk setiap produk. Foto pertama menjadi foto sampul. Nama, harga, dan kategori tetap bisa diatur sendiri.
       </aside>
 
       {feedback && (
@@ -462,7 +462,7 @@ export default function BulkProductsPage() {
             <div className="flex items-center gap-2">
               <label className="touch-target flex-1 inline-flex cursor-pointer items-center justify-center gap-2 border border-caramel-300 px-3 text-xs font-semibold text-cocoa-800 hover:bg-vanilla-100 dark:border-white/20 dark:text-stone-200 dark:hover:bg-stone-900">
                 <MotionIcon icon={UploadCloud} size={16} />
-                <span>{row.photos.length ? `${row.photos.length}/10 foto` : "Pilih foto kue"}</span>
+                <span>{row.photos.length ? `${row.photos.length}/10 foto` : "Pilih foto produk"}</span>
                 <input
                   type="file"
                   accept="image/*"

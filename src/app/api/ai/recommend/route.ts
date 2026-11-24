@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const { occasion, flavor, size, urgency, query } = body;
 
     // Use deterministic catalog-grounded engine
-    const recommendations = await recommendationEngine.matchCakes({
+    const recommendations = await recommendationEngine.matchProducts({
       occasion,
       flavor,
       size,
@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
       recommendations,
       message:
         recommendations.length > 0
-          ? "Berikut adalah pilihan kue paling pas dari dapur SofizCake."
-          : "Silakan konsultasikan pesanan khusus langsung ke WhatsApp Mama SofizCake.",
+          ? "Berikut beberapa produk yang paling sesuai dengan pilihanmu."
+          : "Belum ada produk yang cocok; coba ubah kata kunci atau hubungi brand melalui WhatsApp.",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Gagal memproses rekomendasi";

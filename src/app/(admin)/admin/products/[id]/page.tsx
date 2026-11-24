@@ -276,7 +276,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       return;
     }
     if (images.length === 0) {
-      setFeedback({ text: "Minimal harus ada 1 foto kue.", type: "error" });
+      setFeedback({ text: "Minimal harus ada 1 foto produk.", type: "error" });
       return;
     }
 
@@ -292,7 +292,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const payload = {
         name: name.trim(),
         category_id: categoryId || null,
-        description: description.trim() || `${name.trim()} dari dapur SofizCake.`,
+        description: description.trim() || `${name.trim()} dari katalog kami.`,
         flavor_notes: flavorNotes.length > 0 ? flavorNotes : ["Freshly Baked"],
         base_price: Number(basePrice),
         minimum_lead_time_days: Number(leadTime),
@@ -331,7 +331,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   const handleDelete = async () => {
     const confirmed = confirm(
-      `Apakah Mama yakin ingin menghapus kue "${name}"?\n\nTindakan ini akan menghapus produk dari etalase.`
+      `Yakin ingin menghapus produk "${name}"?\n\nTindakan ini akan menghapus produk dari etalase.`
     );
     if (!confirmed) return;
 
@@ -585,7 +585,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 2. Foto Kue ({images.length})
               </h2>
               <p className="text-xs text-[#67575B] dark:text-stone-300">
-                Pilih foto utama yang akan tampil di katalog. Mama juga bisa menambah foto baru dari HP.
+                Pilih foto utama yang akan tampil di katalog. Kamu juga bisa menambah foto dari perangkat.
               </p>
             </div>
             <label className="touch-target inline-flex items-center gap-2 border border-[#B8794A] bg-[#B8794A] px-4 py-2 text-xs font-semibold text-white hover:bg-[#9E6433] cursor-pointer">

@@ -5,7 +5,7 @@ import {
   ProductImage,
   ProductVariant,
 } from "@/types/bakery";
-import { INITIAL_CATEGORIES, INITIAL_PRODUCTS } from "@/lib/data/seed-cakes";
+import { INITIAL_CATEGORIES, INITIAL_PRODUCTS } from "@/lib/data/seed-catalog";
 import { INDUSTRY_PRESETS } from "@/lib/data/universal-presets";
 import { ProductInput } from "@/lib/validators/product";
 import { isSupabaseConfigured } from "@/lib/supabase/env";

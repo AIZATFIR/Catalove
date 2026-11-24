@@ -6,8 +6,8 @@ console.log("Running validators.test.ts...");
 
 // 1. Valid order input test
 const validOrder = {
-  productId: "prod-basque-cheesecake",
-  variantId: "var-basque-16",
+  productId: "prod-gen-1",
+  variantId: "v-gen-1",
   quantity: 2,
   customerName: "Sarah Wijaya",
   customerWhatsapp: "081234567890",

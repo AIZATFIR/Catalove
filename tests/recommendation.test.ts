@@ -4,37 +4,36 @@ import { recommendationEngine } from "../src/lib/services/recommendation-engine"
 async function runTests() {
   console.log("Running recommendation.test.ts...");
 
-  // 1. Cheese + Birthday recommendation test
-  const cheeseUltah = await recommendationEngine.matchCakes({
-    flavor: "cheese",
-    occasion: "birthday",
+  // 1. Generic product text search
+  const fragrance = await recommendationEngine.matchProducts({
+    query: "fragrance",
   });
 
-  assert.ok(cheeseUltah.length > 0, "Should return recommendations");
+  assert.ok(fragrance.length > 0, "Should return recommendations");
   assert.strictEqual(
-    cheeseUltah[0].product.slug,
-    "basque-burnt-cheesecake-caramel",
-    "Top recommendation for cheese + birthday should be Basque Burnt Cheesecake"
+    fragrance[0].product.slug,
+    "sample-03-fragrance",
+    "A text query should rank the matching Catalove product first"
   );
 
   // 2. Ready stock (urgency: today) test
-  const readyToday = await recommendationEngine.matchCakes({
+  const readyToday = await recommendationEngine.matchProducts({
     urgency: "today",
   });
   assert.ok(readyToday.length > 0, "Should return recommendations for today");
   assert.strictEqual(
     readyToday[0].product.minimum_lead_time_days,
     0,
-    "Urgent recommendation must be a ready stock item (H-0)"
+    "Urgent recommendation must be a ready-to-prepare item"
   );
 
   // 3. Free text query matching
-  const chocolateQuery = await recommendationEngine.matchCakes({
-    query: "cokelat legit",
+  const carryQuery = await recommendationEngine.matchProducts({
+    query: "tas aksesoris",
   });
   assert.ok(
-    chocolateQuery.some((item) => item.product.slug.includes("chocolate")),
-    "Query with 'cokelat' must match chocolate cake"
+    carryQuery[0].product.slug === "sample-04-carry",
+    "Query terms should rank the relevant product ahead of unrelated products"
   );
 
   console.log("✅ All recommendation engine tests passed!");

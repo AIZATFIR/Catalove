@@ -61,16 +61,16 @@ export const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({ products }) 
           <div>
             <div className="mb-2 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.2em] text-[#9B674F]">
               <span className="h-px w-6 bg-[#B8794A]" />
-              <span>Dari dapur SofizCake</span>
+              <span>Pilihan unggulan</span>
             </div>
             <h2
               id="featured-title"
               className="font-serif text-3xl font-medium tracking-tight text-[#4D3040] sm:text-4xl"
             >
-              Pilihan kue
+              Produk pilihan
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#67575B] sm:text-base">
-              Lihat rasa, ukuran, dan waktu persiapan tiap kue.
+              Jelajahi produk pilihan dan detailnya.
             </p>
           </div>
 

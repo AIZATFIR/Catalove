@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { INITIAL_SETTINGS } from "@/lib/data/seed-cakes";
+import { INITIAL_SETTINGS } from "@/lib/data/seed-catalog";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getAdminSupabase } from "@/lib/supabase/server";
 import { verifyServerSession } from "@/lib/services/server-auth";
@@ -61,12 +61,12 @@ const TEXT_KEYS = [
 
 export async function GET() {
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({ settings: INITIAL_SETTINGS });
+    return NextResponse.json({ settings: INITIAL_SETTINGS, persisted: false });
   }
 
   try {
     const supabase = await getAdminSupabase();
-    if (!supabase) return NextResponse.json({ settings: INITIAL_SETTINGS });
+    if (!supabase) return NextResponse.json({ settings: INITIAL_SETTINGS, persisted: false });
 
     const { data, error } = await supabase
       .from("business_settings")
@@ -98,7 +98,7 @@ export async function GET() {
     }
 
     if (Object.keys(content).length === 0 || !content.catalove_v3) {
-      return NextResponse.json({ settings: INITIAL_SETTINGS });
+      return NextResponse.json({ settings: INITIAL_SETTINGS, persisted: false });
     }
 
     const textSettings: Record<string, string> = {};
@@ -116,6 +116,7 @@ export async function GET() {
     const marquee = content.marquee_announcement || INITIAL_SETTINGS.marquee_announcement;
 
     return NextResponse.json({
+      persisted: true,
       settings: {
         ...INITIAL_SETTINGS,
         ...textSettings,
@@ -142,7 +143,7 @@ export async function GET() {
       },
     });
   } catch {
-    return NextResponse.json({ settings: INITIAL_SETTINGS });
+    return NextResponse.json({ settings: INITIAL_SETTINGS, persisted: false });
   }
 }
 

@@ -36,20 +36,20 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
 
   const statusConfig = {
     pending: {
-      label: "Menunggu Review Mama",
-      desc: "Permintaan tersimpan. Silakan kirim detail pesanan ke WhatsApp Mama untuk konfirmasi akhir.",
+      label: "Menunggu konfirmasi toko",
+      desc: "Permintaan tersimpan. Kirim detail pesanan ke WhatsApp toko untuk konfirmasi akhir.",
       color: "bg-amber-100 text-amber-900 border-amber-300",
       icon: Clock,
     },
     contacted: {
       label: "Sedang Berkomunikasi",
-      desc: "Mama dan Anda sedang atau telah terhubung di WhatsApp untuk membahas pesanan.",
+      desc: "Anda dan pengelola toko terhubung melalui WhatsApp untuk membahas pesanan.",
       color: "bg-blue-100 text-blue-900 border-blue-300",
       icon: MessageCircle,
     },
     confirmed: {
       label: "Pesanan Dikonfirmasi",
-      desc: "Mama telah menyetujui pesanan ini dan jadwal pembuatan telah dijadwalkan.",
+      desc: "Pesanan telah disetujui dan jadwal persiapan sudah ditentukan.",
       color: "bg-emerald-100 text-emerald-900 border-emerald-300",
       icon: CheckCircle2,
     },
@@ -212,11 +212,11 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
               className="touch-target w-full flex items-center justify-center gap-2.5 py-4 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] font-bold text-sm shadow-warm transition-all duration-200 active:scale-[0.98]"
             >
               <MessageCircle className="w-5 h-5" />
-              <span>Hubungi Mama di WhatsApp</span>
+              <span>Hubungi toko di WhatsApp</span>
             </a>
 
             <p className="text-[11px] text-center text-cocoa-500">
-              Pertanyaan seputar penyesuaian jam atau pembayaran dilakukan langsung via obrolan WhatsApp dengan Mama SofizCake.
+              Pertanyaan seputar penyesuaian jadwal atau pembayaran dapat disampaikan langsung melalui WhatsApp toko.
             </p>
           </div>
         </div>

@@ -11,7 +11,7 @@ export interface Skiper25Props {
 }
 
 /**
- * Skiper25 - Interactive Sofiz BGM Music Player & Drawer Queue
+ * Skiper25 - Interactive background music player & drawer queue
  * Ported with full 27-track playlist, animated waveform, next/prev, and queue selector.
  */
 export function Skiper25({

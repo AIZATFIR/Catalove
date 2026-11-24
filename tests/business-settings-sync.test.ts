@@ -6,7 +6,7 @@ import {
   readBusinessSettings,
   saveBusinessSettings,
 } from "../src/lib/business-settings";
-import { INITIAL_SETTINGS } from "../src/lib/data/seed-cakes";
+import { INITIAL_SETTINGS } from "../src/lib/data/seed-catalog";
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -73,6 +73,17 @@ async function main() {
   await pause(420);
   releaseSettings({ ok: true, json: async () => ({ settings: localEdit }) });
   await flushBusinessSettings();
+
+  (globalThis as any).fetch = async () => ({
+    ok: true,
+    json: async () => ({ settings: INITIAL_SETTINGS, persisted: false }),
+  });
+  const offlineSettings = await fetchBusinessSettings();
+  assert.equal(
+    offlineSettings.hero_title,
+    "Edit lokal terbaru",
+    "an offline demo response cannot overwrite the saved local draft"
+  );
 
   (globalThis as any).window = {
     dispatchEvent: () => true,

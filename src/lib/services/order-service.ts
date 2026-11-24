@@ -93,7 +93,7 @@ export class OrderService {
     const yy = today.substring(2, 4);
     const mm = today.substring(5, 7);
     const random = Math.floor(1000 + Math.random() * 9000);
-    return `#SC-${yy}${mm}-${random}`;
+    return `#CA-${yy}${mm}-${random}`;
   }
 
   async createCartOrder(input: CartCheckoutInput): Promise<{ order?: OrderRequest; error?: string }> {

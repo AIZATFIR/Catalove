@@ -10,36 +10,35 @@ async function runTests() {
   // 1. Test getProducts
   const products = await cakeService.getProducts();
   assert.ok(products.length >= 5, "Should have seeded products");
-  const basque = await cakeService.getProductBySlug("basque-burnt-cheesecake-caramel");
-  assert.ok(basque !== null, "Basque cheesecake should be found by slug");
-  assert.strictEqual(basque?.name, "Basque Burnt Cheesecake Caramel");
+  const sample = await cakeService.getProductBySlug("sample-01-apparel");
+  assert.ok(sample !== null, "Catalove demo product should be found by slug");
+  assert.strictEqual(sample?.name, "Sample 01 — Apparel");
 
   // 2. Test formatIDR
   assert.strictEqual(formatIDR(245000), "Rp 245.000");
 
   // 3. Test Availability checking
   const today = getTodayJakarta();
-  // Basque requires H-2
-  const invalidDate = today;
+  const invalidDate = addDays(today, -1);
   const validFutureDate = addDays(today, 3);
 
-  const checkPastOrToday = await availabilityService.checkAvailability("prod-basque-cheesecake", invalidDate);
-  assert.strictEqual(checkPastOrToday.isAvailable, false, "Today should be invalid for H-2 product");
+  const checkPast = await availabilityService.checkAvailability(sample!.id, invalidDate);
+  assert.strictEqual(checkPast.isAvailable, false, "Past dates should be rejected");
 
-  const checkFuture = await availabilityService.checkAvailability("prod-basque-cheesecake", validFutureDate);
+  const checkFuture = await availabilityService.checkAvailability(sample!.id, validFutureDate);
   assert.strictEqual(checkFuture.isAvailable, true, "Future date H-3 should be available");
 
   // Test date override (e.g. sold out)
-  await availabilityService.setAvailability("prod-basque-cheesecake", validFutureDate, "sold_out");
-  const checkOverridden = await availabilityService.checkAvailability("prod-basque-cheesecake", validFutureDate);
+  await availabilityService.setAvailability(sample!.id, validFutureDate, "sold_out");
+  const checkOverridden = await availabilityService.checkAvailability(sample!.id, validFutureDate);
   assert.strictEqual(checkOverridden.isAvailable, false, "Overridden sold_out date should be unavailable");
 
   // Reset override
-  await availabilityService.setAvailability("prod-basque-cheesecake", validFutureDate, "available");
+  await availabilityService.setAvailability(sample!.id, validFutureDate, "available");
 
   // 4. Test Order Creation
   const newOrderRes = await orderService.createOrder({
-    productId: "prod-basque-cheesecake",
+    productId: sample!.id,
     quantity: 1,
     customerName: "Ahmad Dani",
     customerWhatsapp: "081234567890",
@@ -49,7 +48,7 @@ async function runTests() {
   });
 
   assert.ok(newOrderRes.order, "Order should be created successfully");
-  assert.match(newOrderRes.order!.reference_code, /^#SC-\d{4}-\d{4}$/, "Reference code must follow #SC-YYMM-XXXX");
+  assert.match(newOrderRes.order!.reference_code, /^#CA-\d{4}-\d{4}$/, "Reference code must follow #CA-YYMM-XXXX");
   assert.strictEqual(newOrderRes.order!.status, "pending");
 
   // 5. Test Order Status Update
@@ -58,13 +57,14 @@ async function runTests() {
 
   // 6. Test Product CRUD (Create, Read, Update, Delete)
   const createdProduct = await cakeService.createProduct({
-    name: "Matcha Chiffon Cake",
-    description: "Chiffon cake lembut dengan bubuk matcha murni asal Uji, Kyoto.",
+    name: "Studio Tote Bag",
+    category_id: "cat-lifestyle-apparel",
+    description: "Tas kanvas untuk aktivitas sehari-hari.",
     base_price: 185000,
     minimum_lead_time_days: 1,
     is_active: true,
     is_featured: false,
-    flavor_notes: ["Uji Matcha", "Light Chiffon"],
+    flavor_notes: ["Kanvas tebal", "Muatan luas"],
     specs: [],
     variants: [
       { name: "Ukuran 18cm", price: 185000, is_default: true, display_order: 1 },
@@ -72,8 +72,8 @@ async function runTests() {
     ],
     images: [
       {
-        storage_path: "https://images.unsplash.com/photo-1578985545062-69928b1d9587",
-        alt_text: "Matcha Chiffon Cake",
+        storage_path: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
+        alt_text: "Studio Tote Bag",
         is_primary: true,
         display_order: 1,
       },
@@ -81,15 +81,15 @@ async function runTests() {
   });
 
   assert.ok(createdProduct.id, "Product should have an id");
-  assert.strictEqual(createdProduct.name, "Matcha Chiffon Cake");
+  assert.strictEqual(createdProduct.name, "Studio Tote Bag");
   assert.strictEqual(createdProduct.variants.length, 2);
 
   // Update Product
   const updatedProduct = await cakeService.updateProduct(createdProduct.id, {
-    name: "Matcha Chiffon Premium",
+    name: "Studio Tote Bag Premium",
     base_price: 195000,
   });
-  assert.strictEqual(updatedProduct?.name, "Matcha Chiffon Premium");
+  assert.strictEqual(updatedProduct?.name, "Studio Tote Bag Premium");
   assert.strictEqual(updatedProduct?.base_price, 195000);
 
   // Delete Product

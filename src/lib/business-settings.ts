@@ -1,4 +1,4 @@
-import { INITIAL_SETTINGS } from "@/lib/data/seed-cakes";
+import { INITIAL_SETTINGS } from "@/lib/data/seed-catalog";
 import type { BusinessSettings } from "@/types/bakery";
 import { createDebouncedWriter } from "@/lib/debounced-writer";
 
@@ -94,6 +94,8 @@ export async function fetchBusinessSettings(): Promise<BusinessSettings> {
     if (res.ok) {
       const data = await res.json();
       if (data?.settings) {
+        if (data.persisted === false) return readBusinessSettings();
+
         // Preserve edits made while this initial request was in flight.
         const latestSnapshot = readStoredSettings();
         if (

@@ -54,14 +54,14 @@ export class AvailabilityService {
         if (override.status === "sold_out") {
           return {
             isAvailable: false,
-            reason: "Kuota produksi untuk kue ini pada tanggal yang dipilih sudah penuh.",
+            reason: "Kuota produk pada tanggal yang dipilih sudah penuh.",
             earliestValidDate,
           };
         }
         if (override.status === "closed") {
           return {
             isAvailable: false,
-            reason: "Dapur SofizCake libur / tidak menerima pesanan pada tanggal ini.",
+            reason: "Toko tidak menerima pesanan pada tanggal ini.",
             earliestValidDate,
           };
         }
@@ -85,14 +85,14 @@ export class AvailabilityService {
         if (data.status === "sold_out") {
           return {
             isAvailable: false,
-            reason: "Kuota produksi untuk kue ini pada tanggal yang dipilih sudah penuh.",
+            reason: "Kuota produk pada tanggal yang dipilih sudah penuh.",
             earliestValidDate,
           };
         }
         if (data.status === "closed") {
           return {
             isAvailable: false,
-            reason: "Dapur SofizCake libur / tidak menerima pesanan pada tanggal ini.",
+            reason: "Toko tidak menerima pesanan pada tanggal ini.",
             earliestValidDate,
           };
         }

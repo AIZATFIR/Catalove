@@ -15,7 +15,7 @@ async function runProductionReadinessTests() {
   if (!isSupabaseConfigured()) {
     assert.throws(
       () => assertSupabaseConfigured("test-op"),
-      /Konfigurasi Supabase belum lengkap/,
+      /Koneksi khusus Catalove belum lengkap/,
       "Should throw descriptive error when Supabase env is missing"
     );
   }
@@ -23,7 +23,7 @@ async function runProductionReadinessTests() {
   // 2. Test Catalog Retrieval & Filtering
   const categories = await cakeService.getCategories();
   assert.ok(categories.length >= 4, "Should have all artisan categories");
-  assert.ok(categories.some((c) => c.slug === "whole-cakes"));
+  assert.ok(categories.some((c) => c.slug === "apparel"));
 
   const allProducts = await cakeService.getProducts({ includeInactive: true });
   assert.ok(allProducts.length >= 5, "Should have products in catalog");
@@ -59,7 +59,7 @@ async function runProductionReadinessTests() {
 
   assert.ok(orderRes.order, "Order should be created successfully");
   const ord = orderRes.order!;
-  assert.match(ord.reference_code, /^#SC-\d{4}-\d{4}$/, "Must generate valid #SC-YYMM-XXXX reference");
+  assert.match(ord.reference_code, /^#CA-\d{4}-\d{4}$/, "Must generate valid #CA-YYMM-XXXX reference");
   assert.strictEqual(ord.status, "pending");
   assert.strictEqual(ord.items.length, 1);
   assert.strictEqual(ord.items[0].quantity, 2);

@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx tests/validators.test.ts && tsx tests/services.test.ts && tsx tests/auth-security.test.ts && tsx tests/whatsapp-url.test.ts && tsx tests/canvas-sections.test.ts && tsx tests/custom-content.test.ts && tsx tests/theme-colors.test.ts && tsx tests/business-settings-sync.test.ts && tsx tests/recommendation.test.ts && tsx tests/e2e-order-flow.test.ts && tsx tests/production-readiness.test.ts"
+    "test": "tsx tests/validators.test.ts && tsx tests/services.test.ts && tsx tests/auth-security.test.ts && tsx tests/supabase-env-isolation.test.ts && tsx tests/whatsapp-url.test.ts && tsx tests/canvas-sections.test.ts && tsx tests/custom-content.test.ts && tsx tests/theme-colors.test.ts && tsx tests/business-settings-sync.test.ts && tsx tests/recommendation.test.ts && tsx tests/e2e-order-flow.test.ts && tsx tests/production-readiness.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
