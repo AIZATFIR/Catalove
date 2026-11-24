@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Kebijakan Privasi dan Pengelolaan Data Catalove",
-  description: "Cara Catalove mengelola data katalog, pesanan, dan preferensi pengunjung.",
+  description: "Pelajari data yang diproses Catalove untuk katalog dan pesanan, cara penyimpanannya, penyedia layanan yang digunakan, serta cara mengajukan permintaan privasi.",
   alternates: { canonical: "/privacy" },
 };
 

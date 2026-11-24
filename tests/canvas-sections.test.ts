@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import {
   addCanvasSection,
-  addCanvasSectionDraft,
+  addCanvasSectionToTheme,
   moveCanvasSection,
   normalizeCanvasSections,
   removeCanvasSection,
 } from "../src/lib/canvas-sections";
 import type { CanvasSectionId } from "../src/types/catalove";
+import { DEFAULT_THEME_CONFIG } from "../src/lib/data/universal-presets";
 
 const valid = new Set<CanvasSectionId>(["hero", "feed", "pricing"]);
 
@@ -28,9 +29,24 @@ assert.deepEqual(
 assert.deepEqual(addCanvasSection(["hero", "feed"], "feed"), ["hero", "feed"]);
 assert.deepEqual(addCanvasSection(["hero"], "pricing"), ["hero", "pricing"]);
 assert.deepEqual(
-  addCanvasSectionDraft(["hero"], ["feed", "pricing"], "feed"),
-  { order: ["hero", "feed"], hidden: ["pricing"] },
-  "adding a hidden section puts it in the draft and unhides only that section"
+  addCanvasSectionToTheme(
+    {
+      ...DEFAULT_THEME_CONFIG,
+      canvas_draft_order: ["hero", "pricing"],
+      hidden_sections: ["feed", "showcase"],
+      hero_align: "center",
+    },
+    "feed",
+    valid,
+    ["hero"]
+  ),
+  {
+    ...DEFAULT_THEME_CONFIG,
+    canvas_draft_order: ["hero", "pricing", "feed"],
+    hidden_sections: ["showcase"],
+    hero_align: "center",
+  },
+  "adding from the latest theme preserves its current order and other settings while unhiding the added section"
 );
 assert.deepEqual(removeCanvasSection(["hero", "feed"], "hero"), ["feed"]);
 assert.deepEqual(removeCanvasSection(["hero"], "hero"), ["hero"]);

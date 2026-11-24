@@ -15,7 +15,9 @@ export default function ContactPage() {
       <Link href="/" className="text-sm font-semibold text-[var(--storefront-accent)]">← Kembali ke Catalove</Link>
       <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Bantuan</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Ada yang bisa kami bantu?</h1>
-      <p className="mt-4 max-w-xl text-base leading-7 text-stone-600 dark:text-stone-300">Tanya soal paket, penggunaan katalog, atau permintaan terkait data. Pesanmu akan dibuka di WhatsApp agar bisa langsung dibahas.</p>
+      <p className="mt-4 max-w-xl text-base leading-7 text-stone-600 dark:text-stone-300">
+        Tanya soal paket, penggunaan katalog, atau permintaan terkait data. Pesanmu akan dibuka di WhatsApp agar bisa langsung dibahas. Untuk detail pengelolaan data, baca <Link href="/privacy" className="font-semibold text-[var(--storefront-accent)] underline">Kebijakan Privasi</Link>.
+      </p>
       <a
         href={buildCataloveInquiryWhatsAppUrl()}
         target="_blank"

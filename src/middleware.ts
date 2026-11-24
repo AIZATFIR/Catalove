@@ -5,6 +5,13 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Canvas mode is a private editing preview, not a second public landing page.
+  if (pathname === "/" && request.nextUrl.searchParams.get("canvas") === "1") {
+    const response = NextResponse.next();
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
+  }
+
   // Only protect /admin routes (except /admin/login)
   if (!pathname.startsWith("/admin") || pathname === "/admin/login") {
     return NextResponse.next();
@@ -66,5 +73,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/", "/admin/:path*"],
 };

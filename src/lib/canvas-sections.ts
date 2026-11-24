@@ -1,4 +1,4 @@
-import type { CanvasSectionId } from "@/types/catalove";
+import type { CanvasSectionId, ThemeConfig } from "@/types/catalove";
 
 export function normalizeCanvasSections(
   order: readonly CanvasSectionId[] | undefined,
@@ -20,14 +20,24 @@ export function addCanvasSection(
   return order.includes(id) ? [...order] : [...order, id];
 }
 
-export function addCanvasSectionDraft(
-  order: readonly CanvasSectionId[],
-  hidden: readonly CanvasSectionId[],
-  id: CanvasSectionId
-): { order: CanvasSectionId[]; hidden: CanvasSectionId[] } {
+export function addCanvasSectionToTheme(
+  theme: ThemeConfig,
+  id: CanvasSectionId,
+  validIds: ReadonlySet<CanvasSectionId>,
+  fallback: readonly CanvasSectionId[]
+): ThemeConfig {
+  const order = normalizeCanvasSections(
+    theme.canvas_draft_order,
+    validIds,
+    fallback,
+    theme.hidden_sections
+  );
   return {
-    order: addCanvasSection(order, id),
-    hidden: hidden.filter((sectionId) => sectionId !== id),
+    ...theme,
+    canvas_draft_order: addCanvasSection(order, id),
+    hidden_sections: (theme.hidden_sections || []).filter(
+      (sectionId) => sectionId !== id
+    ),
   };
 }
 

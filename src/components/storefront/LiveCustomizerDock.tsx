@@ -22,7 +22,7 @@ import {
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
 import {
-  addCanvasSectionDraft,
+  addCanvasSectionToTheme,
   moveCanvasSection,
   normalizeCanvasSections,
   removeCanvasSection,
@@ -250,19 +250,16 @@ export function LiveCustomizerDock() {
     // from an older React render and silently replace a more recent change.
     const latest = readBusinessSettings();
     const theme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
-    const order = normalizeCanvasSections(
-      theme.canvas_draft_order,
+    const updatedTheme = addCanvasSectionToTheme(
+      theme,
+      id,
       VALID_SECTION_IDS,
-      DEFAULT_CANVAS_ORDER,
-      theme.hidden_sections
+      DEFAULT_CANVAS_ORDER
     );
-    const draft = addCanvasSectionDraft(order, theme.hidden_sections || [], id);
     saveBusinessSettings({
       ...latest,
       theme_config: {
-        ...theme,
-        [orderField]: draft.order,
-        hidden_sections: draft.hidden,
+        ...updatedTheme,
       },
     });
   };
