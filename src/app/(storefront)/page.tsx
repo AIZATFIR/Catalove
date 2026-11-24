@@ -458,7 +458,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {activeSections.map((sectionId, idx) => {
           const content = renderSectionContent(sectionId);
           if (!content) return null;

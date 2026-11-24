@@ -105,7 +105,7 @@ export default function BioLinkPage() {
   )}`;
 
   return (
-    <main className="min-h-screen py-6 px-4 pb-24">
+    <main id="main-content" className="min-h-screen py-6 px-4 pb-24">
       <div className="mx-auto max-w-lg space-y-6">
         {/* Top Action Bar */}
         <div className="flex items-center justify-between gap-3">

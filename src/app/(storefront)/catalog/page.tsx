@@ -108,7 +108,7 @@ export default function CatalogPage() {
         <CakeCircularCarousel products={productsList} />
       </section>
 
-      <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-8 sm:py-12 lg:px-12">
+      <main id="main-content" className="mx-auto max-w-[1600px] px-4 py-8 sm:px-8 sm:py-12 lg:px-12">
         {/* Page Header */}
         <div className="mb-8 border-b border-[#DBD0C5]/40 pb-6 dark:border-white/10">
           <h1 className="font-serif text-3xl font-medium tracking-tight text-[#4D3040] dark:text-[#FAF4EE] sm:text-5xl">

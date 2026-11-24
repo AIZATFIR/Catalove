@@ -3,7 +3,7 @@ import { isSupabaseConfigured, assertSupabaseConfigured } from "../src/lib/supab
 import { cakeService } from "../src/lib/services/cake-service";
 import { availabilityService } from "../src/lib/services/availability-service";
 import { orderService } from "../src/lib/services/order-service";
-import { readBusinessSettings, saveBusinessSettings } from "../src/lib/business-settings";
+import { readBusinessSettings } from "../src/lib/business-settings";
 import { getTodayJakarta, addDays } from "../src/lib/utils/formatters";
 import { OrderInputSchema } from "../src/lib/validators/order";
 

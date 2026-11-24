@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INITIAL_SETTINGS } from "@/lib/data/seed-cakes";
 import { readBusinessSettings, fetchBusinessSettings } from "@/lib/business-settings";
 import type { BusinessSettings } from "@/types/bakery";
 

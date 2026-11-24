@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Tentang Catalove",
-  description: "Kenali Catalove, alat sederhana untuk membuat dan mengelola katalog digital brand.",
+  title: "Tentang Catalove: Katalog Digital untuk UMKM",
+  description: "Kenali cara Catalove membantu usaha kecil menyusun katalog produk, mengatur tampilan brand, dan mengarahkan pembeli ke WhatsApp.",
   alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-5 py-16 text-stone-800 dark:text-stone-100 sm:py-24">
+    <main id="main-content" className="mx-auto min-h-screen max-w-3xl px-5 py-16 text-stone-800 dark:text-stone-100 sm:py-24">
       <Link href="/" className="text-sm font-semibold text-[var(--storefront-accent)]">← Kembali ke Catalove</Link>
       <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Tentang</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Katalog digital yang mudah diurus.</h1>

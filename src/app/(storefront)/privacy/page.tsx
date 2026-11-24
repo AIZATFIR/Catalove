@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Kebijakan Privasi",
+  title: "Kebijakan Privasi dan Pengelolaan Data Catalove",
   description: "Cara Catalove mengelola data katalog, pesanan, dan preferensi pengunjung.",
   alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-5 py-16 text-stone-800 dark:text-stone-100 sm:py-24">
+    <main id="main-content" className="mx-auto min-h-screen max-w-3xl px-5 py-16 text-stone-800 dark:text-stone-100 sm:py-24">
       <Link href="/" className="text-sm font-semibold text-[var(--storefront-accent)]">← Kembali ke Catalove</Link>
       <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Privasi</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Kebijakan Privasi</h1>

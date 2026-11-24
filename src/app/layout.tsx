@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     template: "%s | Catalove",
   },
   description:
-    "Buat katalog digital yang menarik, mudah diatur, dan terhubung langsung ke WhatsApp untuk bisnismu.",
+    "Bangun katalog digital untuk brand UMKM dengan tema yang bisa diatur, tampilan produk yang menarik, dan jalur pemesanan langsung ke WhatsApp.",
   alternates: { canonical: "/" },
   keywords: [
     "Catalove",
@@ -104,6 +104,12 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body className="antialiased selection:bg-amber-200 selection:text-amber-950">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-stone-950 focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-white focus:shadow-xl"
+        >
+          Lewati ke konten utama
+        </a>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

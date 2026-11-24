@@ -203,14 +203,7 @@ export function LiveCustomizerDock() {
       fallback,
       activeTheme.hidden_sections
     );
-  }, [
-    isCanvasMode,
-    activeTheme.canvas_draft_order,
-    activeTheme.section_order,
-    activeTheme.hidden_sections,
-  ]);
-
-  const hiddenSections: CanvasSectionId[] = activeTheme.hidden_sections || [];
+  }, [activeTheme.canvas_draft_order, activeTheme.hidden_sections]);
 
   const availableToAdd = useMemo(
     () => ALL_CANVAS_SECTIONS.filter((sec) => !sectionOrder.includes(sec.id)),

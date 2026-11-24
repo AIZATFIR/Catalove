@@ -114,7 +114,7 @@ function LoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
+    <main id="main-content" className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
       <h1 className="sr-only">Masuk ke Studio Catalove</h1>
       <React.Suspense fallback={<div className="text-sm text-cocoa-600">Memuat formulir...</div>}>
         <LoginForm />

@@ -82,7 +82,7 @@ export default function ProductDetailPage() {
     return (
       <div className="flex flex-col min-h-screen bg-[#FCFAF6] dark:bg-[#1A1412]">
         <Navbar />
-        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-10 sm:px-8 lg:px-12">
+        <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-10 sm:px-8 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
             <div className="lg:col-span-6 aspect-square rounded-3xl bg-stone-200/70 dark:bg-white/5 animate-pulse" />
             <div className="lg:col-span-6 space-y-4">
@@ -102,7 +102,7 @@ export default function ProductDetailPage() {
     return (
       <div className="flex flex-col min-h-screen bg-[#FCFAF6] text-[#33262A] dark:bg-[#1A1412] dark:text-[#F2E7DC]">
         <Navbar />
-        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-20 text-center space-y-5">
+        <main id="main-content" className="mx-auto w-full max-w-2xl flex-1 px-4 py-20 text-center space-y-5">
           <p className="text-xs font-bold uppercase tracking-widest text-[#B8794A]">
             404 — Produk Tidak Ditemukan
           </p>
@@ -151,7 +151,7 @@ export default function ProductDetailPage() {
     <div className="flex flex-col min-h-screen bg-[#FCFAF6] text-[#33262A] dark:bg-[#1A1412] dark:text-[#F2E7DC] transition-colors">
       <Navbar />
 
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
+      <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-1.5 text-xs text-cocoa-500 dark:text-[#C5B5A8] mb-6">
           <Link href="/" className="hover:text-[var(--storefront-accent)]">

@@ -4,14 +4,14 @@ import { MessageCircle, ArrowUpRight } from "lucide-react";
 import { buildCataloveInquiryWhatsAppUrl } from "@/lib/utils/catalove-whatsapp";
 
 export const metadata: Metadata = {
-  title: "Kontak Catalove",
-  description: "Hubungi tim Catalove untuk bantuan katalog, paket, dan pertanyaan privasi.",
+  title: "Kontak Catalove: Bantuan dan Konsultasi Katalog",
+  description: "Hubungi tim Catalove untuk bantuan mengatur katalog digital, bertanya tentang paket Business dan Enterprise, atau mengajukan permintaan privasi.",
   alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-5 py-16 text-stone-800 dark:text-stone-100">
+    <main id="main-content" className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-5 py-16 text-stone-800 dark:text-stone-100">
       <Link href="/" className="text-sm font-semibold text-[var(--storefront-accent)]">← Kembali ke Catalove</Link>
       <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Bantuan</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Ada yang bisa kami bantu?</h1>

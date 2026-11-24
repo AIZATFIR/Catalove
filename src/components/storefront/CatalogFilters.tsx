@@ -100,9 +100,15 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
           </div>
 
           {/* Sort Dropdown */}
-          <div className="relative">
+          <div className="relative flex items-center gap-2">
+            <label
+              htmlFor="catalog-sort"
+              className="text-xs font-medium text-[#55464B] dark:text-[#D8CBC0]"
+            >
+              Urutkan produk
+            </label>
             <select
-              aria-label="Urutkan produk"
+              id="catalog-sort"
               value={sortBy}
               onChange={(e) => onSortChange(e.target.value)}
               className="appearance-none border border-[#BFAF9F] bg-white py-2 pl-3 pr-8 text-xs font-medium text-[#4D3040] focus:outline-none focus:border-[#4D3040] cursor-pointer dark:bg-[#2C2421] dark:text-[#FAF4EE] dark:border-white/20"
