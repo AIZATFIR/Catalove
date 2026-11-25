@@ -23,6 +23,7 @@ import { cakeService } from "@/lib/services/cake-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/Button";
 import { MotionIcon } from "@/components/ui/MotionIcon";
+import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
 
 interface UploadedImageItem {
   id: string;
@@ -125,7 +126,7 @@ export default function NewProductDraftPage() {
 
     try {
       const formData = new FormData();
-      formData.append("file", item.file);
+      formData.append("file", await prepareCatalogImage(item.file));
 
       const res = await fetch("/api/upload", {
         method: "POST",

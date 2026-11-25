@@ -6,13 +6,14 @@ const migrationDir = join(process.cwd(), "supabase/migrations");
 const migrationFiles = readdirSync(migrationDir).filter((file) => file.endsWith(".sql")).sort();
 assert.deepEqual(
   migrationFiles,
-  ["202610290001_catalove_core.sql"],
-  "a clean Catalove database runs only the Catalove-owned bootstrap migration"
+  ["202610290001_catalove_core.sql", "202611250001_catalog_image_limits.sql"],
+  "a clean Catalove database runs only Catalove-owned migrations"
 );
 
 const migration = readFileSync(join(migrationDir, migrationFiles[0]), "utf8");
 const supabaseServer = readFileSync(join(process.cwd(), "src/lib/supabase/server.ts"), "utf8");
 const uploadRoute = readFileSync(join(process.cwd(), "src/app/api/upload/route.ts"), "utf8");
+const imageLimitsMigration = readFileSync(join(migrationDir, "202611250001_catalog_image_limits.sql"), "utf8");
 const availabilityService = readFileSync(join(process.cwd(), "src/lib/services/availability-service.ts"), "utf8");
 const orderService = readFileSync(join(process.cwd(), "src/lib/services/order-service.ts"), "utf8");
 const cartDrawer = readFileSync(join(process.cwd(), "src/components/storefront/CartDrawer.tsx"), "utf8");
@@ -33,6 +34,13 @@ assert.doesNotMatch(migration, /sofizcake|cake-images/i);
 assert.match(supabaseServer, /import "server-only"/);
 assert.doesNotMatch(supabaseServer, /SUPABASE_SERVICE_ROLE_KEY\s*\|\|/);
 assert.match(uploadRoute, /catalove-product-images/);
+assert.match(uploadRoute, /validateImageUpload/);
+assert.match(uploadRoute, /users\/\$\{session\.id\}\/products/);
+assert.doesNotMatch(uploadRoute, /local-base64-fallback|dataUrl|data:/);
+assert.match(uploadRoute, /status: 503/);
+assert.match(uploadRoute, /status: 502/);
+assert.match(uploadRoute, /success: true[\s\S]*mode: "supabase-storage"/);
+assert.match(imageLimitsMigration, /file_size_limit\s*=\s*2097152/i);
 assert.doesNotMatch(uploadRoute, /cake-images/);
 assert.match(availabilityService, /\.rpc\("get_product_availability"/);
 assert.doesNotMatch(availabilityService, /\.from\("order_request_items"\)/);

@@ -32,6 +32,7 @@ import { INDUSTRY_PRESETS } from "@/lib/data/universal-presets";
 import { formatPrice } from "@/lib/utils/formatters";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { ProductImage as StorefrontProductImage } from "@/components/storefront/ProductImage";
+import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
 
 interface EditModalState {
   isOpen: boolean;
@@ -276,7 +277,7 @@ export default function AdminProductsPage() {
 
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", await prepareCatalogImage(file));
         const res = await fetch("/api/upload", {
           method: "POST",
           body: formData,

@@ -36,7 +36,7 @@ Use a **new Supabase project only for Catalove**. Do not reuse a project that co
 
    The URL host must match the explicit project ref. The service role key is server-only; never prefix it with `NEXT_PUBLIC_` or commit it.
 
-3. In the new project's SQL Editor, apply `supabase/migrations/202610290001_catalove_core.sql`. This creates Catalove's tables, seller-only write policies, order submission function, and product image bucket.
+3. In the new project's SQL Editor, apply `supabase/migrations/202610290001_catalove_core.sql`, then `supabase/migrations/202611250001_catalog_image_limits.sql`. This creates Catalove's tables, seller-only write policies, order submission function, and applies the product image bucket limits.
 4. In Supabase Authentication, create the owner's email/password account. Then add that account as a seller from the SQL Editor (replace the example email):
 
    ```sql
@@ -52,3 +52,9 @@ The migration is for an empty, dedicated Catalove project. Do not run it against
 ## Deploy
 
 The GitHub repository is connected to Vercel. Push changes to `main` to create a deployment. A successful frontend deployment does not enable database features until the dedicated Supabase project and environment variables are configured.
+
+## Commercial readiness and multiple clients
+
+The current application and database schema are for one Catalove-owned store. Do not onboard multiple unrelated client stores into this schema yet: products, settings, availability, and orders are global rather than scoped to a store. A shared client service requires a tenant/store ID and database-enforced Row Level Security on every business-owned table, media path scoping, store-aware routing, and cross-tenant access tests.
+
+The live site is a demo until `/api/settings` reports persisted data from a dedicated Catalove production Supabase project. Supabase Free is suitable for staging, but it may pause after inactivity and does not provide automatic backups. Vercel Hobby is for personal/non-commercial use; move Catalove to a commercial hosting plan before selling hosted catalogs. Current provider prices are in [docs/COMMERCIAL-RESEARCH.md](docs/COMMERCIAL-RESEARCH.md); client workflows are in [docs/COMMERCIAL-OPERATIONS.md](docs/COMMERCIAL-OPERATIONS.md).

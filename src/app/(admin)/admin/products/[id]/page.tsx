@@ -23,6 +23,7 @@ import {
 import { cakeService } from "@/lib/services/cake-service";
 import type { Category, Product, ProductImage, ProductVariant } from "@/types/bakery";
 import { formatIDR } from "@/lib/utils/formatters";
+import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
 
 interface EditImageItem {
   id: string;
@@ -168,7 +169,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       // Upload via /api/upload
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", await prepareCatalogImage(file));
         const res = await fetch("/api/upload", {
           method: "POST",
           body: formData,

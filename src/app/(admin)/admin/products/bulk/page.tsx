@@ -8,6 +8,7 @@ import { cakeService } from "@/lib/services/cake-service";
 import type { Category } from "@/types/bakery";
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { MotionIcon } from "@/components/ui/MotionIcon";
+import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
 
 type PhotoItem = {
   id: string;
@@ -107,7 +108,7 @@ export default function BulkProductsPage() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", await prepareCatalogImage(file));
 
       const res = await fetch("/api/upload", {
         method: "POST",
