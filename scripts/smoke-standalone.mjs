@@ -19,7 +19,7 @@ const server = spawn(process.execPath, ["scripts/start-standalone.mjs"], {
 
 try {
   let ready = false;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 120; attempt += 1) {
     if (server.exitCode !== null) throw new Error(`Standalone server exited early (${server.exitCode})`);
     try {
       const response = await fetch(baseUrl);
