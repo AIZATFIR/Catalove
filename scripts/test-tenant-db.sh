@@ -118,7 +118,7 @@ if [[ "$signup_a_status" -eq "$signup_b_status" ]]; then
   echo "Concurrent signup must create exactly one catalog." >&2
   exit 1
 fi
-if ! rg -q "Satu akun dapat memiliki satu katalog gratis" "$temp_dir/signup-a.log" "$temp_dir/signup-b.log"; then
+if ! grep -Eq "Satu akun dapat memiliki satu katalog gratis" "$temp_dir/signup-a.log" "$temp_dir/signup-b.log"; then
   cat "$temp_dir/signup-a.log" "$temp_dir/signup-b.log"
   echo "The losing concurrent signup did not receive the one-store limit." >&2
   exit 1
