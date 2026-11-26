@@ -182,7 +182,7 @@ function AdminOrdersContent() {
 
                 {/* Action Row: WhatsApp & Status Stepper */}
                 <div className="pt-3 border-t border-caramel-100 dark:border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  <a
+                  {waChatUrl && <a
                     href={waChatUrl}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -190,7 +190,7 @@ function AdminOrdersContent() {
                   >
                     <MessageCircle className="w-4 h-4" />
                     <span>Chat WhatsApp Pelanggan</span>
-                  </a>
+                  </a>}
 
                   {/* Status Dropdown */}
                   <div className="flex items-center gap-2 self-end sm:self-auto">

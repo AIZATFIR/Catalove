@@ -12,7 +12,7 @@
 
 - Use the configured `seller_whatsapp` number, falling back to `6285946689168`.
 - Show paid prices as starting prices: Business Rp299rb and Enterprise Rp799rb.
-- Describe the free entry plan as ad-supported; discuss final package scope, hosting, and domain details over WhatsApp.
+- Describe Free with clear catalog/photo caps and Catalove attribution; keep client storefronts free of third-party ads. Discuss billing cadence, package scope, hosting, and domain details over WhatsApp.
 - Opening WhatsApp creates a draft; Catalove never sends a message automatically.
 - Preserve the user's existing uncommitted change in `src/app/(storefront)/bio/page.tsx`.
 
@@ -40,7 +40,7 @@
 - Modify: `src/components/storefront/PricingSection.tsx`
 - Modify: `src/app/(storefront)/layout.tsx`
 
-- [ ] Present Free (ad-supported), Business (mulai Rp299rb), and Enterprise (mulai Rp799rb, customizable) with concise explanations and direct anchor links to the WhatsApp helper.
+- [ ] Present Free (capped, with Catalove attribution), Business (mulai Rp299rb), and Enterprise (mulai Rp799rb, scoped via WhatsApp) with direct WhatsApp contact.
 - [ ] Include copy that final feature scope, hosting, and domain are confirmed through WhatsApp.
 - [ ] Remove `OrderSchemeModal` and the order modal event flow from the storefront layout and pricing component.
 - [ ] Confirm keyboard navigation and visible link labels in the rendered pricing section.

@@ -9,6 +9,8 @@ import type { Category } from "@/types/bakery";
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { MotionIcon } from "@/components/ui/MotionIcon";
 import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
+import { withStoreSlug } from "@/lib/store-routing";
+import { discardUnattachedStoreImage } from "@/lib/services/store-media-client";
 
 type PhotoItem = {
   id: string;
@@ -66,7 +68,7 @@ export default function BulkProductsPage() {
     if (!newCatName.trim()) return;
     setCreatingCategory(true);
     try {
-      const res = await fetch("/api/categories", {
+      const res = await fetch(withStoreSlug("/api/categories"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newCatName.trim() }),
@@ -110,7 +112,7 @@ export default function BulkProductsPage() {
       const formData = new FormData();
       formData.append("file", await prepareCatalogImage(file));
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch(withStoreSlug("/api/upload"), {
         method: "POST",
         body: formData,
       });
@@ -196,6 +198,11 @@ export default function BulkProductsPage() {
   const removePhoto = (rowKey: string, photoId: string) => {
     const row = rows.find((item) => item.key === rowKey);
     const photo = row?.photos.find((p) => p.id === photoId);
+    if (photo?.uploadedUrl) {
+      void discardUnattachedStoreImage(photo.uploadedUrl).catch((error: unknown) => {
+        setFeedback(error instanceof Error ? error.message : "Foto belum berhasil dihapus dari penyimpanan.");
+      });
+    }
     if (photo?.previewUrl) {
       URL.revokeObjectURL(photo.previewUrl);
       objectUrls.current.delete(photo.previewUrl);

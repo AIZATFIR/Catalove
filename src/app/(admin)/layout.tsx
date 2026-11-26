@@ -16,7 +16,7 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const settings = useBusinessSettings();
-  const isLoginPage = pathname === "/admin/login";
+  const isLoginPage = pathname === "/admin/login" || pathname === "/admin/register";
 
   if (isLoginPage) {
     return <div className="min-h-screen bg-vanilla-100 dark:bg-[#1A1412] dark:text-[#F2E7DC]">{children}</div>;

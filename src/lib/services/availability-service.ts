@@ -138,8 +138,11 @@ export class AvailabilityService {
     status: AvailabilityStatus,
     quota?: number | null
   ): Promise<ProductAvailability> {
+    const product = await cakeService.getProductById(productId);
+    if (!product) throw new Error("Produk tidak ditemukan di toko ini.");
     const record: ProductAvailability = {
       id: `avail-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      store_id: product.store_id,
       product_id: productId,
       availability_date: dateStr,
       status,
@@ -160,6 +163,7 @@ export class AvailabilityService {
       .from("product_availability")
       .upsert(
         {
+          store_id: product.store_id,
           product_id: productId,
           availability_date: dateStr,
           status,
@@ -195,11 +199,14 @@ export class AvailabilityService {
 
       const startDate = `${yearMonth}-01`;
       const endDate = `${yearMonth}-31`;
+      const product = await cakeService.getProductById(productId);
+      if (!product) return {};
 
       const { data, error } = await supabase
         .from("product_availability")
         .select("availability_date, status")
         .eq("product_id", productId)
+        .eq("store_id", product.store_id)
         .gte("availability_date", startDate)
         .lte("availability_date", endDate);
 
@@ -220,6 +227,7 @@ export class AvailabilityService {
     targetDateStrs: string[]
   ): Promise<boolean> {
     const products = await cakeService.getProducts({ includeInactive: true });
+    const storeId = products[0]?.store_id;
 
     if (!isSupabaseConfigured()) {
       for (const prod of products) {
@@ -240,12 +248,13 @@ export class AvailabilityService {
     }
 
     const supabase = getDirectSupabaseClient();
-    if (!supabase) return false;
+    if (!supabase || !storeId) return false;
 
     // Fetch all availability records for source date
     const { data: sourceRecords } = await supabase
       .from("product_availability")
       .select("*")
+      .eq("store_id", storeId)
       .eq("availability_date", fromDateStr);
 
     if (!sourceRecords || sourceRecords.length === 0) return true;
@@ -254,6 +263,7 @@ export class AvailabilityService {
     for (const src of sourceRecords) {
       for (const targetDate of targetDateStrs) {
         rowsToInsert.push({
+          store_id: storeId,
           product_id: src.product_id,
           availability_date: targetDate,
           status: src.status,

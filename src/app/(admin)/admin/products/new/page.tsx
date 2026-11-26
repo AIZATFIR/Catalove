@@ -24,6 +24,8 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/Button";
 import { MotionIcon } from "@/components/ui/MotionIcon";
 import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
+import { withStoreSlug } from "@/lib/store-routing";
+import { discardUnattachedStoreImage } from "@/lib/services/store-media-client";
 
 interface UploadedImageItem {
   id: string;
@@ -128,7 +130,7 @@ export default function NewProductDraftPage() {
       const formData = new FormData();
       formData.append("file", await prepareCatalogImage(item.file));
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch(withStoreSlug("/api/upload"), {
         method: "POST",
         body: formData,
       });
@@ -232,6 +234,12 @@ export default function NewProductDraftPage() {
   };
 
   const removeImage = (id: string) => {
+    const removed = images.find((image) => image.id === id);
+    if (removed?.uploadedUrl) {
+      void discardUnattachedStoreImage(removed.uploadedUrl).catch((error: unknown) => {
+        setFeedbackMessage(error instanceof Error ? error.message : "Foto belum berhasil dihapus dari penyimpanan.");
+      });
+    }
     setImages((prev) => {
       const filtered = prev.filter((img) => img.id !== id);
       if (filtered.length > 0 && !filtered.some((img) => img.isPrimary)) {

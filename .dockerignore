@@ -1,0 +1,14 @@
+.git
+.next
+.vercel
+node_modules
+coverage
+_bmad
+_bmad-output
+docs
+supabase/.temp
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+npm-debug.log*

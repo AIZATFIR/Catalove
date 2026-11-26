@@ -16,7 +16,7 @@ export function buildCataloveInquiryWhatsAppUrl(
   const message = [
     "Halo Catalove,",
     packageLine,
-    "Mohon info fitur, biaya hosting/domain, dan proses untuk mulai. Terima kasih.",
+    "Mohon rincian scope, periode tagihan, biaya hosting/domain, dan proses mulai sebelum saya menyetujui. Terima kasih.",
   ].join("\n\n");
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;

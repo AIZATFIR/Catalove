@@ -9,25 +9,20 @@ import { Skiper25 } from "@/components/ui/skiper-ui/skiper25";
 import { Skiper26 } from "@/components/ui/skiper-ui/skiper26";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { saveBusinessSettings } from "@/lib/business-settings";
-import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
+import { openStorefrontWhatsApp } from "@/components/storefront/PricingSection";
 import { useCart } from "@/context/CartContext";
+import { getStorefrontNavigationLinks } from "@/lib/store-routing";
 
 interface NavbarProps {
   onOpenQuiz?: () => void;
 }
-
-const links = [
-  { href: "/#discovery-feed", label: "Katalog" },
-  { href: "/#harga", label: "Harga & Skema" },
-  { href: "/catalog", label: "Semua Sample" },
-  { href: "/bio", label: "Bio" },
-];
 
 export function Navbar({ onOpenQuiz }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
   const [editingBrand, setEditingBrand] = useState(false);
   const pathname = usePathname();
+  const links = getStorefrontNavigationLinks(pathname || "/");
   const router = useRouter();
   const settings = useBusinessSettings();
   const { totalItems, savedIds, openCart, openWishlist } = useCart();
@@ -172,7 +167,7 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
 
           <button
             type="button"
-            onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+            onClick={() => openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name)}
             className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-bold tracking-wide text-white transition-opacity hover:opacity-90 whitespace-nowrap"
           >
             {settings.nav_cta_text || "Pesan Catalove"}
@@ -284,11 +279,11 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
-                openCataloveWhatsApp(settings.seller_whatsapp);
+                openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name);
               }}
               className="touch-target flex items-center text-left text-sm font-bold text-[#25D366] py-2.5"
             >
-              Pesan Catalove
+              {settings.nav_cta_text || "Hubungi Kami"}
             </button>
           </nav>
         </div>

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Product, ProductVariant } from "@/types/catalove";
+import { getStoreScopedStorageKey } from "@/lib/store-routing";
 
 export interface CartItem {
   id: string;
@@ -39,8 +40,8 @@ interface CartContextValue {
   lastToast: string | null;
 }
 
-const CART_STORAGE_KEY = "catalove-cart-v1";
-const WISHLIST_STORAGE_KEY = "catalove-wishlist-v1";
+const CART_STORAGE_KEY = () => getStoreScopedStorageKey("catalove-cart-v1");
+const WISHLIST_STORAGE_KEY = () => getStoreScopedStorageKey("catalove-wishlist-v1");
 
 const CartContext = createContext<CartContextValue | null>(null);
 
@@ -55,12 +56,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const rawCart = window.localStorage.getItem(CART_STORAGE_KEY);
+      const rawCart = window.localStorage.getItem(CART_STORAGE_KEY());
       if (rawCart) {
         const parsed = JSON.parse(rawCart);
         if (Array.isArray(parsed)) setItems(parsed);
       }
-      const rawWishlist = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
+      const rawWishlist = window.localStorage.getItem(WISHLIST_STORAGE_KEY());
       if (rawWishlist) {
         const parsedWish = JSON.parse(rawWishlist);
         if (Array.isArray(parsedWish)) setSavedIds(parsedWish);
@@ -73,7 +74,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      window.localStorage.setItem(CART_STORAGE_KEY(), JSON.stringify(items));
     } catch {
       // ignore quota error
     }
@@ -82,7 +83,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(savedIds));
+      window.localStorage.setItem(WISHLIST_STORAGE_KEY(), JSON.stringify(savedIds));
     } catch {
       // ignore quota error
     }

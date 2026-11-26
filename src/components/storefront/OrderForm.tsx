@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Product, ProductVariant, OrderRequest, FulfillmentMethod } from "@/types/bakery";
 import { formatPrice, getTodayJakarta } from "@/lib/utils/formatters";
 import { FulfillmentDatePicker } from "./FulfillmentDatePicker";
@@ -380,6 +381,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ product }) => {
             </div>
           </div>
         </div>
+
+        <p className="text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
+          Checkout mencatat nama, nomor WhatsApp, dan detail pesanan di dashboard toko. WhatsApp membuka draft pesan; kamu yang menekan Kirim. Baca <Link href="/privacy" className="underline underline-offset-2">Kebijakan Privasi</Link>.
+        </p>
 
         {/* Price Summary & Submit CTA */}
         <div className="pt-4 border-t border-caramel-200 dark:border-white/10 space-y-3">

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/storefront/Navbar";
 import { Hero } from "@/components/storefront/Hero";
 import { CakeScrollShowcase } from "@/components/storefront/CakeScrollShowcase";
@@ -48,6 +49,7 @@ import { saveBusinessSettings } from "@/lib/business-settings";
 import { cakeService } from "@/lib/services/cake-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { normalizeCanvasSections } from "@/lib/canvas-sections";
+import { getAllowedStorefrontSections, getStorefrontSectionOrder } from "@/lib/storefront-sections";
 
 const SECTION_TITLE_MAP: Record<CanvasSectionId, string> = ALL_CANVAS_SECTIONS.reduce(
   (acc, item) => {
@@ -157,6 +159,7 @@ const SPACING_WRAPPER_CLASS: Record<SectionSpacingOption, string> = {
 };
 
 export default function HomePage() {
+  const pathname = usePathname() || "/";
   const settings = useBusinessSettings();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
@@ -263,7 +266,17 @@ export default function HomePage() {
     const fallback = isCanvasMode
       ? DEFAULT_CANVAS_ORDER
       : DEFAULT_SHOWCASE_ORDER;
-    return normalizeCanvasSections(
+    if (isCanvasMode) {
+      const allowedSections = getAllowedStorefrontSections(pathname, ALL_CANVAS_SECTIONS);
+      return normalizeCanvasSections(
+        saved,
+        new Set(allowedSections.map((section) => section.id)),
+        fallback,
+        activeTheme.hidden_sections
+      );
+    }
+    return getStorefrontSectionOrder(
+      pathname,
       saved,
       VALID_SECTION_IDS,
       fallback,
@@ -271,6 +284,7 @@ export default function HomePage() {
     );
   }, [
     isCanvasMode,
+    pathname,
     activeTheme.canvas_draft_order,
     activeTheme.section_order,
     activeTheme.hidden_sections,
@@ -441,7 +455,7 @@ export default function HomePage() {
               </button>
               <button
                 type="button"
-                onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+                onClick={() => openCataloveWhatsApp()}
                 className="rounded-full bg-[var(--storefront-accent)] px-3.5 py-1 text-[11px] font-bold text-white hover:opacity-95"
               >
                 Pilih Paket &amp; Pesan

@@ -11,6 +11,7 @@ import { ProductInput } from "@/lib/validators/product";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { shouldUseLocalCatalogOverride } from "@/lib/services/catalog-mode";
+import { DEFAULT_STORE_ID, getStoreScopedStorageKey, withStoreSlug } from "@/lib/store-routing";
 import { createClient } from "@supabase/supabase-js";
 
 const STORAGE_KEYS = {
@@ -18,6 +19,7 @@ const STORAGE_KEYS = {
   CATEGORIES: "catalove-categories-v3",
   LOCAL_MODE: "catalove-local-catalog-mode-v3",
 };
+const catalogStorageKey = (key: string) => getStoreScopedStorageKey(key);
 
 // In-memory store for Node/SSR/automated testing fallback
 let categoriesStore: Category[] = [...INITIAL_CATEGORIES];
@@ -44,8 +46,8 @@ function readBrowserStorage(): { categories: Category[]; products: Product[] } {
   }
 
   try {
-    const rawCats = window.localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    const rawProds = window.localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    const rawCats = window.localStorage.getItem(catalogStorageKey(STORAGE_KEYS.CATEGORIES));
+    const rawProds = window.localStorage.getItem(catalogStorageKey(STORAGE_KEYS.PRODUCTS));
 
     if (rawCats && rawProds) {
       const cats = JSON.parse(rawCats) as Category[];
@@ -58,7 +60,7 @@ function readBrowserStorage(): { categories: Category[]; products: Product[] } {
     // Initialize browser storage with current preset (defaulting to Universal Lifestyle Store)
     let presetKey: IndustryPreset = "general";
     try {
-      const savedSettings = window.localStorage.getItem("catalove-business-settings-v3");
+      const savedSettings = window.localStorage.getItem(getStoreScopedStorageKey("catalove-business-settings-v3"));
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
         if (parsed?.industry_preset && INDUSTRY_PRESETS[parsed.industry_preset as IndustryPreset]) {
@@ -75,8 +77,8 @@ function readBrowserStorage(): { categories: Category[]; products: Product[] } {
       category: bundle.categories.find((c) => c.id === p.category_id) || null,
     }));
 
-    window.localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(bundle.categories));
-    window.localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(hydratedProducts));
+    window.localStorage.setItem(catalogStorageKey(STORAGE_KEYS.CATEGORIES), JSON.stringify(bundle.categories));
+    window.localStorage.setItem(catalogStorageKey(STORAGE_KEYS.PRODUCTS), JSON.stringify(hydratedProducts));
     return { categories: bundle.categories, products: hydratedProducts };
   } catch {
     const bundle = INDUSTRY_PRESETS.general;
@@ -91,10 +93,10 @@ function writeBrowserStorage(categories: Category[], products: Product[], forceL
       ...p,
       category: categories.find((c) => c.id === p.category_id) || p.category || null,
     }));
-    window.localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-    window.localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(hydrated));
+    window.localStorage.setItem(catalogStorageKey(STORAGE_KEYS.CATEGORIES), JSON.stringify(categories));
+    window.localStorage.setItem(catalogStorageKey(STORAGE_KEYS.PRODUCTS), JSON.stringify(hydrated));
     if (forceLocalMode) {
-      window.localStorage.setItem(STORAGE_KEYS.LOCAL_MODE, "1");
+      window.localStorage.setItem(catalogStorageKey(STORAGE_KEYS.LOCAL_MODE), "1");
     }
     dispatchCatalogUpdate();
   } catch {
@@ -107,7 +109,7 @@ function isBrowserLocalOverrideActive(): boolean {
   try {
     return shouldUseLocalCatalogOverride(
       isSupabaseConfigured(),
-      window.localStorage.getItem(STORAGE_KEYS.LOCAL_MODE)
+      window.localStorage.getItem(catalogStorageKey(STORAGE_KEYS.LOCAL_MODE))
     );
   } catch {
     return true;
@@ -136,13 +138,13 @@ export class CakeService {
 
   async clearLocalCatalogOverride(): Promise<void> {
     if (typeof window === "undefined") return;
-    window.localStorage.removeItem(STORAGE_KEYS.LOCAL_MODE);
-    window.localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
-    window.localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+    window.localStorage.removeItem(catalogStorageKey(STORAGE_KEYS.LOCAL_MODE));
+    window.localStorage.removeItem(catalogStorageKey(STORAGE_KEYS.PRODUCTS));
+    window.localStorage.removeItem(catalogStorageKey(STORAGE_KEYS.CATEGORIES));
     dispatchCatalogUpdate();
   }
 
-  async getCategories(): Promise<Category[]> {
+  async getCategories(storeId = DEFAULT_STORE_ID): Promise<Category[]> {
     if (typeof window !== "undefined" && isBrowserLocalOverrideActive()) {
       const { categories } = readBrowserStorage();
       return [...categories]
@@ -158,6 +160,13 @@ export class CakeService {
       return [...categoriesStore].sort((a, b) => a.display_order - b.display_order);
     }
 
+    if (typeof window !== "undefined") {
+      const res = await fetch(withStoreSlug("/api/categories"), { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.categories)) throw new Error(data.error || "Gagal memuat kategori.");
+      return data.categories as Category[];
+    }
+
     try {
       const supabase = getDirectSupabaseClient();
       if (!supabase) return [];
@@ -166,6 +175,7 @@ export class CakeService {
         .from("categories")
         .select("*")
         .eq("is_active", true)
+        .eq("store_id", storeId)
         .neq("slug", "__content_config__")
         .order("display_order", { ascending: true });
 
@@ -181,7 +191,7 @@ export class CakeService {
     name: string;
     slug?: string;
     description?: string;
-  }): Promise<Category> {
+  }, storeId = DEFAULT_STORE_ID): Promise<Category> {
     const slug = (input.slug || input.name)
       .toLowerCase()
       .trim()
@@ -189,7 +199,7 @@ export class CakeService {
       .replace(/^-+|-+$/g, "");
 
     if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
-      const res = await fetch("/api/categories", {
+      const res = await fetch(withStoreSlug("/api/categories"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -238,6 +248,7 @@ export class CakeService {
     const { data, error } = await supabase
       .from("categories")
       .insert({
+        store_id: storeId,
         name: input.name.trim(),
         slug,
         description: input.description?.trim() || "",
@@ -253,9 +264,9 @@ export class CakeService {
     return data as Category;
   }
 
-  async deleteCategory(id: string): Promise<boolean> {
+  async deleteCategory(id: string, storeId = DEFAULT_STORE_ID): Promise<boolean> {
     if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
-      const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res = await fetch(withStoreSlug(`/api/categories?id=${encodeURIComponent(id)}`), { method: "DELETE" });
       if (!res.ok) return false;
       const result = await res.json();
       if (!result.success) return false;
@@ -288,8 +299,8 @@ export class CakeService {
     const supabase = getDirectSupabaseClient();
     if (!supabase) return false;
 
-    await supabase.from("products").update({ category_id: null }).eq("category_id", id);
-    const { error } = await supabase.from("categories").delete().eq("id", id);
+    await supabase.from("products").update({ category_id: null }).eq("store_id", storeId).eq("category_id", id);
+    const { error } = await supabase.from("categories").delete().eq("store_id", storeId).eq("id", id);
     return !error;
   }
 
@@ -299,14 +310,20 @@ export class CakeService {
     readyOnly?: boolean;
     includeInactive?: boolean;
     sort?: string;
-  }): Promise<Product[]> {
+  }, storeId = DEFAULT_STORE_ID): Promise<Product[]> {
     if (typeof window !== "undefined" && isBrowserLocalOverrideActive()) {
       const state = readBrowserStorage();
       return this.filterList(state.products, state.categories, filters);
     }
 
-    if (typeof window !== "undefined" && filters?.includeInactive) {
-      const res = await fetch("/api/products?includeInactive=true");
+    if (typeof window !== "undefined" && isSupabaseConfigured()) {
+      const params = new URLSearchParams();
+      if (filters?.includeInactive) params.set("includeInactive", "true");
+      if (filters?.categoryId) params.set("categoryId", filters.categoryId);
+      if (filters?.search) params.set("search", filters.search);
+      if (filters?.readyOnly) params.set("readyOnly", "true");
+      if (filters?.sort) params.set("sort", filters.sort);
+      const res = await fetch(withStoreSlug(`/api/products?${params.toString()}`), { cache: "no-store" });
       const data = await res.json();
       if (!res.ok || !data?.success || !Array.isArray(data.products)) {
         throw new Error(data?.error || "Gagal memuat produk katalog.");
@@ -333,6 +350,7 @@ export class CakeService {
         variants:product_variants(*),
         images:product_images(*)
       `);
+      query = query.eq("store_id", storeId);
 
       if (!filters?.includeInactive) {
         query = query.eq("is_active", true);
@@ -438,7 +456,7 @@ export class CakeService {
     return null;
   }
 
-  async getProductBySlug(slug: string): Promise<Product | null> {
+  async getProductBySlug(slug: string, storeId = DEFAULT_STORE_ID): Promise<Product | null> {
     if (typeof window !== "undefined" && isBrowserLocalOverrideActive()) {
       const state = readBrowserStorage();
       const browserMatch = state.products.find((p) => p.slug === slug);
@@ -461,6 +479,12 @@ export class CakeService {
       return this.findInAllPresetsBySlug(slug);
     }
 
+    if (typeof window !== "undefined") {
+      const res = await fetch(withStoreSlug(`/api/products?slug=${encodeURIComponent(slug)}`), { cache: "no-store" });
+      const data = await res.json();
+      return res.ok && data?.success ? (data.product as Product) : null;
+    }
+
     try {
       const supabase = getDirectSupabaseClient();
       if (!supabase) return null;
@@ -474,6 +498,7 @@ export class CakeService {
           images:product_images(*)
         `)
         .eq("slug", slug)
+        .eq("store_id", storeId)
         .single();
 
       if (error || !data) return null;
@@ -491,7 +516,7 @@ export class CakeService {
     }
   }
 
-  async getProductById(id: string): Promise<Product | null> {
+  async getProductById(id: string, storeId = DEFAULT_STORE_ID): Promise<Product | null> {
     if (typeof window !== "undefined" && isBrowserLocalOverrideActive()) {
       const state = readBrowserStorage();
       const browserMatch = state.products.find((p) => p.id === id);
@@ -518,6 +543,12 @@ export class CakeService {
       return null;
     }
 
+    if (typeof window !== "undefined") {
+      const res = await fetch(withStoreSlug(`/api/products?id=${encodeURIComponent(id)}`), { cache: "no-store" });
+      const data = await res.json();
+      return res.ok && data?.success ? (data.product as Product) : null;
+    }
+
     try {
       const supabase = getDirectSupabaseClient();
       if (!supabase) return null;
@@ -531,6 +562,7 @@ export class CakeService {
           images:product_images(*)
         `)
         .eq("id", id)
+        .eq("store_id", storeId)
         .single();
 
       if (error || !data) {
@@ -550,7 +582,7 @@ export class CakeService {
     }
   }
 
-  async createProduct(input: ProductInput): Promise<Product> {
+  async createProduct(input: ProductInput, storeId = DEFAULT_STORE_ID): Promise<Product> {
     const slug =
       input.name
         .toLowerCase()
@@ -558,7 +590,7 @@ export class CakeService {
         .replace(/^-+|-+$/g, "") + `-${Date.now().toString().slice(-4)}`;
 
     if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
-      const res = await fetch("/api/products", {
+      const res = await fetch(withStoreSlug("/api/products"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -670,6 +702,7 @@ export class CakeService {
     const { data: prodData, error: prodErr } = await supabase
       .from("products")
       .insert({
+        store_id: storeId,
         category_id: input.category_id || null,
         name: input.name,
         slug,
@@ -691,6 +724,7 @@ export class CakeService {
 
     if (input.variants.length > 0) {
       const variantRows = input.variants.map((v, idx) => ({
+        store_id: storeId,
         product_id: productId,
         name: v.name,
         price: v.price,
@@ -702,6 +736,7 @@ export class CakeService {
 
     if (input.images.length > 0) {
       const imageRows = input.images.map((img, idx) => ({
+        store_id: storeId,
         product_id: productId,
         storage_path: img.storage_path,
         alt_text: img.alt_text || `${input.name} foto ${idx + 1}`,
@@ -711,14 +746,14 @@ export class CakeService {
       await supabase.from("product_images").insert(imageRows);
     }
 
-    const created = await this.getProductById(productId);
+    const created = await this.getProductById(productId, storeId);
     if (!created) throw new Error("Produk berhasil dibuat namun gagal memuat ulang data.");
     return created;
   }
 
-  async updateProduct(id: string, updates: Partial<ProductInput>): Promise<Product | null> {
+  async updateProduct(id: string, updates: Partial<ProductInput>, storeId = DEFAULT_STORE_ID): Promise<Product | null> {
     if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
-      const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, {
+      const res = await fetch(withStoreSlug(`/api/products?id=${encodeURIComponent(id)}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -856,15 +891,17 @@ export class CakeService {
         ...(updates.is_featured !== undefined && { is_featured: updates.is_featured }),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("store_id", storeId);
 
     if (error) throw new Error(error.message);
 
     if (updates.variants) {
-      await supabase.from("product_variants").delete().eq("product_id", id);
+      await supabase.from("product_variants").delete().eq("store_id", storeId).eq("product_id", id);
       if (updates.variants.length > 0) {
         await supabase.from("product_variants").insert(
           updates.variants.map((v, i) => ({
+            store_id: storeId,
             product_id: id,
             name: v.name,
             price: v.price,
@@ -876,10 +913,11 @@ export class CakeService {
     }
 
     if (updates.images) {
-      await supabase.from("product_images").delete().eq("product_id", id);
+      await supabase.from("product_images").delete().eq("store_id", storeId).eq("product_id", id);
       if (updates.images.length > 0) {
         await supabase.from("product_images").insert(
           updates.images.map((img, i) => ({
+            store_id: storeId,
             product_id: id,
             storage_path: img.storage_path,
             alt_text: img.alt_text || updates.name || "Foto produk",
@@ -890,15 +928,16 @@ export class CakeService {
       }
     }
 
-    return this.getProductById(id);
+    return this.getProductById(id, storeId);
   }
 
   async deleteProduct(
-    id: string
+    id: string,
+    storeId = DEFAULT_STORE_ID
   ): Promise<{ success: boolean; softDeleted?: boolean; message?: string }> {
     if (typeof window !== "undefined" && !isBrowserLocalOverrideActive()) {
       try {
-        const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+        const res = await fetch(withStoreSlug(`/api/products?id=${encodeURIComponent(id)}`), { method: "DELETE" });
         const data = await res.json();
         if (!res.ok || !data.success) {
           return { success: false, message: data.error || "Produk belum terhapus." };
@@ -937,10 +976,10 @@ export class CakeService {
     if (!supabase) return { success: false, message: "Koneksi database tidak tersedia." };
 
     try {
-      const { error } = await supabase.from("products").delete().eq("id", id);
+      const { error } = await supabase.from("products").delete().eq("store_id", storeId).eq("id", id);
       if (error) {
         if (error.code === "23503") {
-          await supabase.from("products").update({ is_active: false }).eq("id", id);
+          await supabase.from("products").update({ is_active: false }).eq("store_id", storeId).eq("id", id);
           return {
             success: true,
             softDeleted: true,
@@ -956,7 +995,7 @@ export class CakeService {
     }
   }
 
-  async reorderProducts(productIds: string[]): Promise<void> {
+  async reorderProducts(productIds: string[], storeId = DEFAULT_STORE_ID): Promise<void> {
     if (typeof window !== "undefined" && isBrowserLocalOverrideActive()) {
       const state = readBrowserStorage();
       const updated = state.products.map((p) => {
@@ -975,6 +1014,16 @@ export class CakeService {
       return;
     }
 
+    if (typeof window !== "undefined") {
+      const response = await fetch(withStoreSlug("/api/products"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds }),
+      });
+      if (!response.ok) throw new Error("Urutan produk belum tersimpan.");
+      return;
+    }
+
     const supabase = getDirectSupabaseClient();
     if (!supabase) return;
 
@@ -982,6 +1031,7 @@ export class CakeService {
       await supabase
         .from("products")
         .update({ display_order: i + 1 })
+        .eq("store_id", storeId)
         .eq("id", productIds[i]);
     }
   }

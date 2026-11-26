@@ -33,6 +33,7 @@ import { formatPrice } from "@/lib/utils/formatters";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { ProductImage as StorefrontProductImage } from "@/components/storefront/ProductImage";
 import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
+import { withStoreSlug } from "@/lib/store-routing";
 
 interface EditModalState {
   isOpen: boolean;
@@ -278,7 +279,7 @@ export default function AdminProductsPage() {
       try {
         const formData = new FormData();
         formData.append("file", await prepareCatalogImage(file));
-        const res = await fetch("/api/upload", {
+        const res = await fetch(withStoreSlug("/api/upload"), {
           method: "POST",
           body: formData,
         });

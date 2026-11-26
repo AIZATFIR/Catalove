@@ -2,11 +2,15 @@
 
 import React from "react";
 import { Check } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
+import { INITIAL_SETTINGS } from "@/lib/data/seed-catalog";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
 import type { CanvasSectionId } from "@/types/catalove";
 import { buildCataloveInquiryWhatsAppUrl, type CatalovePlan } from "@/lib/utils/catalove-whatsapp";
+import { buildStoreContactWhatsAppUrl } from "@/lib/utils/store-whatsapp";
+import { isTenantStorefrontPath } from "@/lib/store-routing";
 
 export type CatalovePlanId = CatalovePlan;
 
@@ -62,38 +66,47 @@ const PLAN_DETAILS: Record<
   business: {
     name: "Business",
     price: "Rp 299rb",
-    priceLabel: "Harga final dibahas lewat WhatsApp.",
-    tagline: "Katalog mandiri dengan kontrol lebih untuk bisnismu.",
+    priceLabel: "Harga mulai; scope, biaya rutin, dan hosting dibahas via WhatsApp.",
+    tagline: "Dibantu menyiapkan katalog agar siap dipakai.",
     features: [
-      "Mode Kanvas penuh (geser posisi section, ganti model & layout)",
-      "Kustom palet warna bebas (preset & warna hex brand sendiri)",
-      "Dashboard Studio (input produk, foto, harga & varian mandiri)",
-      "Mode Waterfall, Snap Feed, Grid, Lookbook & halaman Bio QR",
-      "Order pelanggan langsung masuk ke WhatsApp brandmu",
+      "Bantuan setup awal dan input katalog sesuai scope yang disepakati",
+      "Warna, susunan halaman, dan identitas brand disiapkan bersama",
+      "Akses admin untuk mengubah produk, foto, harga, dan stok sendiri",
+      "Katalog siap dibagikan dengan alur order ke WhatsApp",
+      "Hosting dan domain dibahas terpisah sebelum mulai",
     ],
   },
   enterprise: {
     name: "Enterprise",
     price: "Rp 799rb",
-    priceLabel: "Harga menyesuaikan kebutuhan brand.",
-    tagline: "Pendampingan dan branding yang disesuaikan dengan kebutuhan brand.",
+    priceLabel: "Harga mulai; quote akhir mengikuti scope dan biaya rutin.",
+    tagline: "Pendampingan dan branding khusus sesuai kebutuhan brand.",
     features: [
-      "Semua fitur Business dan akses penuh Mode Kanvas",
-      "Input & kurasi katalog awal oleh spesialis katalog kami",
-      "Custom warna palet, tipografi & posisi layout sesuai brandingmu",
-      "Konsultasi opsi domain dan kebutuhan hosting",
-      "Pendampingan & revisi via WhatsApp sampai siap jualan",
+      "Semua bantuan setup Business sesuai scope yang disepakati",
+      "Kurasi katalog awal berdasarkan materi yang kamu sediakan",
+      "Penyesuaian branding dan konten dirinci sebelum pengerjaan",
+      "Timeline, jumlah revisi, dan serah-terima disepakati tertulis",
+      "Hosting dan domain dikutip terpisah sebelum persetujuan",
     ],
   },
 };
 
-export function openCataloveWhatsApp(
+export function openCataloveWhatsApp(plan?: CatalovePlan) {
+  if (typeof window === "undefined") return;
+  const url = buildCataloveInquiryWhatsAppUrl(INITIAL_SETTINGS.seller_whatsapp, plan);
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+export function openStorefrontWhatsApp(
   phoneNumber = readBusinessSettings().seller_whatsapp,
-  plan?: CatalovePlan
+  storeName = readBusinessSettings().store_name
 ) {
   if (typeof window === "undefined") return;
-  const url = buildCataloveInquiryWhatsAppUrl(phoneNumber, plan);
-  window.open(url, "_blank", "noopener,noreferrer");
+  const url = isTenantStorefrontPath(window.location.pathname)
+    ? buildStoreContactWhatsAppUrl(phoneNumber, storeName)
+    : buildCataloveInquiryWhatsAppUrl(INITIAL_SETTINGS.seller_whatsapp);
+  if (url) window.open(url, "_blank", "noopener,noreferrer");
 }
 
 interface PricingSectionProps {
@@ -105,11 +118,13 @@ export function PricingSection({
   isCanvasMode = false,
   onEnableCanvasMode,
 }: PricingSectionProps) {
+  const pathname = usePathname() || "/";
   const settings = useBusinessSettings();
+  if (isTenantStorefrontPath(pathname)) return null;
   const pricingCfg = settings.theme_config?.section_configs?.pricing;
   const headingText = pricingCfg?.title ?? "Pilih cara bangun katalog brandmu.";
   const subtitleText = pricingCfg?.subtitle ??
-    "Mulai gratis untuk mencoba. Pilih Business atau konsultasikan kebutuhan branding dan biaya hosting lewat WhatsApp.";
+    "Mulai sendiri secara gratis dengan batas katalog yang jelas. Butuh bantuan setup atau branding? Bahas scope dan biaya rutin lewat WhatsApp.";
 
   const updatePricingConfig = (field: "title" | "subtitle", value: string) => {
     const activeTheme = settings.theme_config || DEFAULT_THEME_CONFIG;
@@ -182,16 +197,16 @@ export function PricingSection({
             <div className="space-y-4">
               <p className="text-xs font-semibold text-[var(--storefront-accent)]">Mulai tanpa biaya</p>
               <h3 className="font-serif text-2xl font-medium text-[var(--storefront-ink)]">Gratis</h3>
-              <p className="text-sm text-[var(--storefront-ink)] opacity-75">Buat katalog sederhana dan bagikan ke pelanggan. Paket gratis didukung iklan platform.</p>
+              <p className="text-sm text-[var(--storefront-ink)] opacity-75">Buat katalog dan bagikan ke pelanggan. Katalog Free memiliki batas produk dan foto serta atribusi Catalove; tanpa iklan pihak ketiga di tokomu.</p>
               <ul className="space-y-3 text-sm text-[var(--storefront-ink)] opacity-90">
-                {["Buat halaman katalog", "Kelola produk dan foto", "Terima pertanyaan melalui WhatsApp"].map((feature) => (
+                {["Maksimal 25 produk dan 50 foto (2 MiB per foto, total 100 MiB)", "Kelola produk, harga, dan stok sendiri", "Terima order lewat WhatsApp", "Powered by Catalove"].map((feature) => (
                   <li key={feature} className="flex items-start gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--storefront-accent)]" /><span>{feature}</span></li>
                 ))}
               </ul>
             </div>
             <div className="flex flex-col gap-3 pt-8">
               <button type="button" onClick={handleStartCanvas} className="touch-target rounded-full border border-[var(--storefront-line)] px-5 py-3.5 text-sm font-semibold text-[var(--storefront-ink)] hover:border-[var(--storefront-accent)] transition-colors">Coba Mode Kanvas</button>
-              <button type="button" onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)} className="touch-target text-sm font-semibold text-[var(--storefront-accent)] hover:underline">Tanya cara mulai</button>
+              <button type="button" onClick={() => openCataloveWhatsApp()} className="touch-target text-sm font-semibold text-[var(--storefront-accent)] hover:underline">Tanya cara mulai</button>
             </div>
           </article>
 
@@ -213,7 +228,7 @@ export function PricingSection({
                   </ul>
                 </div>
                 <div className="pt-8">
-                  <button type="button" onClick={() => openCataloveWhatsApp(settings.seller_whatsapp, plan)} className="w-full touch-target rounded-full bg-[var(--storefront-accent)] px-6 py-3.5 text-sm font-bold text-white hover:opacity-95 transition-opacity">
+                  <button type="button" onClick={() => openCataloveWhatsApp(plan)} className="w-full touch-target rounded-full bg-[var(--storefront-accent)] px-6 py-3.5 text-sm font-bold text-white hover:opacity-95 transition-opacity">
                     Tanya paket {details.name}
                   </button>
                 </div>

@@ -24,6 +24,8 @@ import { cakeService } from "@/lib/services/cake-service";
 import type { Category, Product, ProductImage, ProductVariant } from "@/types/bakery";
 import { formatIDR } from "@/lib/utils/formatters";
 import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
+import { withStoreSlug } from "@/lib/store-routing";
+import { discardUnattachedStoreImage } from "@/lib/services/store-media-client";
 
 interface EditImageItem {
   id: string;
@@ -125,7 +127,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     if (!newCatName.trim()) return;
     setCreatingCat(true);
     try {
-      const res = await fetch("/api/categories", {
+      const res = await fetch(withStoreSlug("/api/categories"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newCatName.trim() }),
@@ -170,7 +172,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       try {
         const formData = new FormData();
         formData.append("file", await prepareCatalogImage(file));
-        const res = await fetch("/api/upload", {
+        const res = await fetch(withStoreSlug("/api/upload"), {
           method: "POST",
           body: formData,
         });
@@ -210,6 +212,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   };
 
   const removeImage = (id: string) => {
+    const removed = images.find((image) => image.id === id);
+    if (removed?.file && removed.status === "saved") {
+      void discardUnattachedStoreImage(removed.storage_path).catch((error: unknown) => {
+        setFeedback({ text: error instanceof Error ? error.message : "Foto belum berhasil dihapus dari penyimpanan.", type: "error" });
+      });
+    }
     setImages((prev) => {
       const remaining = prev.filter((img) => img.id !== id);
       if (remaining.length > 0 && !remaining.some((img) => img.is_primary)) {

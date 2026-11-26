@@ -40,6 +40,7 @@ import {
   DEFAULT_SHOWCASE_ORDER,
   openCataloveWhatsApp,
 } from "@/components/storefront/PricingSection";
+import { getAllowedStorefrontSections } from "@/lib/storefront-sections";
 import type {
   BodyScaleOption,
   BusinessSettings,
@@ -56,10 +57,6 @@ import type {
 } from "@/types/catalove";
 
 type DockTab = "posisi" | "warna" | "model" | "brand";
-
-const VALID_SECTION_IDS = new Set<CanvasSectionId>(
-  ALL_CANVAS_SECTIONS.map((s) => s.id)
-);
 
 const SECTION_LABELS: Record<CanvasSectionId, string> =
   ALL_CANVAS_SECTIONS.reduce((acc, item) => {
@@ -197,21 +194,29 @@ export function LiveCustomizerDock() {
   );
 
   const orderField = "canvas_draft_order" as const;
+  const allowedSections = useMemo(
+    () => getAllowedStorefrontSections(pathname || "/", ALL_CANVAS_SECTIONS),
+    [pathname]
+  );
+  const allowedSectionIds = useMemo(
+    () => new Set(allowedSections.map((section) => section.id)),
+    [allowedSections]
+  );
 
   const sectionOrder: CanvasSectionId[] = useMemo(() => {
     const saved = activeTheme.canvas_draft_order;
     const fallback = DEFAULT_CANVAS_ORDER;
     return normalizeCanvasSections(
       saved,
-      VALID_SECTION_IDS,
+      allowedSectionIds,
       fallback,
       activeTheme.hidden_sections
     );
-  }, [activeTheme.canvas_draft_order, activeTheme.hidden_sections]);
+  }, [activeTheme.canvas_draft_order, activeTheme.hidden_sections, allowedSectionIds]);
 
   const availableToAdd = useMemo(
-    () => ALL_CANVAS_SECTIONS.filter((sec) => !sectionOrder.includes(sec.id)),
-    [sectionOrder]
+    () => allowedSections.filter((sec) => !sectionOrder.includes(sec.id)),
+    [allowedSections, sectionOrder]
   );
 
   const presetBasePalette =
@@ -257,7 +262,7 @@ export function LiveCustomizerDock() {
     const updatedTheme = addCanvasSectionToTheme(
       theme,
       id,
-      VALID_SECTION_IDS,
+      allowedSectionIds,
       DEFAULT_CANVAS_ORDER
     );
     saveBusinessSettings({
@@ -282,7 +287,7 @@ export function LiveCustomizerDock() {
     updateTheme({
       [orderField]: normalizeCanvasSections(
         DEFAULT_SHOWCASE_ORDER,
-        VALID_SECTION_IDS,
+        allowedSectionIds,
         DEFAULT_CANVAS_ORDER
       ),
       hidden_sections: [],
@@ -296,7 +301,7 @@ export function LiveCustomizerDock() {
       const merged: BusinessSettings = {
         ...settings,
         ...bundle.settings,
-        seller_whatsapp: settings.seller_whatsapp || "6285946689168",
+        seller_whatsapp: settings.seller_whatsapp,
         industry_preset: presetKey,
         theme_config: {
           ...DEFAULT_THEME_CONFIG,
@@ -1005,7 +1010,7 @@ export function LiveCustomizerDock() {
             </Link>
             <button
               type="button"
-              onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+              onClick={() => openCataloveWhatsApp()}
               className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--storefront-accent)] py-2.5 px-3 text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity"
             >
               <span>Pesan Desain Ini</span>

@@ -41,7 +41,7 @@ export function assertSupabaseConfigured(operation: string): SupabaseEnv {
   if (!env) {
     const isProd = process.env.NODE_ENV === "production";
     const msg = `[Supabase] Koneksi khusus Catalove belum lengkap atau project ref tidak cocok untuk operasi "${operation}". Atur NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, dan NEXT_PUBLIC_CATALOVE_SUPABASE_PROJECT_REF ke project Catalove yang terpisah${
-      isProd ? " di Vercel" : " di (.env.local)"
+      isProd ? " di konfigurasi server produksi" : " di (.env.local)"
     }.`;
     throw new Error(msg);
   }

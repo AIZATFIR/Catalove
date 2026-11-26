@@ -4,6 +4,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getAdminSupabase } from "@/lib/supabase/server";
 import { verifyServerSession } from "@/lib/services/server-auth";
 import type { BusinessSettings } from "@/types/catalove";
+import { getRequestedStoreSlug, getStoreSlugFromRequest, resolveStoreBySlug } from "@/lib/services/store-service";
+import { DEFAULT_TENANT_SECTION_ORDER } from "@/lib/storefront-sections";
+import { getTenantTextSettingFallback } from "@/lib/tenant-settings-defaults";
 
 const TEXT_KEYS = [
   "nav_cta_text",
@@ -59,7 +62,7 @@ const TEXT_KEYS = [
   "footer_badge",
 ] as const;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ settings: INITIAL_SETTINGS, persisted: false });
   }
@@ -67,11 +70,14 @@ export async function GET() {
   try {
     const supabase = await getAdminSupabase();
     if (!supabase) return NextResponse.json({ settings: INITIAL_SETTINGS, persisted: false });
+    const session = await verifyServerSession(getRequestedStoreSlug(req));
+    const store = await resolveStoreBySlug(getStoreSlugFromRequest(req), Boolean(session));
+    if (!store) return NextResponse.json({ error: "Katalog tidak ditemukan." }, { status: 404 });
 
     const { data, error } = await supabase
       .from("business_settings")
       .select("*")
-      .eq("id", true)
+      .eq("store_id", store.id)
       .maybeSingle();
 
     let content: Record<string, any> = {};
@@ -85,6 +91,7 @@ export async function GET() {
       const { data: configRow } = await supabase
         .from("categories")
         .select("description")
+        .eq("store_id", store.id)
         .eq("slug", "__content_config__")
         .maybeSingle();
 
@@ -97,22 +104,27 @@ export async function GET() {
       }
     }
 
-    if (Object.keys(content).length === 0 || !content.catalove_v3) {
-      return NextResponse.json({ settings: INITIAL_SETTINGS, persisted: false });
-    }
-
+    const isCataloveStore = store.slug === "catalove";
     const textSettings: Record<string, string> = {};
     for (const key of TEXT_KEYS) {
       if (content[key] !== undefined) {
         textSettings[key] = content[key];
       } else if (data?.[key] !== undefined) {
         textSettings[key] = data[key];
-      } else if ((INITIAL_SETTINGS as Record<string, any>)[key] !== undefined) {
+      } else if (isCataloveStore && (INITIAL_SETTINGS as Record<string, any>)[key] !== undefined) {
         textSettings[key] = (INITIAL_SETTINGS as Record<string, any>)[key];
+      } else if (!isCataloveStore) {
+        textSettings[key] = getTenantTextSettingFallback(key, store.name) || "";
       }
     }
 
-    const themeConfig = content.theme_config || INITIAL_SETTINGS.theme_config;
+    const tenantThemeConfig = {
+      ...INITIAL_SETTINGS.theme_config,
+      section_order: DEFAULT_TENANT_SECTION_ORDER,
+      canvas_draft_order: INITIAL_SETTINGS.theme_config.canvas_draft_order,
+      hidden_sections: INITIAL_SETTINGS.theme_config.hidden_sections,
+    };
+    const themeConfig = content.theme_config || (isCataloveStore ? INITIAL_SETTINGS.theme_config : tenantThemeConfig);
     const marquee = content.marquee_announcement || INITIAL_SETTINGS.marquee_announcement;
 
     return NextResponse.json({
@@ -120,16 +132,17 @@ export async function GET() {
       settings: {
         ...INITIAL_SETTINGS,
         ...textSettings,
-        store_name: data?.store_name || INITIAL_SETTINGS.store_name,
-        seller_whatsapp: data?.seller_whatsapp || INITIAL_SETTINGS.seller_whatsapp,
+        footer_badge: store.plan === "free" ? "Powered by Catalove" : textSettings.footer_badge || INITIAL_SETTINGS.footer_badge,
+        store_name: data?.store_name || (isCataloveStore ? INITIAL_SETTINGS.store_name : store.name),
+        seller_whatsapp: data?.seller_whatsapp ?? (isCataloveStore ? INITIAL_SETTINGS.seller_whatsapp : ""),
         kitchen_address: data?.kitchen_address || INITIAL_SETTINGS.store_address,
         store_address: content.store_address || data?.kitchen_address || INITIAL_SETTINGS.store_address,
         currency_symbol: content.currency_symbol || INITIAL_SETTINGS.currency_symbol,
         default_lead_time_days: Number(data?.default_lead_time_days ?? INITIAL_SETTINGS.default_lead_time_days),
         business_timezone: data?.business_timezone || INITIAL_SETTINGS.business_timezone,
-        instagram_handle: data?.instagram_handle || INITIAL_SETTINGS.instagram_handle,
-        tiktok_handle: content.tiktok_handle || INITIAL_SETTINGS.tiktok_handle,
-        store_tagline: data?.store_tagline ?? INITIAL_SETTINGS.store_tagline,
+        instagram_handle: data?.instagram_handle || (isCataloveStore ? INITIAL_SETTINGS.instagram_handle : ""),
+        tiktok_handle: content.tiktok_handle || (isCataloveStore ? INITIAL_SETTINGS.tiktok_handle : ""),
+        store_tagline: data?.store_tagline ?? (isCataloveStore ? INITIAL_SETTINGS.store_tagline : `Katalog resmi ${store.name}.`),
         industry_preset: content.industry_preset || INITIAL_SETTINGS.industry_preset,
         workflow_mode: content.workflow_mode || INITIAL_SETTINGS.workflow_mode,
         catalog_layout: content.catalog_layout || INITIAL_SETTINGS.catalog_layout,
@@ -148,7 +161,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await verifyServerSession())) {
+  const storeSlug = getRequestedStoreSlug(req);
+  const session = await verifyServerSession(storeSlug);
+  if (!session) {
     return NextResponse.json(
       { error: "Akses ditolak. Silakan masuk sebagai pengelola toko." },
       { status: 401 }
@@ -157,6 +172,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = (await req.json()) as Partial<BusinessSettings>;
+    const admin = isSupabaseConfigured() ? await getAdminSupabase() : null;
+    let isFreePlan = false;
+    if (isSupabaseConfigured()) {
+      if (!admin) return NextResponse.json({ error: "Koneksi database tidak tersedia" }, { status: 503 });
+      const { data: store, error: storeError } = await admin.from("stores").select("plan").eq("id", session.storeId).maybeSingle();
+      if (storeError || !store) return NextResponse.json({ error: "Data paket toko tidak tersedia." }, { status: 503 });
+      isFreePlan = store.plan === "free";
+    }
 
     const contentConfig: Record<string, any> = {
       catalove_v3: true,
@@ -166,6 +189,7 @@ export async function POST(req: NextRequest) {
         contentConfig[key] = String((body as any)[key] || "").trim();
       }
     }
+    if (isFreePlan) contentConfig.footer_badge = "Powered by Catalove";
 
     if (body.theme_config) contentConfig.theme_config = body.theme_config;
     if (body.marquee_announcement) contentConfig.marquee_announcement = body.marquee_announcement;
@@ -190,38 +214,33 @@ export async function POST(req: NextRequest) {
     };
 
     if (isSupabaseConfigured()) {
-      const supabase = await getAdminSupabase();
-      if (!supabase) {
-        return NextResponse.json({ error: "Koneksi database tidak tersedia" }, { status: 500 });
-      }
-
-      // Try saving with content_config
-      const { error: upsertErr } = await supabase
+      const { error: upsertErr } = await admin!
         .from("business_settings")
-        .upsert({ id: true, ...cleanSettings, content_config: contentConfig });
+        .upsert({ id: true, store_id: session.storeId, ...cleanSettings, content_config: contentConfig }, { onConflict: "store_id" });
 
       if (upsertErr) {
-        await supabase
-          .from("business_settings")
-          .upsert({ id: true, ...cleanSettings });
+        console.error("Catalove settings save failed", upsertErr.code || "database error");
+        return NextResponse.json({ error: "Pengaturan belum berhasil disimpan. Coba lagi." }, { status: 500 });
       }
 
-      // Also persist to resilient storage row in categories
-      await supabase.from("categories").upsert(
+      // Keep the legacy fallback row in sync for existing clients.
+      const { error: fallbackError } = await admin!.from("categories").upsert(
         {
+          store_id: session.storeId,
           slug: "__content_config__",
           name: "System Content Config",
           description: JSON.stringify(contentConfig),
           is_active: false,
           display_order: 9999,
         },
-        { onConflict: "slug" }
+        { onConflict: "store_id,slug" }
       );
+      if (fallbackError) console.error("Catalove legacy settings mirror failed", fallbackError.code || "database error");
     }
 
     return NextResponse.json({
       success: true,
-      settings: { ...INITIAL_SETTINGS, ...cleanSettings, ...contentConfig },
+      settings: { ...INITIAL_SETTINGS, ...cleanSettings, ...contentConfig, ...(isFreePlan ? { footer_badge: "Powered by Catalove" } : {}) },
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Gagal memperbarui pengaturan toko";

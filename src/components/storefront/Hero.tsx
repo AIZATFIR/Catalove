@@ -10,7 +10,7 @@ import { CakeCircularCarousel } from "@/components/storefront/CakeCircularCarous
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { saveBusinessSettings } from "@/lib/business-settings";
-import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
+import { openStorefrontWhatsApp } from "@/components/storefront/PricingSection";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils/formatters";
 
@@ -122,7 +122,7 @@ export function Hero({
       ) : (
         <button
           type="button"
-          onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+          onClick={() => openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name)}
           className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
         >
           <span>{primaryCta || "Pesan Catalove"}</span>

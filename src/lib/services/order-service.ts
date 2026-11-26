@@ -7,8 +7,10 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { shouldUseLocalCatalogOverride } from "@/lib/services/catalog-mode";
 import { createClient } from "@supabase/supabase-js";
+import { getCurrentStoreSlug, getStoreScopedStorageKey, withStoreSlug } from "@/lib/store-routing";
+import { DEFAULT_STORE_ID } from "@/lib/store-routing";
 
-const ORDERS_STORAGE_KEY = "catalove-orders-v1";
+const ordersStorageKey = () => getStoreScopedStorageKey("catalove-orders-v1");
 
 // In-memory orders store used ONLY when Supabase is not configured (local dev & testing)
 let localOrdersStore: OrderRequest[] = [];
@@ -16,18 +18,18 @@ let localOrdersStore: OrderRequest[] = [];
 function readBrowserOrders(): OrderRequest[] {
   if (typeof window === "undefined") return localOrdersStore;
   try {
-    const raw = window.localStorage.getItem(ORDERS_STORAGE_KEY);
+    const raw = window.localStorage.getItem(ordersStorageKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         const realOrders = parsed.filter((order) => order?.id !== "ord-sample-1");
         if (realOrders.length !== parsed.length) {
-          window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(realOrders));
+          window.localStorage.setItem(ordersStorageKey(), JSON.stringify(realOrders));
         }
         return realOrders;
       }
     }
-    window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(localOrdersStore));
+    window.localStorage.setItem(ordersStorageKey(), JSON.stringify(localOrdersStore));
     return localOrdersStore;
   } catch {
     return localOrdersStore;
@@ -37,7 +39,7 @@ function readBrowserOrders(): OrderRequest[] {
 function writeBrowserOrders(orders: OrderRequest[]) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+    window.localStorage.setItem(ordersStorageKey(), JSON.stringify(orders));
   } catch {
     // ignore quota error
   }
@@ -57,7 +59,7 @@ function isLocalOrdersMode(): boolean {
   try {
     return shouldUseLocalCatalogOverride(
       isSupabaseConfigured(),
-      window.localStorage.getItem("catalove-local-catalog-mode-v3")
+      window.localStorage.getItem(getStoreScopedStorageKey("catalove-local-catalog-mode-v3"))
     );
   } catch {
     return true;
@@ -92,7 +94,7 @@ export class OrderService {
     return `#CA-${yy}${mm}-${token}`;
   }
 
-  async createCartOrder(input: CartCheckoutInput): Promise<{ order?: OrderRequest; error?: string }> {
+  async createCartOrder(input: CartCheckoutInput, storeSlug = getCurrentStoreSlug()): Promise<{ order?: OrderRequest; error?: string }> {
     if (!input.items || input.items.length === 0) {
       return { error: "Keranjang belanja masih kosong." };
     }
@@ -101,7 +103,8 @@ export class OrderService {
       try {
         const supabase = getDirectSupabaseClient();
         if (!supabase) return { error: "Koneksi database tidak tersedia." };
-        const { data, error } = await supabase.rpc("submit_cart_order", {
+        const { data, error } = await supabase.rpc("submit_cart_order_for_store", {
+          p_store_slug: storeSlug,
           p_customer_name: input.customerName.trim(),
           p_customer_whatsapp: input.customerWhatsapp.trim(),
           p_fulfillment_method: input.fulfillmentMethod,
@@ -166,7 +169,7 @@ export class OrderService {
     return { order: newOrder };
   }
 
-  async createOrder(input: OrderInput): Promise<{ order?: OrderRequest; error?: string }> {
+  async createOrder(input: OrderInput, storeSlug = getCurrentStoreSlug()): Promise<{ order?: OrderRequest; error?: string }> {
     if (!isSupabaseConfigured() || typeof window !== "undefined") {
       // Check browser/local mode first or when in browser
       const product = await cakeService.getProductById(input.productId);
@@ -193,7 +196,8 @@ export class OrderService {
             const supabase = getDirectSupabaseClient();
             if (supabase) {
               const customerPhone = (input.customerWhatsapp || (input as any).customerWhatsApp || "").trim();
-              const { data, error } = await supabase.rpc("submit_order_request", {
+              const { data, error } = await supabase.rpc("submit_order_request_for_store", {
+                p_store_slug: storeSlug,
                 p_product_id: input.productId,
                 p_variant_id: input.variantId || null,
                 p_customer_name: input.customerName.trim(),
@@ -274,7 +278,8 @@ export class OrderService {
 
       const customerPhone = (input.customerWhatsapp || (input as any).customerWhatsApp || "").trim();
 
-      const { data, error } = await supabase.rpc("submit_order_request", {
+      const { data, error } = await supabase.rpc("submit_order_request_for_store", {
+        p_store_slug: storeSlug,
         p_product_id: input.productId,
         p_variant_id: input.variantId || null,
         p_customer_name: input.customerName.trim(),
@@ -305,7 +310,7 @@ export class OrderService {
     }
   }
 
-  async getOrderByReference(referenceCode: string): Promise<OrderRequest | null> {
+  async getOrderByReference(referenceCode: string, storeId = DEFAULT_STORE_ID): Promise<OrderRequest | null> {
     if (!isSupabaseConfigured()) {
       const list = readBrowserOrders();
       const ord = list.find((o) => o.reference_code === referenceCode);
@@ -323,6 +328,7 @@ export class OrderService {
           items:order_request_items(*)
         `)
         .eq("reference_code", referenceCode)
+        .eq("store_id", storeId)
         .maybeSingle();
 
       if (error || !data) {
@@ -343,11 +349,19 @@ export class OrderService {
     }
   }
 
-  async listOrders(statusFilter?: OrderStatus): Promise<OrderRequest[]> {
+  async listOrders(statusFilter?: OrderStatus, storeId = DEFAULT_STORE_ID): Promise<OrderRequest[]> {
     if (isLocalOrdersMode()) {
       const list = readBrowserOrders();
       if (!statusFilter) return [...list];
       return list.filter((o) => o.status === statusFilter);
+    }
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams();
+      if (statusFilter) params.set("status", statusFilter);
+      const response = await fetch(withStoreSlug(`/api/orders?${params.toString()}`), { cache: "no-store" });
+      const result = await response.json();
+      return response.ok && Array.isArray(result.orders) ? result.orders as OrderRequest[] : [];
     }
 
     try {
@@ -361,6 +375,7 @@ export class OrderService {
           items:order_request_items(*)
         `)
         .order("created_at", { ascending: false });
+      query = query.eq("store_id", storeId);
 
       if (statusFilter) {
         query = query.eq("status", statusFilter);
@@ -383,7 +398,7 @@ export class OrderService {
     }
   }
 
-  async updateOrderStatus(orderId: string, newStatus: OrderStatus): Promise<OrderRequest | null> {
+  async updateOrderStatus(orderId: string, newStatus: OrderStatus, storeId = DEFAULT_STORE_ID): Promise<OrderRequest | null> {
     if (isLocalOrdersMode()) {
       const list = readBrowserOrders();
       const ord = list.find((o) => o.id === orderId);
@@ -397,6 +412,16 @@ export class OrderService {
       return null;
     }
 
+    if (typeof window !== "undefined") {
+      const response = await fetch(withStoreSlug(`/api/orders?orderId=${encodeURIComponent(orderId)}`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const result = await response.json();
+      return response.ok && result.order ? result.order as OrderRequest : null;
+    }
+
     try {
       const supabase = getDirectSupabaseClient();
       if (!supabase) return null;
@@ -408,6 +433,7 @@ export class OrderService {
           updated_at: new Date().toISOString(),
         })
         .eq("id", orderId)
+        .eq("store_id", storeId)
         .select(`
           *,
           items:order_request_items(*)
@@ -432,8 +458,8 @@ export class OrderService {
     }
   }
 
-  async getOrderStats(): Promise<{ pending: number; contacted: number; confirmed: number; completed: number }> {
-    const orders = await this.listOrders();
+  async getOrderStats(storeId = DEFAULT_STORE_ID): Promise<{ pending: number; contacted: number; confirmed: number; completed: number }> {
+    const orders = await this.listOrders(undefined, storeId);
     return {
       pending: orders.filter((o) => o.status === "pending").length,
       contacted: orders.filter((o) => o.status === "contacted").length,

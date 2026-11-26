@@ -1,0 +1,55 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: build-catalove-image
+    args:
+      - build
+      - --build-arg=NEXT_PUBLIC_SUPABASE_URL=${_SUPABASE_URL}
+      - --build-arg=NEXT_PUBLIC_SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY}
+      - --build-arg=NEXT_PUBLIC_CATALOVE_SUPABASE_PROJECT_REF=${_SUPABASE_PROJECT_REF}
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-catalove-image
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+    waitFor: [build-catalove-image]
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    id: deploy-catalove
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_NAME}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --cpu=1
+      - --memory=1Gi
+      - --concurrency=40
+      - --max=5
+      - --min=0
+      - --port=8080
+      - --service-account=catalove-runtime@$PROJECT_ID.iam.gserviceaccount.com
+      - --startup-probe=httpGet.path=/api/health,httpGet.port=8080,periodSeconds=10,timeoutSeconds=5,failureThreshold=6
+      - --update-env-vars=NEXT_PUBLIC_SUPABASE_URL=${_SUPABASE_URL},NEXT_PUBLIC_SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},NEXT_PUBLIC_CATALOVE_SUPABASE_PROJECT_REF=${_SUPABASE_PROJECT_REF}
+      - --update-secrets=SUPABASE_SERVICE_ROLE_KEY=CATALOVE_SUPABASE_SERVICE_ROLE_KEY:latest
+    waitFor: [push-catalove-image]
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  dynamicSubstitutions: true
+
+substitutions:
+  _REGION: asia-southeast2
+  _AR_REPOSITORY: catalove
+  _SERVICE_NAME: catalove
+  _SUPABASE_URL: ''
+  _SUPABASE_ANON_KEY: ''
+  _SUPABASE_PROJECT_REF: ''

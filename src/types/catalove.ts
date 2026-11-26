@@ -169,6 +169,7 @@ export interface ProductSpec {
 
 export interface Product {
   id: string;
+  store_id?: string;
   category_id?: string | null;
   category?: Category | null;
   name: string;
