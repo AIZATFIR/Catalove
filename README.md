@@ -2,7 +2,7 @@
 
 Catalove is a multi-tenant product catalog and storefront for small businesses. A merchant can publish a catalog, manage products and stock, and capture an order before opening a pre-filled WhatsApp message. There is no payment processing in the app.
 
-The repo contains the tenant-aware application, database migration, image quotas, store export, and Cloud Run build/deploy pipeline. It is **not connected to a Catalove production database or cloud project yet**. Do not use the current live Vercel demo for real client orders.
+The repo contains the tenant-aware application, database migrations, image quotas, store export, and Cloud Run build/deploy pipeline. A dedicated Catalove Supabase project has been created and verified empty; migrations, production secrets, billing/recovery setup, and the production app deployment are still pending. Do not use the current live Vercel demo for real client orders.
 
 ## Local development
 
@@ -40,11 +40,11 @@ npm run test:tenant-db
 
 Do not use SofizCake's Supabase project, secrets, storage, or database for Catalove.
 
-## Create the production Supabase project
+## Configure the production Supabase project
 
 Use a dedicated Supabase **Pro** project owned by Catalove. Do not use Supabase Free for live orders: a free project may pause after one week of inactivity and has no automatic backups. Keep project access, billing alerts, and recovery contacts under Catalove control.
 
-1. Create the project and enable email authentication. Set the production site URL and redirect URLs for the Catalove domain.
+1. The dedicated project is `vrugrxcajlkhsvmnayfc` in Singapore. Confirm its billing tier and keep it under Catalove's owner account. Set the production site URL and redirect URLs for the final Catalove domain.
 2. Create and verify the initial Catalove owner account in Supabase Auth.
 3. In SQL Editor, apply the migrations in order:
    - `supabase/migrations/202610290001_catalove_core.sql`
