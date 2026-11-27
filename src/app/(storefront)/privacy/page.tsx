@@ -16,22 +16,22 @@ export default function PrivacyPage() {
       <p className="mt-4 text-sm text-stone-500">Terakhir diperbarui: 27 November 2026</p>
 
       <aside className="mt-8 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
-        <h2 className="font-bold">Mode demo Catalove</h2>
-        <p className="mt-1">Versi ini masih demo, bukan layanan untuk pesanan sungguhan. Jangan masukkan data pesanan atau pelanggan sungguhan. Katalog contoh dan perubahan lokal dapat hilang dan tidak tersinkron ke perangkat lain. Informasi penyedia dan retensi data akan disesuaikan dengan infrastruktur aktif sebelum pilot klien dimulai.</p>
+        <h2 className="font-bold">Preview Catalove</h2>
+        <p className="mt-1">Katalog contoh dan editor demo ini belum untuk pesanan atau data pelanggan sungguhan. Preview memakai project Supabase khusus Catalove pada paket Free; project dapat dipause setelah tidak aktif dan tidak memiliki backup otomatis. Perubahan katalog demo tersimpan di browser ini. Jangan masukkan alamat, nomor WhatsApp, atau catatan milik pembeli sungguhan.</p>
       </aside>
 
       <div className="mt-10 space-y-8 text-sm leading-7 text-stone-700 dark:text-stone-300">
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Data yang digunakan</h2>
-          <p>Jika fitur pesanan sudah diaktifkan untuk katalog produksi, data yang diminta dapat mencakup nama, nomor WhatsApp, produk dan jumlah pesanan, tanggal, metode pemenuhan, serta alamat atau catatan yang kamu isi. Pengelola katalog juga dapat menyimpan informasi produk, foto, dan pengaturan brand.</p>
+          <p>Pendaftaran pengelola menggunakan alamat email, kata sandi yang diproses oleh Supabase Auth, nama brand, dan alamat katalog. Pengelola juga dapat menyimpan nama produk, harga, variasi, stok, foto, nomor WhatsApp toko, dan pengaturan tampilan. Formulir permintaan order dapat meminta nama, nomor WhatsApp, produk dan jumlah, tanggal, metode pemenuhan, alamat, serta catatan. Jangan gunakan form order demo untuk pembeli sungguhan.</p>
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Pengelolaan data pesanan</h2>
-          <p>Dalam layanan produksi, pengelola katalog menerima detail pesanan untuk menghubungi pembeli dan menyiapkan pesanan. Personel Catalove dapat mengakses data seperlunya untuk menjalankan layanan, dukungan, dan keamanan. Data pesanan tidak digunakan untuk iklan Catalove. Demo saat ini tidak boleh dipakai untuk mengirim pesanan sungguhan.</p>
+          <p>Permintaan order pada layanan terhubung dapat disimpan di database sebelum pembeli memilih untuk membuka dan mengirim pesan WhatsApp. Pengelola toko bertanggung jawab atas kebenaran produk, harga, ketersediaan, konfirmasi, pembayaran, dan pemenuhan. Catalove mengoperasikan perangkat lunak dan dapat mengakses data seperlunya untuk keamanan dan dukungan; peran hukum setiap pihak harus dituangkan dalam ketentuan layanan sebelum pilot. Data kontak order tidak digunakan untuk iklan Catalove.</p>
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Penyedia layanan</h2>
-          <p>Target infrastruktur produksi Catalove adalah Supabase untuk data katalog dan pesanan, serta Google Cloud Run untuk menyajikan aplikasi. Keduanya belum menjadi infrastruktur aktif untuk demo ini. Sebelum pilot dimulai, halaman ini akan diperbarui dengan penyedia yang benar-benar aktif. Saat kamu membuka tautan WhatsApp, kamu berpindah ke layanan WhatsApp; pesan yang kamu kirim di sana tunduk pada kebijakan WhatsApp.</p>
+          <p>Preview menggunakan Supabase untuk autentikasi, database, dan foto katalog, serta Vercel untuk deployment preview. Aplikasi produksi Cloud Run belum dikonfigurasi. Supabase Free tidak menyediakan backup otomatis dan dapat dipause setelah periode tidak aktif. Saat membuka tautan WhatsApp, kamu berpindah ke layanan WhatsApp dan tunduk pada kebijakan layanan tersebut. Penyedia aktif dan lokasi pemrosesan harus diperbarui sebelum layanan klien diluncurkan.</p>
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Saran AI dari foto</h2>
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Penyimpanan dan permintaan data</h2>
-          <p>Jangka waktu penyimpanan data produksi akan ditetapkan dan dijelaskan sebelum pilot klien dimulai. Untuk permintaan akses, koreksi, atau penghapusan data pesanan produksi, hubungi pengelola toko melalui nomor WhatsApp di katalog. Untuk masalah akun atau layanan Catalove, gunakan halaman <Link className="font-semibold text-[var(--storefront-accent)] underline" href="/contact">Kontak</Link>. Preferensi dan keranjang demo tersimpan di browser dan dapat dihapus dengan membersihkan data situs.</p>
+          <p>Jadwal retensi dan penghapusan data layanan klien belum ditetapkan; karena itu, jangan kirim data pembeli sungguhan lewat preview. Untuk akses, koreksi, atau penghapusan akun/data preview, hubungi Catalove lewat halaman <Link className="font-semibold text-[var(--storefront-accent)] underline" href="/contact">Kontak</Link>. Untuk data order toko, hubungi pengelola toko. Preferensi dan katalog demo tersimpan di browser dan dapat dihapus dengan membersihkan data situs.</p>
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Pembayaran</h2>

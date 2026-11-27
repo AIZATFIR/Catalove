@@ -97,7 +97,7 @@ export function StorefrontMotion({ children }: { children: React.ReactNode }) {
     <div ref={rootRef} className="storefront-editorial">
       <div id="smooth-wrapper">
         <div id="smooth-content" className="relative">
-          <Skiper19 />
+          {pathname !== "/" && <Skiper19 />}
           <div className="relative z-[2]">{children}</div>
         </div>
       </div>

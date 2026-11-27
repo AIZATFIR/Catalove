@@ -33,7 +33,11 @@ async function main() {
       "the former static owner cookie must not authorize a seller session"
     );
     assert.equal(await isSellerUser("attacker"), false, "missing auth configuration must fail closed");
-    assert.equal((await getSellerSession()).status, 401, "the session endpoint must reject unauthenticated users");
+    assert.equal(
+      (await getSellerSession(new NextRequest("http://localhost/api/auth/session?storeSlug=demo-store"))).status,
+      401,
+      "the session endpoint must reject unauthenticated users"
+    );
 
     const privateProducts = await getProducts(
       new NextRequest("http://localhost/api/products?includeInactive=true")

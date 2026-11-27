@@ -48,6 +48,7 @@ import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
 import { saveBusinessSettings } from "@/lib/business-settings";
 import { cakeService } from "@/lib/services/cake-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
 import { normalizeCanvasSections } from "@/lib/canvas-sections";
 import { getAllowedStorefrontSections, getStorefrontSectionOrder } from "@/lib/storefront-sections";
 
@@ -161,6 +162,7 @@ const SPACING_WRAPPER_CLASS: Record<SectionSpacingOption, string> = {
 export default function HomePage() {
   const pathname = usePathname() || "/";
   const settings = useBusinessSettings();
+  const canEditStorefront = useStorefrontEditorAccess();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -169,12 +171,12 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("canvas") === "1" || window.location.hash === "#canvas") {
-        setIsCanvasMode(true);
-      }
+      const requestedCanvasMode = params.get("canvas") === "1" || window.location.hash === "#canvas";
+      setIsCanvasMode(requestedCanvasMode && canEditStorefront);
     }
 
     const handleToggleCanvas = (e: Event) => {
+      if (!canEditStorefront) return;
       const detail = (e as CustomEvent<{ open?: boolean }>).detail;
       if (typeof detail?.open === "boolean") {
         setIsCanvasMode(detail.open);
@@ -187,7 +189,7 @@ export default function HomePage() {
     return () => {
       window.removeEventListener("catalove-toggle-canvas", handleToggleCanvas);
     };
-  }, []);
+  }, [canEditStorefront]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

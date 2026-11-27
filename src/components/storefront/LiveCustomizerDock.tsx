@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
 import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
 import {
   addCanvasSectionToTheme,
@@ -41,6 +42,7 @@ import {
   openCataloveWhatsApp,
 } from "@/components/storefront/PricingSection";
 import { getAllowedStorefrontSections } from "@/lib/storefront-sections";
+import { isTenantStorefrontPath } from "@/lib/store-routing";
 import type {
   BodyScaleOption,
   BusinessSettings,
@@ -147,6 +149,7 @@ const HEADING_FONTS: { id: FontHeadingOption; label: string }[] = [
 export function LiveCustomizerDock() {
   const settings = useBusinessSettings();
   const pathname = usePathname();
+  const canEditStorefront = useStorefrontEditorAccess();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DockTab>("posisi");
@@ -230,10 +233,12 @@ export function LiveCustomizerDock() {
     ink: activeTheme.custom_colors?.ink || presetBasePalette.ink,
   };
 
-  if (pathname === "/privacy" || pathname === "/contact") return null;
+  const isTenantStorefront = isTenantStorefrontPath(pathname || "/");
+  if (pathname !== "/" && !isTenantStorefront) return null;
+  if (!canEditStorefront) return null;
 
   const handleToggleCanvas = () => {
-    if (pathname !== "/") {
+    if (pathname !== "/" && !isTenantStorefront) {
       router.push("/#canvas");
       return;
     }

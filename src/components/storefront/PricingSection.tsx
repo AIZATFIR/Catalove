@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Check } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -20,9 +21,6 @@ export const DEFAULT_SHOWCASE_ORDER: CanvasSectionId[] = [
   "hero",
   "statement_banner",
   "feed",
-  "lookbook",
-  "showcase",
-  "carousel",
   "process_steps",
   "pricing",
   "faq_minimal",
@@ -205,8 +203,13 @@ export function PricingSection({
               </ul>
             </div>
             <div className="flex flex-col gap-3 pt-8">
-              <button type="button" onClick={handleStartCanvas} className="touch-target rounded-full border border-[var(--storefront-line)] px-5 py-3.5 text-sm font-semibold text-[var(--storefront-ink)] hover:border-[var(--storefront-accent)] transition-colors">Coba Mode Kanvas</button>
-              <button type="button" onClick={() => openCataloveWhatsApp()} className="touch-target text-sm font-semibold text-[var(--storefront-accent)] hover:underline">Tanya cara mulai</button>
+              <Link
+                href="/admin/register"
+                className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:brightness-95"
+              >
+                Buat katalog gratis
+              </Link>
+              <button type="button" onClick={handleStartCanvas} className="touch-target rounded-full border border-[var(--storefront-line)] px-5 py-3.5 text-sm font-semibold text-[var(--storefront-ink)] transition-colors hover:border-[var(--storefront-accent)]">Coba editor demo</button>
             </div>
           </article>
 

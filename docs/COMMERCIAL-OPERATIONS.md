@@ -1,6 +1,6 @@
 # Catalove: operating the first client catalogs
 
-This runbook is for the first managed-service stage. Tenant routing, `store_id` on client records, Row Level Security (RLS), storage quotas, onboarding and cross-store isolation checks are implemented in the current code and migration. Production remains **not ready for real customer data** until a separate Catalove-owned Supabase project has that migration applied and is verified end-to-end. A seller UI filter alone does not isolate client data.
+This runbook is for the first managed-service stage. Tenant routing, `store_id` on client records, Row Level Security (RLS), storage quotas, onboarding and cross-store isolation checks are implemented in code. Four migrations are applied to the dedicated Catalove Supabase project and match its remote history. Production remains **not ready for real customer data**: the project is Free, has no owner membership or order history yet, and backup/restore, Cloud Run, legal terms, and a real deployed transaction path are not verified. A seller UI filter alone does not isolate client data.
 
 ## Recommended service shape
 
@@ -24,9 +24,9 @@ Do not sell “unlimited” storage, products, traffic, support, or custom work.
 
 ## Production and data rules
 
-- Current deployment target is Cloud Run Jakarta. Google Cloud terms allow integrating GCP services into customer applications with independent material value; do not resell the underlying cloud service. Recheck terms and project billing before the first paid customer. Do not route the client catalog app to Vercel Hobby; its terms limit Hobby to personal/non-commercial use and the general service-bureau language is unclear for this product.
+- Current intended production host is Cloud Run Jakarta; it is not deployed. A Vercel PR preview exists, but the preview is access-protected and the current public production URL does not serve this branch. Review the chosen host's current commercial terms and project billing before the first paid customer.
 - Use a paid Supabase production project for real orders. The Free project can pause after a week of low activity and lacks automatic backups. Keep the project owner account under Catalove control and enable spend/usage alerts.
-- The dedicated Catalove Supabase project exists, but is currently Free and empty; the migration, Auth, and storage setup are pending. A Catalove-owned Cloud Run project/deployment and billing setup are also not verified. Treat any current live deployment as a demo until those services and the real order path are configured and verified.
+- The dedicated Catalove Supabase project is currently Free. Its four migrations are applied; it contains one published showcase store with six active sample products and no owner memberships or order requests. The Auth project exists, but no owner membership has been bootstrapped. Cloud Run project/deployment and billing setup are not verified. Treat the current app as a preview until those services and the real order path are configured and verified.
 - Never reuse SofizCake’s Supabase project, credentials, buckets, or database. Catalove secrets remain server-side and separate.
 - Keep customer orders private. They include phone numbers and may include addresses/notes. Limit access, collect only what fulfillment needs, do not use order contacts for ads, and agree on retention and deletion with the client.
 - Product photos are intentionally public in the current bucket. Never place invoices, identity documents, or private customer photos in that bucket.
@@ -54,10 +54,11 @@ Use one shared database only after multi-tenant controls are complete. One Supab
 ## Launch gates
 
 - [ ] Catalove has a named operational owner and dedicated cloud project; Cloud Run deployment and billing alerts are active.
-- [ ] Dedicated Catalove production Supabase project, migrations applied, owner login, backup/restore procedure, and cost alerts.
+- [x] Dedicated Catalove Supabase project exists and the four migrations match remote history.
+- [ ] Owner login and membership are verified; choose an appropriate paid plan, configure cost alerts, and practice backup/restore before any real orders.
 - [x] Tenant schema, route-to-store mapping, RLS on tenant-owned tables, and tenant-scoped media quotas are implemented in the migration.
 - [x] Cross-tenant database checks and tenant-scoped API tests for catalog, settings, orders, uploads, export, and admin actions.
-- [ ] Client terms: plan caps, recurring fees, support scope, data ownership/export, cancellation/deletion, and photo/content rights.
+- [ ] Client terms and privacy notice: plan caps, recurring fees, support scope, data ownership/export, cancellation/deletion, photo/content rights, actual providers, retention, and incident contact. Confirm PSE/NIB/KBLI applicability with the applicable Indonesian authorities or counsel before commercial launch.
 - [ ] Client terms identify merchant/Catalove responsibilities, data retention/deletion periods, approved service providers, support contact, and incident escalation; public privacy text must match active production providers.
 - [ ] Until self-service cancellation is shipped, assign one Catalove operator to use the manual [offboarding runbook](CLIENT-OFFBOARDING.md) for every client exit.
 - [ ] Document the data-incident response path, assign an owner, and confirm it can meet the applicable notification deadline.

@@ -1,36 +1,32 @@
-# Catalove: Production Finish Handoff
+# Catalove production finish handoff
 
-**Scope:** This handoff applies only to `/home/aizatfir/Project/Catalove`. Do not inspect or edit sibling projects, including SofizCake. Keep Catalove's database, storage, credentials, and deployment separate.
+**Scope:** `/home/aizatfir/Project/Catalove` only. Never inspect or edit SofizCake's source, database, secrets, or deployments.
 
-## Current state
+## Verified state — 27 November 2026
 
-- Repository: `AIZATFIR/Catalove`; active implementation branch: `catalove/hosted-catalog-platform`.
-- Pull request: [#1](https://github.com/AIZATFIR/Catalove/pull/1). Check the live PR state before acting; the branch can change after this note is written.
-- The production app is not approved for real client data or orders. A green build or Vercel preview is not proof of production persistence.
-- The owner created a dedicated Catalove Supabase project (`vrugrxcajlkhsvmnayfc`). The migration chain, Auth owner membership, production secrets, Cloud Run deployment, backup/restore, and live transaction checks still need to be completed in the owner's secure accounts.
-- The local demo is for presentation and UI work. Browser-local edits do not sync between devices; uploads and durable order records require the production backend.
-
-## Source of truth
-
-Read these current files before changing launch behavior:
-
-1. [`README.md`](../README.md) for local setup, migration order, and deployment boundaries.
-2. [`CLOUD-RUN-DEPLOYMENT.md`](CLOUD-RUN-DEPLOYMENT.md) for infrastructure and recovery steps.
-3. [`COMMERCIAL-OPERATIONS.md`](COMMERCIAL-OPERATIONS.md) for onboarding, privacy, support, and launch gates.
-4. [`CLIENT-LIFECYCLE-AND-TRUST.md`](CLIENT-LIFECYCLE-AND-TRUST.md) and [`CLIENT-OFFBOARDING.md`](CLIENT-OFFBOARDING.md) for promises and data exit handling.
-5. The current PR diff and working tree before editing; preserve changes already in progress.
-
-Historical files in this repository may describe older product or deployment states. Do not treat them as live implementation instructions without checking the current Catalove code and these source-of-truth documents.
+- Repository: `AIZATFIR/Catalove`, branch `catalove/hosted-catalog-platform`, head `2b5d245` at the time this note was updated.
+- Pull request #1 is open. GitHub CI and the Vercel preview status pass. The preview is access-protected; the public `catalove.vercel.app` route checked during this work returned 404 for the health and store routes. Do not treat that public URL as this branch's production deployment.
+- Supabase project `vrugrxcajlkhsvmnayfc` is the dedicated Catalove project. Four local migrations match remote history. Read-only checks found one published Free showcase store, four active categories, six active products, ten product image records, zero store memberships, and zero order requests. Public REST reads succeeded.
+- The Supabase project is on Free. No automatic backups/restore drill or paid-plan readiness is verified. No owner membership has been added to the seeded `catalove` showcase store.
+- Local `/api/health` returns 200 with the dedicated project configuration. This is not evidence of a public production health check, an owner login, or a real order round-trip.
+- Cloud Run is not deployed and its billing, runtime identity, Secret Manager, alerts, and recovery are not verified. No production release or PR merge has been authorized in this thread.
+- The app handles product catalogs, stock/availability, order requests, and a user-confirmed WhatsApp handoff. It does not process payment or securely fulfill digital files. Business/Enterprise prices are indicative starting points discussed via WhatsApp; recurring cadence and hosting/domain costs are not final.
 
 ## Finish sequence
 
-1. Complete the dedicated Catalove Supabase setup from the README. Do not request passwords, API keys, service-role keys, or access tokens in chat; use `supabase login` in the owner's terminal.
-2. Verify the linked ref is `vrugrxcajlkhsvmnayfc`, inspect `supabase db push --remote --dry-run`, and apply migrations through `supabase db push --remote` so migration history stays synchronized. Supabase CLI targets the local database by default. Then verify tables, RLS, Storage bucket limits, seeded showcase catalog, and the initial owner membership.
-3. Configure production runtime secrets through Catalove-owned Secret Manager and deploy the container to Catalove-owned Cloud Run. Keep service-role and AI keys server-only. Do not deploy the hosted-client service to Vercel production while the commercial hosting review remains unresolved.
-4. Verify `/api/health`, owner sign-in/recovery, create/edit/publish, mobile image upload and deletion, stock/availability updates, order persistence and WhatsApp handoff, export, and tenant isolation using separate accounts.
-5. Configure cost alerts, backups, and recovery contacts; practice restore and offboarding. Finalize client terms, retention, incident owner, support contact, and provider disclosures.
-6. Deploy real traffic only after every launch gate in the operations runbook is evidenced. Keep the public demo clearly labeled until then.
+1. Keep working only in Catalove. Review the current diff and preserve the live branch history. Do not merge PR #1 or move traffic to production without explicit authorization.
+2. Run the app suite, lint, production build, PostgreSQL tenant isolation checks, and standalone smoke tests. Inspect mobile and desktop rendering plus signup, owner authorization, editor, image upload, settings save, order, export, and tenant routing flows.
+3. Complete the reviewed branch changes, push to the authorized branch, and confirm CI and its Vercel preview. The protected preview URL must be tested in an authenticated browser session before claiming visual or runtime readiness.
+4. In the owner-controlled account, create and verify the Catalove operator account, bootstrap its membership in the seeded `catalove` store, then verify login and store-scoped administration. Do not request or print passwords, tokens, or service-role keys in chat.
+5. Decide whether this is a private pilot or production managed service. Before real orders, select a database plan with an appropriate recovery path, configure owner recovery contacts and spend alerts, practice a restore, and test a full order round-trip against the deployed URL.
+6. Configure a Catalove-owned commercial runtime, auth redirect URLs, production secrets, domain/TLS, monitoring, and rollback. Cloud Run is the documented production target but has not been created or deployed. Keep Vercel preview separate from the production release decision.
+7. Finalize Indonesian business/PSE applicability, NIB/KBLI steps, client agreement, privacy/retention terms, support contact, incident owner, cancellation/export/deletion process, and provider disclosures. Recheck advice with the appropriate Indonesian authority or counsel; this handoff is not legal advice.
+8. Use a named-client pilot only after the relevant gates above are evidenced. Keep the showcase clearly labeled and never promise payments, digital-file delivery, backup, uptime, custom domains, or a service SLA that has not been implemented and verified.
 
-## Safe claims
+## Source of truth
 
-Call Catalove a **demo** until the production flow above is verified. Call it a **private pilot** only after the data, access, support, recovery, and client-approval gates are in place for named merchants. Do not promise durable orders, cross-device editing, uptime, backups, custom domains, or third-party AI processing unless the deployed configuration and written client terms support that exact claim.
+- [README](../README.md): local setup, Supabase state, and deployment boundaries.
+- [Cloud Run deployment and recovery](CLOUD-RUN-DEPLOYMENT.md): infrastructure checklist; it remains a target runbook, not proof of a live deployment.
+- [Commercial operations](COMMERCIAL-OPERATIONS.md): pricing, onboarding, privacy, support and launch gates.
+- [Client lifecycle and trust](CLIENT-LIFECYCLE-AND-TRUST.md) and [offboarding](CLIENT-OFFBOARDING.md): client promises, export, retention and exit handling.
+- Current Git diff, remote migration history, actual deployment checks, and the dedicated Supabase project outrank older plans or README claims.

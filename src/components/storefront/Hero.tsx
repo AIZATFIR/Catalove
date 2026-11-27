@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowDown, Sliders, ShoppingBag } from "lucide-react";
 import type { Product } from "@/types/bakery";
 import type { BodyScaleOption, HeadingScaleOption } from "@/types/catalove";
@@ -13,6 +13,7 @@ import { saveBusinessSettings } from "@/lib/business-settings";
 import { openStorefrontWhatsApp } from "@/components/storefront/PricingSection";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils/formatters";
+import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
 
 interface HeroProps {
   products: Product[];
@@ -40,11 +41,16 @@ export function Hero({
   onToggleCanvasMode,
 }: HeroProps) {
   const settings = useBusinessSettings();
+  const canEditStorefront = useStorefrontEditorAccess();
   const router = useRouter();
+  const pathname = usePathname();
+  const isCataloveLandingPage = pathname === "/";
   const { addItem } = useCart();
   const [showcaseIndex, setShowcaseIndex] = useState(0);
 
-  const heroStyle = settings.theme_config?.hero_style || "split_dynamic";
+  const heroStyle = isCataloveLandingPage
+    ? "bento_grid"
+    : settings.theme_config?.hero_style || "split_dynamic";
   const isSplitReverse = heroStyle === "split_reverse";
   const headingScale: HeadingScaleOption =
     settings.theme_config?.heading_scale || "lg";
@@ -54,10 +60,20 @@ export function Hero({
   const currency = settings.currency_symbol || "Rp";
 
   const title =
-    settings.hero_title ?? "Simple yet interesting catalog for your brand.";
+    isCataloveLandingPage && settings.hero_title === "Simple yet interesting catalog for your brand."
+      ? "Katalog online yang terasa seperti brandmu."
+      : settings.hero_title ?? "Katalog online yang terasa seperti brandmu.";
   const subtitle =
-    settings.hero_subtitle ?? "Pesan Catalove mu untuk brand mu sendiri.";
-  const primaryCta = settings.hero_primary_cta ?? "Pesan Catalove";
+    isCataloveLandingPage && (
+      settings.hero_subtitle === "Pesan Catalove mu untuk brand mu sendiri." ||
+      settings.hero_subtitle?.startsWith("Template web katalog siap pakai")
+    )
+      ? "Tampilkan produk dan variasimu dalam satu halaman yang bisa diatur sendiri. Terima pertanyaan dan pesanan langsung lewat WhatsApp."
+      : settings.hero_subtitle ?? "Tampilkan produk dan variasimu dalam satu halaman yang bisa diatur sendiri. Terima pertanyaan dan pesanan langsung lewat WhatsApp.";
+  const primaryCta =
+    isCataloveLandingPage && (!settings.hero_primary_cta || settings.hero_primary_cta === "Pesan Catalove")
+      ? "Buat katalog gratis"
+      : settings.hero_primary_cta ?? "Buat katalog gratis";
   const secondaryCta = settings.hero_secondary_cta ?? "Sample";
 
   const headingSizeClass =
@@ -88,7 +104,12 @@ export function Hero({
   };
 
   const featuredProducts = products
-    .filter((p) => p.is_active && p.images?.length > 0)
+    .filter(
+      (p) =>
+        p.is_active &&
+        p.is_featured &&
+        p.images?.length > 0
+    )
     .slice(0, 4);
   const currentShowcase =
     featuredProducts[showcaseIndex % Math.max(1, featuredProducts.length)];
@@ -119,6 +140,13 @@ export function Hero({
             className="bg-transparent text-center text-sm font-bold text-white placeholder:text-white/70 focus:outline-none"
           />
         </div>
+      ) : isCataloveLandingPage ? (
+        <Link
+          href="/admin/register"
+          className="touch-target inline-flex min-h-12 items-center justify-center rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:brightness-95"
+        >
+          <span>{primaryCta}</span>
+        </Link>
       ) : (
         <button
           type="button"
@@ -129,18 +157,20 @@ export function Hero({
         </button>
       )}
 
-      <button
-        type="button"
-        onClick={handleToggleCanvas}
-        className={`touch-target inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-sm font-semibold transition-colors ${
-          isCanvasMode
-            ? "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
-            : "border-[var(--storefront-line)] text-[var(--storefront-ink)] hover:bg-[var(--storefront-surface)]"
-        }`}
-      >
-        <Sliders aria-hidden="true" className="h-4 w-4" />
-        <span>Mode Kanvas</span>
-      </button>
+      {canEditStorefront && (
+        <button
+          type="button"
+          onClick={handleToggleCanvas}
+          className={`touch-target inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-sm font-semibold transition-colors ${
+            isCanvasMode
+              ? "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
+              : "border-[var(--storefront-line)] text-[var(--storefront-ink)] hover:bg-[var(--storefront-surface)]"
+          }`}
+        >
+          <Sliders aria-hidden="true" className="h-4 w-4" />
+          <span>Mode Kanvas</span>
+        </button>
+      )}
 
       {isCanvasMode ? (
         <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--storefront-line)] px-4 py-2.5 text-[var(--storefront-ink)]">

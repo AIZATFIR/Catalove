@@ -2,7 +2,7 @@
 
 Catalove is a multi-tenant product catalog and storefront for small businesses. A merchant can publish a catalog, manage products and stock, and capture an order before opening a pre-filled WhatsApp message. There is no payment processing in the app.
 
-The repo contains the tenant-aware application, database migrations, image quotas, store export, and Cloud Run build/deploy pipeline. A dedicated Catalove Supabase project has been created and verified empty; migrations, production secrets, billing/recovery setup, and the production app deployment are still pending. Do not use the current live Vercel demo for real client orders.
+The repo contains the tenant-aware application, database migrations, image quotas, store export, and Cloud Run build/deploy pipeline. The dedicated Catalove Supabase project (`vrugrxcajlkhsvmnayfc`) is connected: all four migrations are applied and in sync, with one published Free showcase store, six active sample products, and no memberships or order requests. It is still a preview setup: the project is on Free, no Catalove owner membership exists yet, no Cloud Run deployment or backup/restore drill is verified, and the current Vercel production URL is not serving this branch. Do not use it for real client orders.
 
 ## Local development
 
@@ -42,10 +42,10 @@ Do not use SofizCake's Supabase project, secrets, storage, or database for Catal
 
 ## Configure the production Supabase project
 
-Use a dedicated Supabase project owned by Catalove. The current project is Free, so keep it for preview/testing only: a free project may pause after one week of inactivity and has no automatic backups. Upgrade and configure recovery before accepting real orders. Keep project access, billing alerts, and recovery contacts under Catalove control.
+Use the dedicated Catalove Supabase project only for preview/testing until its owner account, plan, backups, and recovery are verified. It is currently on Free and may pause after inactivity; it has no automatic backups. Keep project access and recovery under Catalove control.
 
 1. The dedicated project is `vrugrxcajlkhsvmnayfc` in Singapore. Confirm the ref in the dashboard and keep the project under Catalove's owner account. Set the production site URL and redirect URLs for the final Catalove domain.
-2. From a trusted terminal, authenticate and link only the dedicated Catalove project. The CLI may ask for the database password; enter it only in the terminal prompt:
+2. The four migrations currently in `supabase/migrations` have already been applied to the dedicated project and match the remote migration history. Before applying any future migration, authenticate and link only the dedicated Catalove project, inspect the remote dry run, confirm the target ref, then push with `--remote`. The CLI may ask for the database password; enter it only in the terminal prompt:
 
    ```sh
    npx supabase login
@@ -53,25 +53,22 @@ Use a dedicated Supabase project owned by Catalove. The current project is Free,
    npx supabase db push --remote --dry-run
    ```
 
-Review the linked project and the four pending migrations. If either does not match, stop and correct the link. When the dry run is correct, run `npx supabase db push --remote` and confirm the CLI prompt. Supabase CLI targets the local database by default, so keep `--remote` on both commands. Do not apply migration files in SQL Editor: direct SQL bypasses Supabase migration history and can leave future deploys out of sync.
-3. Create and verify the initial Catalove owner account in Supabase Auth.
-4. After all migrations succeed, grant the owner access to the legacy seller check and the new tenant membership. In SQL Editor, replace the email with the verified owner email:
+Review the linked project ref and pending migrations. If either does not match, stop and correct the link. Supabase CLI targets the local database by default, so keep `--remote` on both commands. Do not apply migration files in SQL Editor: direct SQL bypasses Supabase migration history and can leave future deploys out of sync.
+3. Create and verify the Catalove owner account in Supabase Auth. The current project has zero `store_memberships`; no account can manage the seeded Catalove showcase store until a verified owner is granted membership.
+4. After verifying the owner's email and the target store, grant that account `owner` membership using the Supabase project owner account. Keep the operation in a local, auditable terminal session; never send the owner email, password, or service-role key in chat.
 
    ```sql
-   insert into public.seller_users (user_id, is_active)
-   select id, true from auth.users where email = 'owner@example.com'
-   on conflict (user_id) do update set is_active = true;
-
+   -- Replace the email only in your trusted terminal session after verification.
    insert into public.store_memberships (store_id, user_id, role)
    select s.id, u.id, 'owner'
    from public.stores s
    join auth.users u on u.email = 'owner@example.com'
-   where s.slug = 'catalove'
+   where s.slug = 'catalove' and u.email_confirmed_at is not null
    on conflict (store_id, user_id) do update set role = 'owner';
    ```
 
-   Verify both inserts affected one row and the owner can sign in. The migration chain creates the `catalove` tenant, backfills existing catalog data, and seeds clearly labeled showcase products; new client stores are not seeded. Do not edit the seeded UUID or run this migration chain on a database containing another business.
-5. Verify `/api/health` returns `200` with `{ "status": "ok" }`, sign in at `/admin/login`, and verify the Catalove demo catalog and owner access. Test public catalog loading, image upload/deletion, an order round-trip, export, and cross-store access isolation before routing real visitors.
+   Verify one row was added and the owner can sign in. The migration chain created the `catalove` tenant and seeded clearly labeled showcase products; new client stores are not seeded. Do not edit the seeded UUID or run this migration chain on a database containing another business.
+5. The local preview currently returns `200` from `/api/health`, and public reads return the showcase catalog. This does not prove the Vercel production deployment or owner operations. Before routing real visitors, verify production `/api/health`, owner login, image upload/deletion, a test order round-trip, export, and cross-store isolation on the actual deployed URL.
 
 Keep `SUPABASE_SERVICE_ROLE_KEY` out of browser code and source control. Public `NEXT_PUBLIC_*` configuration is passed to the image build; the service-role key is stored in Secret Manager for runtime use.
 

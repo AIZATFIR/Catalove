@@ -33,8 +33,8 @@ export const THEME_COLOR_MAP: Record<
     dark: { accent: "#F59E0B", glow: "rgba(245, 158, 11, 0.45)", bg: "#0C0F17", surface: "#151B28", ink: "#F8FAFC" },
   },
   warm_oat: {
-    light: { accent: "#C27838", glow: "rgba(194, 120, 56, 0.35)", bg: "#FAF7F2", surface: "#F5EBDD", ink: "#29211D" },
-    dark: { accent: "#D97706", glow: "rgba(217, 119, 6, 0.4)", bg: "#1C1816", surface: "#29221F", ink: "#F4EDE6" },
+    light: { accent: "#B45309", glow: "rgba(180, 83, 9, 0.22)", bg: "#FAF7F2", surface: "#F5EBDD", ink: "#29211D" },
+    dark: { accent: "#B45309", glow: "rgba(180, 83, 9, 0.28)", bg: "#1C1816", surface: "#29221F", ink: "#F4EDE6" },
   },
   matcha_sage: {
     light: { accent: "#15803D", glow: "rgba(21, 128, 61, 0.35)", bg: "#F7FAF8", surface: "#EAF3ED", ink: "#142519" },
@@ -171,7 +171,7 @@ function DynamicThemeBridge() {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
-    <NextThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <NextThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       <DynamicThemeBridge />
       {children}
     </NextThemeProvider>
