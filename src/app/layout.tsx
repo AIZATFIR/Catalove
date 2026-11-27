@@ -15,6 +15,7 @@ const cormorant = localFont({
   weight: "300 700",
   variable: "--font-cormorant",
   display: "swap",
+  preload: false,
 });
 
 const outfit = localFont({
@@ -22,6 +23,7 @@ const outfit = localFont({
   weight: "100 900",
   variable: "--font-outfit",
   display: "swap",
+  preload: false,
 });
 
 const syne = localFont({
@@ -29,6 +31,7 @@ const syne = localFont({
   weight: "400 800",
   variable: "--font-syne",
   display: "swap",
+  preload: false,
 });
 
 const jakarta = localFont({
@@ -43,6 +46,7 @@ const space = localFont({
   weight: "300 700",
   variable: "--font-space",
   display: "swap",
+  preload: false,
 });
 
 const inter = localFont({
@@ -50,6 +54,7 @@ const inter = localFont({
   weight: "100 900",
   variable: "--font-inter",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
