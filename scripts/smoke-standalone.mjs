@@ -39,8 +39,8 @@ try {
     assert.equal(response.status, 200, `${route} must render successfully`);
     const html = await response.text();
     if (route === "/privacy") {
-      assert.match(html, /Mode demo Catalove/, "privacy page must disclose demo status");
-      assert.match(html, /jangan masukkan data pesanan atau pelanggan sungguhan/i);
+      assert.match(html, /Preview Catalove/, "privacy page must disclose preview status");
+      assert.match(html, /jangan masukkan alamat, nomor WhatsApp, atau catatan milik pembeli sungguhan/i);
     }
     if (route === "/") {
       const cssPath = html.match(/(?:href|content)="([^\"]*\/_next\/static\/css\/[^\"]+\.css[^\"]*)"/)?.[1];
