@@ -1,4 +1,4 @@
-import type { CustomContentBlock } from "@/types/catalove";
+import type { CustomContentBlock, MarqueeAnnouncement } from "@/types/catalove";
 
 export function appendCustomContentBlock(
   blocks: readonly CustomContentBlock[],
@@ -43,6 +43,21 @@ export function isSafeCustomContentUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function sanitizeMarqueeAnnouncement(value: unknown): MarqueeAnnouncement {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { enabled: false, text: "", badge: "", link: "" };
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const rawLink = typeof candidate.link === "string" ? candidate.link.trim() : "";
+  return {
+    enabled: candidate.enabled === true,
+    text: typeof candidate.text === "string" ? candidate.text.trim() : "",
+    badge: typeof candidate.badge === "string" ? candidate.badge.trim() : "",
+    link: rawLink && isSafeCustomContentUrl(rawLink) ? rawLink : "",
+  };
 }
 
 export function publishedCustomContentBlocks(

@@ -3,10 +3,11 @@
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { sanitizeMarqueeAnnouncement } from "@/lib/custom-content";
 
 export function AnnouncementBar() {
   const settings = useBusinessSettings();
-  const marquee = settings.marquee_announcement;
+  const marquee = sanitizeMarqueeAnnouncement(settings.marquee_announcement);
 
   if (!marquee || !marquee.enabled || !marquee.text.trim()) {
     return null;

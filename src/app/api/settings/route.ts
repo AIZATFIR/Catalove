@@ -7,6 +7,7 @@ import type { BusinessSettings } from "@/types/catalove";
 import { getRequestedStoreSlug, getStoreSlugFromRequest, resolveStoreBySlug } from "@/lib/services/store-service";
 import { DEFAULT_TENANT_SECTION_ORDER } from "@/lib/storefront-sections";
 import { getTenantTextSettingFallback } from "@/lib/tenant-settings-defaults";
+import { sanitizeMarqueeAnnouncement } from "@/lib/custom-content";
 
 const TEXT_KEYS = [
   "nav_cta_text",
@@ -125,7 +126,7 @@ export async function GET(req: NextRequest) {
       hidden_sections: INITIAL_SETTINGS.theme_config.hidden_sections,
     };
     const themeConfig = content.theme_config || (isCataloveStore ? INITIAL_SETTINGS.theme_config : tenantThemeConfig);
-    const marquee = content.marquee_announcement || INITIAL_SETTINGS.marquee_announcement;
+    const marquee = sanitizeMarqueeAnnouncement(content.marquee_announcement || INITIAL_SETTINGS.marquee_announcement);
 
     return NextResponse.json({
       persisted: true,
@@ -192,7 +193,7 @@ export async function POST(req: NextRequest) {
     if (isFreePlan) contentConfig.footer_badge = "Powered by Catalove";
 
     if (body.theme_config) contentConfig.theme_config = body.theme_config;
-    if (body.marquee_announcement) contentConfig.marquee_announcement = body.marquee_announcement;
+    if (body.marquee_announcement) contentConfig.marquee_announcement = sanitizeMarqueeAnnouncement(body.marquee_announcement);
     if (body.industry_preset) contentConfig.industry_preset = body.industry_preset;
     if (body.workflow_mode) contentConfig.workflow_mode = body.workflow_mode;
     if (body.catalog_layout) contentConfig.catalog_layout = body.catalog_layout;
