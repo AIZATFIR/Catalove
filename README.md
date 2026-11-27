@@ -50,10 +50,10 @@ Use a dedicated Supabase project owned by Catalove. The current project is Free,
    ```sh
    npx supabase login
    npx supabase link --project-ref vrugrxcajlkhsvmnayfc
-   npx supabase db push --dry-run
+   npx supabase db push --remote --dry-run
    ```
 
-   Review the linked project and the four pending migrations. If either does not match, stop and correct the link. When the dry run is correct, run `npx supabase db push` and confirm the CLI prompt. Do not apply migration files in SQL Editor: direct SQL bypasses Supabase migration history and can leave future deploys out of sync.
+Review the linked project and the four pending migrations. If either does not match, stop and correct the link. When the dry run is correct, run `npx supabase db push --remote` and confirm the CLI prompt. Supabase CLI targets the local database by default, so keep `--remote` on both commands. Do not apply migration files in SQL Editor: direct SQL bypasses Supabase migration history and can leave future deploys out of sync.
 3. Create and verify the initial Catalove owner account in Supabase Auth.
 4. After all migrations succeed, grant the owner access to the legacy seller check and the new tenant membership. In SQL Editor, replace the email with the verified owner email:
 
