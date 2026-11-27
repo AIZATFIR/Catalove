@@ -6,7 +6,7 @@ decision: 'Launch a capped free catalog on shared tenant-safe infrastructure; ke
 source: user request
 status: researched; production setup remains external
 created: 2026-11-25
-updated: 2026-11-26
+updated: 2026-11-27
 ---
 
 # Catalove commercial research
@@ -39,7 +39,7 @@ Keep the accepted “Business mulai Rp299rb / Enterprise mulai Rp799rb; bahas vi
 
 ## Current launch gate
 
-Code and migration are prepared, but production has not been connected to a dedicated Supabase project or cloud billing account. Do not collect real client orders until the migration has been applied, production authentication and storage are configured, a real order round-trip has been verified, a restore has been practiced, and client-facing terms/contact/retention details are published. See [Cloud Run deployment and recovery](CLOUD-RUN-DEPLOYMENT.md) and [operations runbook](COMMERCIAL-OPERATIONS.md).
+The dedicated Catalove Supabase project exists and was verified empty. It is still on Free; no schema migrations, owner membership, or storage setup are active. Cloud Run and billing setup are also not verified. Do not collect real client orders until the project plan and recovery controls are appropriate for production, migrations and authentication/storage are configured, a real order round-trip is verified, a restore is practiced, and client-facing terms/contact/retention details are published. See [Cloud Run deployment and recovery](CLOUD-RUN-DEPLOYMENT.md) and [operations runbook](COMMERCIAL-OPERATIONS.md).
 
 ## Sources
 
