@@ -9,6 +9,7 @@ assert.deepEqual(migrationFiles, [
   "202611250001_catalog_image_limits.sql",
   "202611260001_store_tenants.sql",
   "202611260002_seed_catalove_demo_catalog.sql",
+  "202611270001_unbranded_demo_fragrance.sql",
 ]);
 const migration = readFileSync(join(root, "supabase/migrations/202611260001_store_tenants.sql"), "utf8");
 const demoMigration = readFileSync(join(root, "supabase/migrations/202611260002_seed_catalove_demo_catalog.sql"), "utf8");

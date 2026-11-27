@@ -51,11 +51,18 @@ try {
     }
   }
 
+  for (const asset of ["/demo-assets/fragrance-sample.svg", "/demo-assets/fragrance-detail.svg"]) {
+    const response = await fetch(`${baseUrl}${asset}`);
+    assert.equal(response.status, 200, `${asset} must be served by the standalone build`);
+    assert.match(response.headers.get("content-type") || "", /image\/svg\+xml/i);
+    assert.match(await response.text(), /<svg\b/i);
+  }
+
   const health = await fetch(`${baseUrl}/api/health`);
   assert.equal(health.status, 503, "the service must fail readiness without a runtime service key");
   assert.deepEqual(await health.json(), { status: "unavailable" });
 
-  console.log("✅ Standalone storefront, admin, privacy, contact, CSS, and health smoke checks passed");
+  console.log("✅ Standalone storefront, admin, privacy, contact, CSS, demo art, and health smoke checks passed");
 } finally {
   server.kill("SIGTERM");
 }

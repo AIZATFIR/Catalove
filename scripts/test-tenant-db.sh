@@ -72,6 +72,7 @@ SQL
   cat "$repo_root/supabase/tests/store_migration_seed.sql"
   cat "$repo_root/supabase/migrations/202611260001_store_tenants.sql"
   cat "$repo_root/supabase/migrations/202611260002_seed_catalove_demo_catalog.sql"
+  cat "$repo_root/supabase/migrations/202611270001_unbranded_demo_fragrance.sql"
   cat "$repo_root/supabase/tests/store_migration_backfill_assertions.sql"
   cat "$repo_root/supabase/tests/store_demo_catalog_assertions.sql"
   cat "$repo_root/supabase/tests/store_isolation.sql"

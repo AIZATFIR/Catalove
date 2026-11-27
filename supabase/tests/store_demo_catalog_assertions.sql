@@ -13,3 +13,18 @@ begin
   end if;
 end;
 $$;
+
+do $$
+declare
+  demo_store constant uuid := '00000000-0000-4000-8000-000000000001';
+begin
+  if (select count(*)
+      from public.product_images image
+      join public.products product on product.id = image.product_id and product.store_id = image.store_id
+      where image.store_id = demo_store
+        and product.slug = 'sample-03-fragrance'
+        and image.storage_path in ('/demo-assets/fragrance-sample.svg', '/demo-assets/fragrance-detail.svg')) <> 2 then
+    raise exception 'The showcase fragrance sample must use two original, unbranded illustrations';
+  end if;
+end;
+$$;

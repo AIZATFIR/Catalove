@@ -11,6 +11,7 @@ assert.deepEqual(
     "202611250001_catalog_image_limits.sql",
     "202611260001_store_tenants.sql",
     "202611260002_seed_catalove_demo_catalog.sql",
+    "202611270001_unbranded_demo_fragrance.sql",
   ],
   "a clean Catalove database runs only Catalove-owned migrations"
 );
