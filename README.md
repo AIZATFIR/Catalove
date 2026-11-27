@@ -2,7 +2,7 @@
 
 Catalove is a multi-tenant product catalog and storefront for small businesses. A merchant can publish a catalog, manage products and stock, and capture an order before opening a pre-filled WhatsApp message. There is no payment processing in the app.
 
-The repo contains the tenant-aware application, database migrations, image quotas, store export, and Cloud Run build/deploy pipeline. The dedicated Catalove Supabase project (`vrugrxcajlkhsvmnayfc`) is connected: four migrations are applied and in sync; two migrations are pending explicit remote approval (original demo art and optional seller-managed checkout links). The project has one published Free showcase store, six active sample products, and no memberships or order requests. It is still a preview setup: the project is on Free, no Catalove owner membership exists yet, no Cloud Run deployment or backup/restore drill is verified, and the current Vercel production URL is not serving this branch. Do not use it for real client orders.
+The repo contains the tenant-aware application, database migrations, image quotas, store export, and Cloud Run build/deploy pipeline. The dedicated Catalove Supabase project (`vrugrxcajlkhsvmnayfc`) is connected: all six migrations are applied and match the remote history, including the showcase art and optional seller-managed checkout link changes. The project has one published Free showcase store, six active sample products, and no memberships or order requests. It is still a preview setup: the project is on Free, no Catalove owner membership exists yet, no Cloud Run deployment or backup/restore drill is verified, and the current Vercel production URL is not serving this branch. Do not use it for real client orders.
 
 ## Local development
 
@@ -46,7 +46,7 @@ Do not use SofizCake's Supabase project, secrets, storage, or database for Catal
 Use the dedicated Catalove Supabase project only for preview/testing until its owner account, plan, backups, and recovery are verified. It is currently on Free and may pause after inactivity; it has no automatic backups. Keep project access and recovery under Catalove control.
 
 1. The dedicated project is `vrugrxcajlkhsvmnayfc` in Singapore. Confirm the ref in the dashboard and keep the project under Catalove's owner account. Set the production site URL and redirect URLs for the final Catalove domain.
-2. Four migrations currently match the remote history. Two are pending explicit approval: one replaces two showcase image URLs, and one adds optional HTTPS seller-checkout links. Confirm the linked project ref and review the dry run. Apply with `npx supabase db push --remote --yes` only after approving the exact pending set. For future migrations, repeat the same target and dry-run checks before applying. The CLI may ask for the database password; enter it only in the terminal prompt:
+2. All six local migrations currently match the remote history. For future migrations, confirm the linked project ref, inspect the dry run, and use `--yes` only when the user has approved the exact pending set. The CLI may ask for the database password; enter it only in the terminal prompt:
 
    ```sh
    npx supabase login
