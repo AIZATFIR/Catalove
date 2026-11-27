@@ -579,7 +579,7 @@ export default function BulkProductsPage() {
             )}
             {row.photos.some((photo) => photo.status === "success" && photo.storagePath?.startsWith("stores/")) && (
               <p className="col-span-full text-[10px] text-cocoa-500 dark:text-stone-400">
-                Jika meminta saran AI, foto terpilih dikirim ke Google Gemini. Periksa saran sebelum menyimpan produk.
+                Jika meminta saran AI, foto terpilih dan nama kategori toko dikirim ke Google Gemini. Data pesanan tidak ikut dikirim.
               </p>
             )}
           </section>

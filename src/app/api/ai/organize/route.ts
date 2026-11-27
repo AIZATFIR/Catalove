@@ -5,6 +5,7 @@ import { isManagedAiImagePath } from "@/lib/store-media-path";
 import { getAdminSupabase } from "@/lib/supabase/server";
 import { MAX_STORED_IMAGE_BYTES, validateImageUpload } from "@/lib/image-upload-validation";
 import { resolveAiSuggestedCategoryId } from "@/lib/ai-organize";
+import { isGeminiAiEnabled } from "@/lib/ai-feature-gate";
 
 export async function POST(req: NextRequest) {
   // Verify seller session with Supabase Auth.
@@ -17,12 +18,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 2. Check server-only GEMINI_API_KEY
+  // Require an explicit paid-tier confirmation before sending merchant photos to Google.
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!isGeminiAiEnabled(apiKey, process.env.GEMINI_API_PAID_TIER_CONFIRMED)) {
     return NextResponse.json({
       available: false,
-      message: "AI Organizer belum aktif (GEMINI_API_KEY belum diatur). Anda dapat mengisi detail produk secara manual.",
+      message: "Saran AI belum diaktifkan. Foto produk dapat diisi manual; pengelola Catalove harus lebih dulu memastikan paket dan perlindungan data Gemini.",
     });
   }
 

@@ -34,6 +34,10 @@ export default function PrivacyPage() {
           <p>Target infrastruktur produksi Catalove adalah Supabase untuk data katalog dan pesanan, serta Google Cloud Run untuk menyajikan aplikasi. Keduanya belum menjadi infrastruktur aktif untuk demo ini. Sebelum pilot dimulai, halaman ini akan diperbarui dengan penyedia yang benar-benar aktif. Saat kamu membuka tautan WhatsApp, kamu berpindah ke layanan WhatsApp; pesan yang kamu kirim di sana tunduk pada kebijakan WhatsApp.</p>
         </section>
         <section>
+          <h2 className="font-bold text-stone-900 dark:text-white">Saran AI dari foto</h2>
+          <p>Jika fitur ini diaktifkan, foto produk yang dipilih dan nama kategori toko dikirim ke Google Gemini hanya setelah pengelola menekan tombol saran AI. Data pesanan dan pembeli tidak dikirim. Jangan gunakan foto pelanggan atau dokumen sensitif. Kebijakan Google membedakan penggunaan API Free dan Paid: konten pada Free dapat digunakan untuk peningkatan produk, sedangkan Paid menyatakan konten tidak digunakan untuk itu. Catalove menjaga fitur ini nonaktif sampai paket Paid, ketentuan data, dan anggaran penggunaan diverifikasi. <a className="font-semibold text-[var(--storefront-accent)] underline" href="https://ai.google.dev/gemini-api/docs/pricing">Lihat ketentuan penggunaan data Gemini</a>.</p>
+        </section>
+        <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Penyimpanan dan permintaan data</h2>
           <p>Jangka waktu penyimpanan data produksi akan ditetapkan dan dijelaskan sebelum pilot klien dimulai. Untuk permintaan akses, koreksi, atau penghapusan data pesanan produksi, hubungi pengelola toko melalui nomor WhatsApp di katalog. Untuk masalah akun atau layanan Catalove, gunakan halaman <Link className="font-semibold text-[var(--storefront-accent)] underline" href="/contact">Kontak</Link>. Preferensi dan keranjang demo tersimpan di browser dan dapat dihapus dengan membersihkan data situs.</p>
         </section>

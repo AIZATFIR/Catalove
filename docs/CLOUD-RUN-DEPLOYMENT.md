@@ -9,7 +9,7 @@ This repository ships as a container for Catalove's hosted, multi-tenant catalog
 3. Create and verify the owner in Supabase Auth. After migrations have completed, add that user to `seller_users` and `store_memberships` using the owner bootstrap SQL in the README. Verify the active owner membership and a real admin login.
 4. The migration chain creates/configures the public `catalove-product-images` bucket with a 2 MiB per-object limit and JPEG, PNG and WebP MIME types, and seeds the Catalove-owned showcase store with clearly labeled sample products. Merchant accounts remain separate. Product photos are public by design; private customer/order information must never go in this bucket.
 5. Configure Supabase Auth site URL and redirect URLs for the production Catalove domain. Verify email delivery and recovery.
-6. Create Secret Manager versions for `SUPABASE_SERVICE_ROLE_KEY` and (if AI features are enabled) `GEMINI_API_KEY`. Grant access only to the Cloud Run runtime service account. Never add these values as Docker build arguments or commit them.
+6. Create a Secret Manager version for `SUPABASE_SERVICE_ROLE_KEY` and grant access only to the Cloud Run runtime service account. Keep the AI route disabled by default. If Catalove later enables photo suggestions, store `GEMINI_API_KEY` in a separate Secret Manager secret and set `GEMINI_API_PAID_TIER_CONFIRMED=true` only after verifying a paid Gemini API tier, provider data terms, client disclosure, and request budgets. Never pass keys as Docker build arguments or commit them.
 7. Review the selected Supabase plan costs and set billing/usage alerts. Pro pricing starts at US$25/month before tax/overages. This shared project is the baseline database/storage cost for all free catalogs; separate projects multiply compute cost.
 
 ## Build and deploy
@@ -23,7 +23,7 @@ gcloud builds submit --config cloudbuild.yaml \
   --substitutions=_SUPABASE_URL='https://PROJECT.supabase.co',_SUPABASE_ANON_KEY='PUBLIC_ANON_KEY',_SUPABASE_PROJECT_REF='PROJECT_REF' .
 ```
 
-Configure the same substitutions on the Cloud Build GitHub trigger after the manual deployment works. Trigger deployments only from the protected production branch after tests pass. If the AI feature is enabled, add `GEMINI_API_KEY` from a separate Secret Manager secret to the Cloud Run service configuration. Public `NEXT_PUBLIC_*` values are compiled into browser code and are not secrets; the service-role and AI keys must only come from Secret Manager at runtime.
+Configure the same substitutions on the Cloud Build GitHub trigger after the manual deployment works. Trigger deployments only from the protected production branch after tests pass. Do not enable AI by adding only a key: the route also requires `GEMINI_API_PAID_TIER_CONFIRMED=true`, after data terms, disclosure, and request budgets have been reviewed. Public `NEXT_PUBLIC_*` values are compiled into browser code and are not secrets; the service-role and AI keys must only come from Secret Manager at runtime.
 
 ## Release and recovery
 

@@ -658,8 +658,8 @@ export default function NewProductDraftPage() {
                 type="button"
                 onClick={requestAiAssistant}
                 disabled={aiLoading}
-                title="Foto akan diproses Google Gemini untuk membuat saran. Periksa hasilnya sebelum disimpan."
-                aria-label="Kirim foto produk ke Google Gemini untuk saran deskripsi dan tag"
+                title="Foto produk dan nama kategori toko akan dikirim ke Google Gemini untuk saran. Periksa hasilnya sebelum disimpan."
+                aria-label="Kirim foto produk dan nama kategori toko ke Google Gemini untuk saran deskripsi dan tag"
                 className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-caramel-700 hover:text-caramel-800 bg-caramel-50 px-2.5 py-1 rounded-full border border-caramel-200"
               >
                 {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
@@ -667,6 +667,11 @@ export default function NewProductDraftPage() {
               </button>
             )}
           </div>
+          {images.some((img) => img.status === "success" && img.storagePath?.startsWith("stores/")) && (
+            <p className="text-[10px] leading-4 text-cocoa-500 dark:text-stone-400">
+              Saat diminta, foto produk dan nama kategori toko dikirim ke Google Gemini. Data pesanan tidak ikut dikirim.
+            </p>
+          )}
           <textarea
             rows={3}
             value={description}
