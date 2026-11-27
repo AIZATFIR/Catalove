@@ -4,12 +4,13 @@ This repository ships as a container for Catalove's hosted, multi-tenant catalog
 
 ## Before the first deploy
 
-1. Create a dedicated Supabase **Pro** project in a region close to the expected customers. Do not use the SofizCake project or credentials. Free Supabase projects can pause after one week of inactivity and have no automatic backups; they are for preview/testing, not real order intake.
-2. Run `npm run test:tenant-db` locally with Docker available, then apply migrations in order. The final migration seeds the Catalove-owned showcase store with clearly labeled sample products; merchant accounts remain separate. Verify the migration backfills the `catalove` store and its active seller membership before routing production traffic.
-3. Configure Supabase Auth site URL and redirect URLs for the production Catalove domain. Verify email delivery and a real admin login.
-4. Apply the full migration chain, which creates/configures the public `catalove-product-images` bucket with a 2 MiB per-object limit and JPEG, PNG and WebP MIME types. Product photos are public by design; private customer/order information must never go in this bucket.
-5. Create Secret Manager versions for `SUPABASE_SERVICE_ROLE_KEY` and (if AI features are enabled) `GEMINI_API_KEY`. Grant access only to the Cloud Run runtime service account. Never add these values as Docker build arguments or commit them.
-6. Review Supabase Pro costs and set billing/usage alerts. The listed plan starts at US$25/month before tax/overages. This shared project is the baseline database/storage cost for all free catalogs; separate projects multiply compute cost.
+1. Use a dedicated Catalove Supabase project in a region close to expected customers. The current project is Free; use it only for preview/testing because Free projects can pause after one week of inactivity and have no automatic backups. Upgrade and configure recovery before accepting real orders. Never use SofizCake's project or credentials.
+2. Run `npm run test:tenant-db` locally with Docker available. In a trusted terminal, run `npx supabase login`, link the exact project with `npx supabase link --project-ref vrugrxcajlkhsvmnayfc`, then run `npx supabase db push --dry-run`. Confirm the linked ref and all four pending migrations before running `npx supabase db push` interactively. Do not apply migration files directly in SQL Editor; that bypasses Supabase migration history.
+3. Create and verify the owner in Supabase Auth. After migrations have completed, add that user to `seller_users` and `store_memberships` using the owner bootstrap SQL in the README. Verify the active owner membership and a real admin login.
+4. The migration chain creates/configures the public `catalove-product-images` bucket with a 2 MiB per-object limit and JPEG, PNG and WebP MIME types, and seeds the Catalove-owned showcase store with clearly labeled sample products. Merchant accounts remain separate. Product photos are public by design; private customer/order information must never go in this bucket.
+5. Configure Supabase Auth site URL and redirect URLs for the production Catalove domain. Verify email delivery and recovery.
+6. Create Secret Manager versions for `SUPABASE_SERVICE_ROLE_KEY` and (if AI features are enabled) `GEMINI_API_KEY`. Grant access only to the Cloud Run runtime service account. Never add these values as Docker build arguments or commit them.
+7. Review the selected Supabase plan costs and set billing/usage alerts. Pro pricing starts at US$25/month before tax/overages. This shared project is the baseline database/storage cost for all free catalogs; separate projects multiply compute cost.
 
 ## Build and deploy
 

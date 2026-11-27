@@ -42,24 +42,36 @@ Do not use SofizCake's Supabase project, secrets, storage, or database for Catal
 
 ## Configure the production Supabase project
 
-Use a dedicated Supabase **Pro** project owned by Catalove. Do not use Supabase Free for live orders: a free project may pause after one week of inactivity and has no automatic backups. Keep project access, billing alerts, and recovery contacts under Catalove control.
+Use a dedicated Supabase project owned by Catalove. The current project is Free, so keep it for preview/testing only: a free project may pause after one week of inactivity and has no automatic backups. Upgrade and configure recovery before accepting real orders. Keep project access, billing alerts, and recovery contacts under Catalove control.
 
-1. The dedicated project is `vrugrxcajlkhsvmnayfc` in Singapore. Confirm its billing tier and keep it under Catalove's owner account. Set the production site URL and redirect URLs for the final Catalove domain.
-2. Create and verify the initial Catalove owner account in Supabase Auth.
-3. In SQL Editor, apply the migrations in order:
-   - `supabase/migrations/202610290001_catalove_core.sql`
-   - `supabase/migrations/202611250001_catalog_image_limits.sql`
-4. Grant the initial owner seller access **before** the tenant migration runs:
+1. The dedicated project is `vrugrxcajlkhsvmnayfc` in Singapore. Confirm the ref in the dashboard and keep the project under Catalove's owner account. Set the production site URL and redirect URLs for the final Catalove domain.
+2. From a trusted terminal, authenticate and link only the dedicated Catalove project. The CLI may ask for the database password; enter it only in the terminal prompt:
 
-   ```sql
-   insert into public.seller_users (user_id)
-   select id from auth.users where email = 'owner@example.com'
-   on conflict (user_id) do update set is_active = true;
+   ```sh
+   npx supabase login
+   npx supabase link --project-ref vrugrxcajlkhsvmnayfc
+   npx supabase db push --dry-run
    ```
 
-5. Apply `supabase/migrations/202611260001_store_tenants.sql`. It creates the `catalove` tenant, backfills existing catalog data, and converts the initial seller to a store owner. Do not edit the seeded UUID or run this on a database containing another business.
-6. Apply `supabase/migrations/202611260002_seed_catalove_demo_catalog.sql`. It adds labeled showcase products to Catalove's demo catalog; new client stores are not seeded with these products.
-7. Verify `/api/health` returns `200` with `{ "status": "ok" }`, sign in at `/admin/login`, and verify the Catalove demo catalog and owner access. Test public catalog loading, image upload/deletion, an order round-trip, export, and cross-store access isolation before routing real visitors.
+   Review the linked project and the four pending migrations. If either does not match, stop and correct the link. When the dry run is correct, run `npx supabase db push` and confirm the CLI prompt. Do not apply migration files in SQL Editor: direct SQL bypasses Supabase migration history and can leave future deploys out of sync.
+3. Create and verify the initial Catalove owner account in Supabase Auth.
+4. After all migrations succeed, grant the owner access to the legacy seller check and the new tenant membership. In SQL Editor, replace the email with the verified owner email:
+
+   ```sql
+   insert into public.seller_users (user_id, is_active)
+   select id, true from auth.users where email = 'owner@example.com'
+   on conflict (user_id) do update set is_active = true;
+
+   insert into public.store_memberships (store_id, user_id, role)
+   select s.id, u.id, 'owner'
+   from public.stores s
+   join auth.users u on u.email = 'owner@example.com'
+   where s.slug = 'catalove'
+   on conflict (store_id, user_id) do update set role = 'owner';
+   ```
+
+   Verify both inserts affected one row and the owner can sign in. The migration chain creates the `catalove` tenant, backfills existing catalog data, and seeds clearly labeled showcase products; new client stores are not seeded. Do not edit the seeded UUID or run this migration chain on a database containing another business.
+5. Verify `/api/health` returns `200` with `{ "status": "ok" }`, sign in at `/admin/login`, and verify the Catalove demo catalog and owner access. Test public catalog loading, image upload/deletion, an order round-trip, export, and cross-store access isolation before routing real visitors.
 
 Keep `SUPABASE_SERVICE_ROLE_KEY` out of browser code and source control. Public `NEXT_PUBLIC_*` configuration is passed to the image build; the service-role key is stored in Secret Manager for runtime use.
 

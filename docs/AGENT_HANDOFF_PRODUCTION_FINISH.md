@@ -24,8 +24,8 @@ Historical files in this repository may describe older product or deployment sta
 
 ## Finish sequence
 
-1. Complete the dedicated Catalove Supabase setup from the README in the Supabase dashboard. Do not request passwords, API keys, service-role keys, or access tokens in chat.
-2. Verify the exact project ref and inspect the empty target schema. Apply each Catalove migration in order, then verify tables, RLS, Storage bucket limits, seeded showcase catalog, and the initial owner membership.
+1. Complete the dedicated Catalove Supabase setup from the README. Do not request passwords, API keys, service-role keys, or access tokens in chat; use `supabase login` in the owner's terminal.
+2. Verify the linked ref is `vrugrxcajlkhsvmnayfc`, inspect `supabase db push --dry-run`, and apply migrations through `supabase db push` so migration history stays synchronized. Then verify tables, RLS, Storage bucket limits, seeded showcase catalog, and the initial owner membership.
 3. Configure production runtime secrets through Catalove-owned Secret Manager and deploy the container to Catalove-owned Cloud Run. Keep service-role and AI keys server-only. Do not deploy the hosted-client service to Vercel production while the commercial hosting review remains unresolved.
 4. Verify `/api/health`, owner sign-in/recovery, create/edit/publish, mobile image upload and deletion, stock/availability updates, order persistence and WhatsApp handoff, export, and tenant isolation using separate accounts.
 5. Configure cost alerts, backups, and recovery contacts; practice restore and offboarding. Finalize client terms, retention, incident owner, support contact, and provider disclosures.
