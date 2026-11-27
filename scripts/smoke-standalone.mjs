@@ -38,6 +38,10 @@ try {
     const response = await fetch(`${baseUrl}${route}`);
     assert.equal(response.status, 200, `${route} must render successfully`);
     const html = await response.text();
+    if (route === "/privacy") {
+      assert.match(html, /Mode demo Catalove/, "privacy page must disclose demo status");
+      assert.match(html, /jangan masukkan data pesanan atau pelanggan sungguhan/i);
+    }
     if (route === "/") {
       const cssPath = html.match(/(?:href|content)="([^\"]*\/_next\/static\/css\/[^\"]+\.css[^\"]*)"/)?.[1];
       assert.ok(cssPath, "homepage must reference a production CSS asset");

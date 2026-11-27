@@ -17,6 +17,10 @@ assert.doesNotMatch(source, /Harga final dibahas lewat WhatsApp/);
 assert.match(faq, /Pelanggan tetap perlu menekan tombol Kirim di WhatsApp/);
 assert.match(faq, /periode tagihan, hosting/);
 assert.match(cart, /Checkout mencatat nama, nomor WhatsApp/);
-assert.match(privacy, /Supabase; Google Cloud Run/);
+assert.match(privacy, /Mode demo/);
+assert.match(privacy, /jangan masukkan data pesanan atau pelanggan sungguhan/i);
+assert.match(privacy, /Target infrastruktur produksi/);
+assert.match(privacy, /Supabase/);
+assert.match(privacy, /Google Cloud Run/);
 
 console.log("✅ Commercial pricing copy matches the current free caps and WhatsApp quote policy");
