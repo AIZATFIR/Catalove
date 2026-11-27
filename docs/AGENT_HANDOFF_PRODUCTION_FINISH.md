@@ -4,11 +4,11 @@
 
 ## Verified state — 27 November 2026
 
-- Repository: `AIZATFIR/Catalove`, branch `catalove/hosted-catalog-platform`, head `2b5d245` at the time this note was updated.
-- Pull request #1 is open. GitHub CI and the Vercel preview status pass. The preview is access-protected; the public `catalove.vercel.app` route checked during this work returned 404 for the health and store routes. Do not treat that public URL as this branch's production deployment.
-- Supabase project `vrugrxcajlkhsvmnayfc` is the dedicated Catalove project. Four local migrations match remote history. Read-only checks found one published Free showcase store, four active categories, six active products, ten product image records, zero store memberships, and zero order requests. Public REST reads succeeded.
+- Repository: `AIZATFIR/Catalove`, branch `catalove/hosted-catalog-platform`, head `222dd6f` at the time this note was updated.
+- Pull request #1 is open. GitHub `verify` and Vercel deployment checks pass for this head. The branch preview [is deployed](https://catalove-git-catalove-hosted-ca-bd987b-zafirs-projects-5b3c6ef2.vercel.app) but Vercel Authentication returns `302` to unauthenticated requests. The public `catalove.vercel.app/api/health` route still returns `404`; do not treat the branch preview as the production deployment.
+- Supabase project `vrugrxcajlkhsvmnayfc` is the dedicated Catalove project. Four local migrations match remote history. A current read-only query found one store, six active products, zero store memberships, and zero order requests. Public REST reads succeeded.
 - The Supabase project is on Free. No automatic backups/restore drill or paid-plan readiness is verified. No owner membership has been added to the seeded `catalove` showcase store.
-- Local `/api/health` returns 200 with the dedicated project configuration. This is not evidence of a public production health check, an owner login, or a real order round-trip.
+- Local `/api/health` returns 200 with the dedicated project configuration. Lint, the app test suite, PostgreSQL tenant isolation tests, production build, and standalone smoke checks pass on `222dd6f`. These are not evidence of a public production health check, an owner login, or a real order round-trip.
 - Cloud Run is not deployed and its billing, runtime identity, Secret Manager, alerts, and recovery are not verified. No production release or PR merge has been authorized in this thread.
 - The app handles product catalogs, stock/availability, order requests, and a user-confirmed WhatsApp handoff. It does not process payment or securely fulfill digital files. Business/Enterprise prices are indicative starting points discussed via WhatsApp; recurring cadence and hosting/domain costs are not final.
 
