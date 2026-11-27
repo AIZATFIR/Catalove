@@ -183,8 +183,8 @@ export default function NewProductDraftPage() {
   };
 
   const requestAiAssistant = async () => {
-    const uploaded = images.find((img) => img.status === "success" && img.uploadedUrl);
-    if (!uploaded?.uploadedUrl) {
+    const uploaded = images.find((img) => img.status === "success" && img.storagePath?.startsWith("stores/"));
+    if (!uploaded?.storagePath) {
       setFeedbackMessage("Tunggu minimal 1 foto selesai diunggah sebelum meminta saran AI.");
       return;
     }
@@ -193,10 +193,10 @@ export default function NewProductDraftPage() {
     setFeedbackMessage("");
 
     try {
-      const res = await fetch("/api/ai/organize", {
+      const res = await fetch(withStoreSlug("/api/ai/organize"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: uploaded.uploadedUrl }),
+        body: JSON.stringify({ storagePath: uploaded.storagePath }),
       });
 
       const data = await res.json();
@@ -653,11 +653,13 @@ export default function NewProductDraftPage() {
             <label className="block text-xs font-bold text-cocoa-800 dark:text-stone-200">
               Deskripsi &amp; Keunggulan Produk
             </label>
-            {images.some((img) => img.status === "success" && img.uploadedUrl) && (
+            {images.some((img) => img.status === "success" && img.storagePath?.startsWith("stores/")) && (
               <button
                 type="button"
                 onClick={requestAiAssistant}
                 disabled={aiLoading}
+                title="Foto akan diproses Google Gemini untuk membuat saran. Periksa hasilnya sebelum disimpan."
+                aria-label="Kirim foto produk ke Google Gemini untuk saran deskripsi dan tag"
                 className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-caramel-700 hover:text-caramel-800 bg-caramel-50 px-2.5 py-1 rounded-full border border-caramel-200"
               >
                 {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyServerSession } from "@/lib/services/server-auth";
+import { getRequestedStoreSlug } from "@/lib/services/store-service";
+import { isManagedAiImagePath } from "@/lib/store-media-path";
+import { getAdminSupabase } from "@/lib/supabase/server";
+import { MAX_STORED_IMAGE_BYTES, validateImageUpload } from "@/lib/image-upload-validation";
+import { resolveAiSuggestedCategoryId } from "@/lib/ai-organize";
 
 export async function POST(req: NextRequest) {
   // Verify seller session with Supabase Auth.
-  const session = await verifyServerSession();
+  const session = await verifyServerSession(getRequestedStoreSlug(req));
 
   if (!session) {
     return NextResponse.json(
@@ -22,23 +27,58 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { imageUrl, photoUrl } = body;
-    const targetUrl = imageUrl || photoUrl;
+    const contentLength = Number(req.headers.get("content-length") || 0);
+    if (contentLength > 4096) {
+      return NextResponse.json({ error: "Permintaan foto terlalu besar." }, { status: 413 });
+    }
 
-    if (!targetUrl) {
+    const body = await req.json().catch(() => null);
+    const storagePath = typeof body?.storagePath === "string" ? body.storagePath : "";
+    if (!isManagedAiImagePath(storagePath, session.storeId, session.id)) {
       return NextResponse.json(
-        { available: true, error: "Tautan foto diperlukan untuk analisis AI." },
+        { error: "Untuk saran AI, unggah foto ke katalog ini terlebih dahulu. Tautan foto eksternal tetap bisa dipakai tanpa AI." },
         { status: 400 }
       );
     }
+
+    const admin = await getAdminSupabase();
+    if (!admin) {
+      return NextResponse.json({ available: false, message: "Penyimpanan foto belum siap. Saran AI bisa dicoba lagi nanti." }, { status: 503 });
+    }
+    const { data: image, error: downloadError } = await admin.storage
+      .from("catalove-product-images")
+      .download(storagePath);
+    if (downloadError || !image) {
+      return NextResponse.json({ error: "Foto katalog tidak ditemukan." }, { status: 404 });
+    }
+
+    const imageBytes = new Uint8Array(await image.arrayBuffer());
+    if (imageBytes.byteLength > MAX_STORED_IMAGE_BYTES) {
+      return NextResponse.json({ error: "Ukuran foto untuk saran AI maksimal 2 MB." }, { status: 413 });
+    }
+    const validation = validateImageUpload(image.type, imageBytes.byteLength, imageBytes);
+    if (!validation.ok) {
+      return NextResponse.json({ error: "Format foto katalog tidak didukung AI." }, { status: 415 });
+    }
+
+    const { data: storeCategories } = await admin
+      .from("categories")
+      .select("id,slug,name")
+      .eq("store_id", session.storeId)
+      .eq("is_active", true)
+      .limit(100);
+    const categories = (storeCategories || []).filter(
+      (category): category is { id: string; slug: string; name: string } =>
+        typeof category.id === "string" && typeof category.slug === "string" && typeof category.name === "string"
+    );
+    const categoryOptions = categories.map(({ id, slug, name }) => ({ id, slug, name }));
 
     // Call Gemini Multimodal API
     // System instruction: suggest highlight tags/variants, draft description, and category for any UMKM product. Never set name or price.
     const prompt = `Anda adalah asisten copywriter & kurator katalog UMKM profesional di platform Catalove (mendukung berbagai bisnis: Fashion, Kuliner/Bakery, Florist, Kerajinan/Craft, Gadget/Gear, Jasa, hingga Lifestyle).
 Lihat foto produk ini dan berikan saran untuk pemilik toko:
 1. flavor_notes: array berisi 2-4 tag keunggulan, varian, material, atau catatan rasa dalam bahasa Indonesia (contoh: ["Katun Combed 24s", "Jahitan Rapi", "Unisex"] atau ["Cokelat Belgia", "Tanpa Pengawet", "Best Seller"]).
-2. suggested_category: pilih salah satu slug kategori yang paling relevan: "best-seller", "new-arrivals", "bundling-hemat", "koleksi-khusus", "whole-cakes", "hampers".
+2. suggested_category: pilih tepat satu ID dari daftar kategori toko ini: ${JSON.stringify(categoryOptions)}. Jika tidak ada yang cocok, gunakan null. Jangan membuat ID baru.
 3. draft_description: deskripsi elegan, informatif, dan persuasif sebanyak 1-2 kalimat dalam bahasa Indonesia.
 
 PENTING: JANGAN tentukan nama produk atau harga. Nama dan harga wajib diisi sendiri oleh pemilik toko secara manual.
@@ -46,38 +86,16 @@ PENTING: JANGAN tentukan nama produk atau harga. Nama dan harga wajib diisi send
 Balas HANYA dalam format JSON valid:
 {
   "flavor_notes": ["..."],
-  "suggested_category": "best-seller",
+  "suggested_category": null,
   "draft_description": "..."
 }`;
 
-    // Fetch image bytes to base64 if needed, or pass url
-    let inlineData: { mimeType: string; data: string } | null = null;
+    const inlineData = {
+      mimeType: image.type,
+      data: Buffer.from(imageBytes).toString("base64"),
+    };
 
-    if (targetUrl.startsWith("data:")) {
-      const match = targetUrl.match(/^data:([^;]+);base64,(.+)$/);
-      if (match) {
-        inlineData = { mimeType: match[1], data: match[2] };
-      }
-    } else if (targetUrl.startsWith("http://") || targetUrl.startsWith("https://")) {
-      const imgRes = await fetch(targetUrl);
-      if (imgRes.ok) {
-        const mimeType = imgRes.headers.get("content-type") || "image/jpeg";
-        const buffer = await imgRes.arrayBuffer();
-        inlineData = {
-          mimeType,
-          data: Buffer.from(buffer).toString("base64"),
-        };
-      }
-    }
-
-    if (!inlineData) {
-      return NextResponse.json({
-        available: true,
-        message: "Foto belum dapat dianalisis secara otomatis. Anda dapat mengisi detail tag dan deskripsi secara manual.",
-      });
-    }
-
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
 
     const geminiRes = await fetch(geminiUrl, {
       method: "POST",
@@ -97,10 +115,12 @@ Balas HANYA dalam format JSON valid:
           },
         ],
         generationConfig: {
-          response_mime_type: "application/json",
+          responseMimeType: "application/json",
+          maxOutputTokens: 512,
           temperature: 0.3,
         },
       }),
+      signal: AbortSignal.timeout(20_000),
     });
 
     if (!geminiRes.ok) {
@@ -125,9 +145,15 @@ Balas HANYA dalam format JSON valid:
     return NextResponse.json({
       available: true,
       suggestions: {
-        flavor_notes: Array.isArray(parsed.flavor_notes) ? parsed.flavor_notes : [],
-        suggested_category: parsed.suggested_category || "best-seller",
-        draft_description: parsed.draft_description || "",
+        flavor_notes: Array.isArray(parsed.flavor_notes)
+          ? parsed.flavor_notes
+              .filter((note: unknown): note is string => typeof note === "string")
+              .slice(0, 4)
+              .map((note: string) => note.trim().slice(0, 60))
+              .filter(Boolean)
+          : [],
+        suggested_category: resolveAiSuggestedCategoryId(parsed.suggested_category, categoryOptions),
+        draft_description: typeof parsed.draft_description === "string" ? parsed.draft_description.trim().slice(0, 500) : "",
       },
     });
   } catch (err: unknown) {

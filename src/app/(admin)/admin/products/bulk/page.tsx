@@ -239,9 +239,9 @@ export default function BulkProductsPage() {
 
   const requestAiSuggestions = async (rowKey: string) => {
     const row = rows.find((r) => r.key === rowKey);
-    const firstUploaded = row?.photos.find((p) => p.status === "success" && p.uploadedUrl);
+    const firstUploaded = row?.photos.find((p) => p.status === "success" && p.storagePath?.startsWith("stores/"));
 
-    if (!firstUploaded?.uploadedUrl) {
+    if (!firstUploaded?.storagePath) {
       setFeedback("Tunggu minimal satu foto selesai diunggah sebelum meminta saran AI.");
       return;
     }
@@ -250,10 +250,10 @@ export default function BulkProductsPage() {
     setFeedback("");
 
     try {
-      const res = await fetch("/api/ai/organize", {
+      const res = await fetch(withStoreSlug("/api/ai/organize"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: firstUploaded.uploadedUrl }),
+        body: JSON.stringify({ storagePath: firstUploaded.storagePath }),
       });
 
       const data = await res.json();
@@ -484,13 +484,13 @@ export default function BulkProductsPage() {
                 />
               </label>
 
-              {row.photos.some((p) => p.status === "success") && (
+              {row.photos.some((p) => p.status === "success" && p.storagePath?.startsWith("stores/")) && (
                 <button
                   type="button"
                   onClick={() => requestAiSuggestions(row.key)}
                   disabled={aiLoadingKey === row.key}
-                  title="Saran AI untuk deskripsi & rasa"
-                  aria-label="Minta saran AI untuk rasa dan deskripsi"
+                  title="Foto akan diproses Google Gemini untuk membuat saran. Periksa hasilnya sebelum disimpan."
+                  aria-label="Kirim foto produk ke Google Gemini untuk saran deskripsi dan tag"
                   className="touch-target inline-flex items-center justify-center border border-caramel-300 px-2 text-caramel-800 hover:bg-caramel-100 dark:border-white/20 dark:text-caramel-400"
                 >
                   {aiLoadingKey === row.key ? (
@@ -576,6 +576,11 @@ export default function BulkProductsPage() {
                   </div>
                 ))}
               </div>
+            )}
+            {row.photos.some((photo) => photo.status === "success" && photo.storagePath?.startsWith("stores/")) && (
+              <p className="col-span-full text-[10px] text-cocoa-500 dark:text-stone-400">
+                Jika meminta saran AI, foto terpilih dikirim ke Google Gemini. Periksa saran sebelum menyimpan produk.
+              </p>
             )}
           </section>
         ))}
