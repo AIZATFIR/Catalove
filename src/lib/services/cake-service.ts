@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
   PRODUCTS: "catalove-products-v3",
   CATEGORIES: "catalove-categories-v3",
   LOCAL_MODE: "catalove-local-catalog-mode-v3",
+  DEMO_INITIALIZED: "catalove-marketing-demo-initialized-v1",
 };
 const catalogStorageKey = (key: string) => getStoreScopedStorageKey(key);
 
@@ -122,13 +123,22 @@ export class CakeService {
       return { categories: [...INITIAL_CATEGORIES], products: [...INITIAL_PRODUCTS] };
     }
 
-    const localMode = window.localStorage.getItem(catalogStorageKey(STORAGE_KEYS.LOCAL_MODE));
-    if (shouldInitializeDemoCatalog(localMode)) {
-      return this.applyIndustryPresetCatalog("general");
-    }
+    try {
+      const initialized = window.localStorage.getItem(catalogStorageKey(STORAGE_KEYS.DEMO_INITIALIZED));
+      const state = readBrowserStorage();
+      if (shouldInitializeDemoCatalog(initialized, state.products.length)) {
+        const catalog = await this.applyIndustryPresetCatalog("general");
+        window.localStorage.setItem(catalogStorageKey(STORAGE_KEYS.DEMO_INITIALIZED), "1");
+        return catalog;
+      }
 
-    const state = readBrowserStorage();
-    return { categories: state.categories, products: state.products };
+      if (initialized !== "1") {
+        window.localStorage.setItem(catalogStorageKey(STORAGE_KEYS.DEMO_INITIALIZED), "1");
+      }
+      return state;
+    } catch {
+      return { categories: [...INITIAL_CATEGORIES], products: [...INITIAL_PRODUCTS] };
+    }
   }
 
   async applyIndustryPresetCatalog(

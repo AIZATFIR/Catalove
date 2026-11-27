@@ -17,14 +17,19 @@ assert.equal(
   "offline/demo mode should use the local catalog"
 );
 assert.equal(
-  shouldInitializeDemoCatalog(null),
+  shouldInitializeDemoCatalog(null, 0),
   true,
   "the marketing demo should initialize its local sample catalog once"
 );
 assert.equal(
-  shouldInitializeDemoCatalog("1"),
+  shouldInitializeDemoCatalog(null, 3),
   false,
-  "the marketing demo should preserve a visitor's existing local edits"
+  "the marketing demo should preserve saved local products"
+);
+assert.equal(
+  shouldInitializeDemoCatalog("1", 0),
+  false,
+  "the marketing demo should preserve an intentionally empty catalog after initialization"
 );
 
 console.log("✅ Catalog persistence mode tests passed!");
