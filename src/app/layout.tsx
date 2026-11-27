@@ -1,55 +1,53 @@
 import type { Metadata } from "next";
-import {
-  Playfair_Display,
-  Cormorant_Garamond,
-  Outfit,
-  Syne,
-  Plus_Jakarta_Sans,
-  Space_Grotesk,
-  Inter,
-} from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
+const playfair = localFont({
+  src: "./fonts/playfair-display-latin.woff2",
+  weight: "400 900",
   variable: "--font-playfair",
   display: "swap",
 });
 
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+const cormorant = localFont({
+  src: "./fonts/cormorant-garamond-latin.woff2",
+  weight: "300 700",
   variable: "--font-cormorant",
   display: "swap",
 });
 
-const outfit = Outfit({
-  subsets: ["latin"],
+const outfit = localFont({
+  src: "./fonts/outfit-latin.woff2",
+  weight: "100 900",
   variable: "--font-outfit",
   display: "swap",
 });
 
-const syne = Syne({
-  subsets: ["latin"],
+const syne = localFont({
+  src: "./fonts/syne-latin.woff2",
+  weight: "400 800",
   variable: "--font-syne",
   display: "swap",
 });
 
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+const jakarta = localFont({
+  src: "./fonts/plus-jakarta-sans-latin.woff2",
+  weight: "200 800",
   variable: "--font-jakarta",
   display: "swap",
 });
 
-const space = Space_Grotesk({
-  subsets: ["latin"],
+const space = localFont({
+  src: "./fonts/space-grotesk-latin.woff2",
+  weight: "300 700",
   variable: "--font-space",
   display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
+  weight: "100 900",
   variable: "--font-inter",
   display: "swap",
 });
