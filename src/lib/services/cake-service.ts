@@ -10,7 +10,7 @@ import { INDUSTRY_PRESETS } from "@/lib/data/universal-presets";
 import { ProductInput } from "@/lib/validators/product";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getBrowserSupabase } from "@/lib/supabase/client";
-import { shouldUseLocalCatalogOverride } from "@/lib/services/catalog-mode";
+import { shouldInitializeDemoCatalog, shouldUseLocalCatalogOverride } from "@/lib/services/catalog-mode";
 import { DEFAULT_STORE_ID, getStoreScopedStorageKey, withStoreSlug } from "@/lib/store-routing";
 import { createClient } from "@supabase/supabase-js";
 
@@ -117,6 +117,20 @@ function isBrowserLocalOverrideActive(): boolean {
 }
 
 export class CakeService {
+  async ensureMarketingDemoCatalog(): Promise<{ categories: Category[]; products: Product[] }> {
+    if (typeof window === "undefined") {
+      return { categories: [...INITIAL_CATEGORIES], products: [...INITIAL_PRODUCTS] };
+    }
+
+    const localMode = window.localStorage.getItem(catalogStorageKey(STORAGE_KEYS.LOCAL_MODE));
+    if (shouldInitializeDemoCatalog(localMode)) {
+      return this.applyIndustryPresetCatalog("general");
+    }
+
+    const state = readBrowserStorage();
+    return { categories: state.categories, products: state.products };
+  }
+
   async applyIndustryPresetCatalog(
     presetKey: IndustryPreset
   ): Promise<{ categories: Category[]; products: Product[] }> {

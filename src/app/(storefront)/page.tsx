@@ -201,17 +201,15 @@ export default function HomePage() {
   useEffect(() => {
     let active = true;
     const loadCatalog = async () => {
-      const [prods, cats] = await Promise.all([
-        cakeService.getProducts({ includeInactive: false }),
-        cakeService.getCategories(),
-      ]);
+      const catalog = pathname === "/"
+        ? await cakeService.ensureMarketingDemoCatalog()
+        : {
+            products: await cakeService.getProducts({ includeInactive: false }),
+            categories: await cakeService.getCategories(),
+          };
       if (!active) return;
-      if (prods) {
-        setProducts(prods.filter((p) => p.is_active));
-      }
-      if (cats) {
-        setCategories(cats);
-      }
+      setProducts(catalog.products.filter((p) => p.is_active));
+      setCategories(catalog.categories);
     };
 
     loadCatalog();
@@ -230,7 +228,7 @@ export default function HomePage() {
       window.removeEventListener("catalove-settings-change", handleCatalogUpdate);
       window.removeEventListener("storage", handleCatalogUpdate);
     };
-  }, []);
+  }, [pathname]);
 
   const stickyCards = useMemo(() => {
     return products

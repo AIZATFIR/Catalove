@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { shouldUseLocalCatalogOverride } from "../src/lib/services/catalog-mode";
+import { shouldInitializeDemoCatalog, shouldUseLocalCatalogOverride } from "../src/lib/services/catalog-mode";
 
 assert.equal(
   shouldUseLocalCatalogOverride(true, null),
@@ -15,6 +15,16 @@ assert.equal(
   shouldUseLocalCatalogOverride(false, null),
   true,
   "offline/demo mode should use the local catalog"
+);
+assert.equal(
+  shouldInitializeDemoCatalog(null),
+  true,
+  "the marketing demo should initialize its local sample catalog once"
+);
+assert.equal(
+  shouldInitializeDemoCatalog("1"),
+  false,
+  "the marketing demo should preserve a visitor's existing local edits"
 );
 
 console.log("✅ Catalog persistence mode tests passed!");
