@@ -21,5 +21,6 @@ assert.match(exportRoute, /verifyServerSession/);
 assert.match(exportRoute, /\.eq\("store_id",\s*session\.storeId\)/, "every exported dataset is scoped to the authenticated tenant");
 assert.match(exportRoute, /Cache-Control.*private, no-store/i, "sensitive order exports are never cacheable");
 assert.match(createStoreFunction, /pg_advisory_xact_lock\(hashtextextended\(owner_id::text,\s*0\)\)/i, "parallel signups for one account cannot bypass the one-free-store limit");
+assert.match(createStoreFunction, /auth\.users[\s\S]*email_confirmed_at\s+is\s+not\s+null/i, "the database RPC independently requires a verified email");
 
 console.log("✅ Store onboarding validation checks passed");

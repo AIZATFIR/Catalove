@@ -39,7 +39,11 @@ create role authenticated nologin;
 create role service_role nologin bypassrls;
 create schema extensions;
 create schema auth;
-create table auth.users (id uuid primary key, raw_app_meta_data jsonb not null default '{}'::jsonb);
+create table auth.users (
+  id uuid primary key,
+  raw_app_meta_data jsonb not null default '{}'::jsonb,
+  email_confirmed_at timestamptz
+);
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
@@ -75,7 +79,7 @@ SQL
 
 concurrent_user_id="40000000-0000-4000-8000-000000000001"
 docker exec "$container_name" psql -U postgres -v ON_ERROR_STOP=1 -c \
-  "insert into auth.users (id, raw_app_meta_data) values ('$concurrent_user_id', '{}'::jsonb)"
+  "insert into auth.users (id, raw_app_meta_data, email_confirmed_at) values ('$concurrent_user_id', '{}'::jsonb, now())"
 
 # Hold the same per-user lock before racing two independent signup connections.
 docker exec "$container_name" psql -U postgres -v ON_ERROR_STOP=1 -c \

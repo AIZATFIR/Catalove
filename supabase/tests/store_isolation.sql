@@ -1,11 +1,12 @@
 -- Run against a disposable database after applying all Catalove migrations.
 begin;
 
-insert into auth.users (id, raw_app_meta_data)
+insert into auth.users (id, raw_app_meta_data, email_confirmed_at)
 values
-  ('20000000-0000-4000-8000-000000000001', '{}'::jsonb),
-  ('20000000-0000-4000-8000-000000000002', '{}'::jsonb),
-  ('20000000-0000-4000-8000-000000000003', '{}'::jsonb)
+  ('20000000-0000-4000-8000-000000000001', '{}'::jsonb, now()),
+  ('20000000-0000-4000-8000-000000000002', '{}'::jsonb, now()),
+  ('20000000-0000-4000-8000-000000000003', '{}'::jsonb, now()),
+  ('20000000-0000-4000-8000-000000000004', '{}'::jsonb, null)
 on conflict (id) do nothing;
 
 insert into public.stores (id, slug, name, status)
@@ -198,6 +199,19 @@ begin
   exception when others then
     if sqlerrm = 'account unexpectedly created a second free store' then raise; end if;
     if sqlerrm not like 'Satu akun dapat memiliki satu katalog gratis%' then raise; end if;
+  end;
+end;
+$$;
+
+set local request.jwt.claim.sub = '20000000-0000-4000-8000-000000000004';
+do $$
+begin
+  begin
+    perform public.create_store_for_current_user('Unverified Client', 'unverified-client');
+    raise exception 'unverified account unexpectedly created a store';
+  exception when others then
+    if sqlerrm = 'unverified account unexpectedly created a store' then raise; end if;
+    if sqlerrm <> 'Verifikasi alamat email sebelum membuat katalog' then raise; end if;
   end;
 end;
 $$;

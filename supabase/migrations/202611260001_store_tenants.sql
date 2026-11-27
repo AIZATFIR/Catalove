@@ -142,6 +142,12 @@ declare
   normalized_name text := trim(coalesce(p_store_name, ''));
 begin
   if owner_id is null then raise exception 'Silakan masuk untuk membuat katalog'; end if;
+  if not exists (
+    select 1 from auth.users u
+    where u.id = owner_id and u.email_confirmed_at is not null
+  ) then
+    raise exception 'Verifikasi alamat email sebelum membuat katalog';
+  end if;
   perform pg_advisory_xact_lock(hashtextextended(owner_id::text, 0));
   if length(normalized_name) not between 2 and 60 then raise exception 'Nama toko harus 2–60 karakter'; end if;
   if normalized_slug !~ '^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$' then raise exception 'Alamat katalog tidak valid'; end if;
