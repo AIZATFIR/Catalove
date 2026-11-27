@@ -10,9 +10,11 @@ assert.deepEqual(migrationFiles, [
   "202611260001_store_tenants.sql",
   "202611260002_seed_catalove_demo_catalog.sql",
   "202611270001_unbranded_demo_fragrance.sql",
+  "202611280001_external_checkout_links.sql",
 ]);
 const migration = readFileSync(join(root, "supabase/migrations/202611260001_store_tenants.sql"), "utf8");
 const demoMigration = readFileSync(join(root, "supabase/migrations/202611260002_seed_catalove_demo_catalog.sql"), "utf8");
+const externalCheckoutMigration = readFileSync(join(root, "supabase/migrations/202611280001_external_checkout_links.sql"), "utf8");
 const uploadRoute = readFileSync(join(root, "src/app/api/upload/route.ts"), "utf8");
 const settingsRoute = readFileSync(join(root, "src/app/api/settings/route.ts"), "utf8");
 const productRoute = readFileSync(join(root, "src/app/api/products/route.ts"), "utf8");
@@ -44,6 +46,8 @@ assert.match(uploadRoute, /session\.storeId[\s\S]*?session\.id[\s\S]*?bytes\.byt
 assert.match(uploadRoute, /export async function DELETE/);
 assert.match(productRoute, /ProductInputSchema\.safeParse/);
 assert.match(productRoute, /deleteUnreferencedStoreImage/);
+assert.match(externalCheckoutMigration, /add column external_checkout_url text/i);
+assert.match(externalCheckoutMigration, /external_checkout_url ~\* '\^https:\/\//i);
 assert.doesNotMatch(migration, /for all to authenticated using \(public\.is_catalove_seller\(\)\)/i, "legacy global seller policy must not survive");
 assert.match(migration, /for select to authenticated using \(public\.is_store_admin\(store_id\)\)/i, "order data is limited to store admins");
 assert.match(demoMigration, /Sample 01 — Apparel/);

@@ -660,6 +660,7 @@ export class CakeService {
         specs: input.specs || [],
         base_price: input.base_price,
         compare_at_price: input.compare_at_price ?? undefined,
+        external_checkout_url: input.external_checkout_url ?? undefined,
         minimum_lead_time_days: input.minimum_lead_time_days,
         is_active: input.is_active,
         is_featured: input.is_featured,
@@ -706,6 +707,7 @@ export class CakeService {
         specs: input.specs || [],
         base_price: input.base_price,
         compare_at_price: input.compare_at_price ?? undefined,
+        external_checkout_url: input.external_checkout_url ?? undefined,
         minimum_lead_time_days: input.minimum_lead_time_days,
         is_active: input.is_active,
         is_featured: input.is_featured,
@@ -733,6 +735,7 @@ export class CakeService {
         description: input.description,
         flavor_notes: input.flavor_notes,
         base_price: input.base_price,
+        external_checkout_url: input.external_checkout_url ?? null,
         minimum_lead_time_days: input.minimum_lead_time_days,
         is_active: input.is_active,
         is_featured: input.is_featured,
@@ -812,6 +815,10 @@ export class CakeService {
           updates.compare_at_price !== undefined
             ? updates.compare_at_price ?? undefined
             : current.compare_at_price,
+        external_checkout_url:
+          updates.external_checkout_url !== undefined
+            ? updates.external_checkout_url ?? undefined
+            : current.external_checkout_url,
         minimum_lead_time_days: updates.minimum_lead_time_days ?? current.minimum_lead_time_days,
         is_active: updates.is_active ?? current.is_active,
         is_featured: updates.is_featured ?? current.is_featured,
@@ -865,6 +872,10 @@ export class CakeService {
           updates.compare_at_price !== undefined
             ? updates.compare_at_price ?? undefined
             : current.compare_at_price,
+        external_checkout_url:
+          updates.external_checkout_url !== undefined
+            ? updates.external_checkout_url ?? undefined
+            : current.external_checkout_url,
         minimum_lead_time_days: updates.minimum_lead_time_days ?? current.minimum_lead_time_days,
         is_active: updates.is_active ?? current.is_active,
         is_featured: updates.is_featured ?? current.is_featured,
@@ -906,6 +917,9 @@ export class CakeService {
         ...(updates.name && { name: updates.name }),
         ...(updates.category_id !== undefined && { category_id: updates.category_id || null }),
         ...(updates.description !== undefined && { description: updates.description }),
+        ...(updates.external_checkout_url !== undefined && {
+          external_checkout_url: updates.external_checkout_url || null,
+        }),
         ...(updates.flavor_notes && { flavor_notes: updates.flavor_notes }),
         ...(updates.base_price && { base_price: updates.base_price }),
         ...(updates.minimum_lead_time_days !== undefined && {

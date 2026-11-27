@@ -26,6 +26,7 @@ import { MotionIcon } from "@/components/ui/MotionIcon";
 import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
 import { withStoreSlug } from "@/lib/store-routing";
 import { discardUnattachedStoreImage } from "@/lib/services/store-media-client";
+import { ExternalCheckoutUrlField } from "@/components/admin/ExternalCheckoutUrlField";
 
 interface UploadedImageItem {
   id: string;
@@ -58,6 +59,7 @@ export default function NewProductDraftPage() {
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState<number>(0);
   const [compareAtPrice, setCompareAtPrice] = useState<string>("");
+  const [externalCheckoutUrl, setExternalCheckoutUrl] = useState("");
   const [leadTime, setLeadTime] = useState<number>(0);
   const [flavorNotesStr, setFlavorNotesStr] = useState("");
   const [specs, setSpecs] = useState<{ label: string; value: string }[]>([]);
@@ -316,6 +318,7 @@ export default function NewProductDraftPage() {
           compareAtPrice.trim() !== "" && Number.isFinite(parsedCompare) && parsedCompare > 0
             ? parsedCompare
             : null,
+        external_checkout_url: externalCheckoutUrl.trim() || null,
         minimum_lead_time_days: Number(leadTime),
         is_active: isPublish,
         is_featured: false,
@@ -579,6 +582,8 @@ export default function NewProductDraftPage() {
             />
           </div>
         </div>
+
+        <ExternalCheckoutUrlField value={externalCheckoutUrl} onChange={setExternalCheckoutUrl} />
 
         {/* Category & Lead Time */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

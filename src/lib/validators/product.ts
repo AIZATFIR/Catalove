@@ -23,6 +23,24 @@ const ProductImageUrlSchema = z.string().max(2048).url().refine((value) => {
 
 export const ProductInputSchema = z.object({
   name: z.string().trim().min(3, "Nama produk minimal 3 karakter").max(100),
+  external_checkout_url: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? null : value),
+    z.string()
+      .trim()
+      .max(2048)
+      .url("Masukkan tautan checkout yang valid.")
+      .refine((value) => {
+        try {
+          const url = new URL(value);
+          return url.protocol === "https:" && !url.username && !url.password;
+        } catch {
+          return false;
+        }
+      }, "Tautan checkout harus menggunakan HTTPS.")
+      .transform((value) => new URL(value).toString())
+      .optional()
+      .nullable(),
+  ),
   category_id: z.string().max(100).optional().nullable().or(z.literal("")),
   tagline: z.string().trim().max(160).optional().nullable().or(z.literal("")),
   badge: z.string().trim().max(40).optional().nullable().or(z.literal("")),

@@ -2,15 +2,15 @@
 
 **Scope:** `/home/aizatfir/Project/Catalove` only. Never inspect or edit SofizCake's source, database, secrets, or deployments.
 
-## Verified state — 27 November 2026
+## Verified state — 28 November 2026
 
-- Repository: `AIZATFIR/Catalove`, branch `catalove/hosted-catalog-platform`, head `648e78f` at the latest verification.
+- Repository: `AIZATFIR/Catalove`, branch `catalove/hosted-catalog-platform`, last pushed head `9d0b08f`; seller-checkout work remains local.
 - Pull request #1 is open. GitHub `verify` and Vercel deployment checks pass for this head. The branch preview [is deployed](https://catalove-git-catalove-hosted-ca-bd987b-zafirs-projects-5b3c6ef2.vercel.app) and its Vercel check passes; Vercel Authentication returns `302` to unauthenticated requests. The public `catalove.vercel.app/api/health` route still returns `404`; do not treat the branch preview as the production deployment.
-- Supabase project `vrugrxcajlkhsvmnayfc` is the dedicated Catalove project. Four migrations match remote history. A fifth unbranded demo-image migration passed dry-run inspection. Its application was rejected without an explicit consent flag; read-only migration history confirms it is still pending and remote data was unchanged. A current read-only query found one store, six active products, zero store memberships, and zero order requests. Public REST reads succeeded.
+- Supabase project `vrugrxcajlkhsvmnayfc` is the dedicated Catalove project. Four migrations match remote history. Two migrations (unbranded showcase art and seller-managed checkout URLs) are pending; the art migration passed dry run but its application was rejected without an explicit consent flag. Latest read-only history showed four applied migrations; no remote changes were made. A current read-only query found one store, six active products, zero store memberships, and zero order requests. Public REST reads succeeded.
 - The Supabase project is on Free. No automatic backups/restore drill or paid-plan readiness is verified. No owner membership has been added to the seeded `catalove` showcase store.
-- The unbranded art, scoped data migration, regression tests, and docs are committed as `648e78f` and pushed. Local app tests, lint, PostgreSQL tenant isolation, production build, standalone smoke checks (including SVG delivery), and GitHub/Vercel preview checks pass. Local `/api/health` returns 200 with dedicated project configuration. These are not evidence of a public production health check, an owner login, or a real order round-trip.
+- The unbranded demo-art work is committed and pushed. Seller-managed checkout support is implemented locally, with HTTPS validation, safe rendering, seller disclosure, and service/database tests. Two checkout/demo migrations remain pending. Local app tests, lint, PostgreSQL tenant isolation, production build, and standalone smoke checks pass for the local changes; they are not yet on the Vercel preview. Local `/api/health` returns 200 with dedicated project configuration. These are not evidence of a public production health check, an owner login, or a real order round-trip.
 - Cloud Run is not deployed and its billing, runtime identity, Secret Manager, alerts, and recovery are not verified. No production release or PR merge has been authorized in this thread.
-- The app handles product catalogs, stock/availability, order requests, and a user-confirmed WhatsApp handoff. It does not process payment or securely fulfill digital files. Business/Enterprise prices are indicative starting points discussed via WhatsApp; recurring cadence and hosting/domain costs are not final.
+- The app handles product catalogs, stock/availability, order requests, and a user-confirmed WhatsApp handoff. Work in progress adds optional links to seller-managed checkout pages; Catalove still does not process payment or deliver digital files. Business/Enterprise prices are indicative starting points discussed via WhatsApp; recurring cadence and hosting/domain costs are not final.
 
 ## Finish sequence
 

@@ -1,12 +1,12 @@
 # Catalove: operating the first client catalogs
 
-This runbook is for the first managed-service stage. Tenant routing, `store_id` on client records, Row Level Security (RLS), storage quotas, onboarding and cross-store isolation checks are implemented in code. Four migrations are applied and match remote history; a fifth migration for two demo image URLs is pending explicit approval. Production remains **not ready for real customer data**: the project is Free, has no owner membership or order history yet, and backup/restore, Cloud Run, legal terms, and a real deployed transaction path are not verified. A seller UI filter alone does not isolate client data.
+This runbook is for the first managed-service stage. Tenant routing, `store_id` on client records, Row Level Security (RLS), storage quotas, onboarding and cross-store isolation checks are implemented in code. Four migrations are applied and match remote history; two migrations are pending explicit approval (showcase art and optional HTTPS seller-checkout URLs). Production remains **not ready for real customer data**: the project is Free, has no owner membership or order history yet, and backup/restore, Cloud Run, legal terms, and a real deployed transaction path are not verified. A seller UI filter alone does not isolate client data.
 
 ## Recommended service shape
 
 | Tier | What the client receives | Honest limits / revenue |
 |---|---|---|
-| Free starter | One hosted catalog, WhatsApp inquiry/order flow, Catalove attribution, up to 25 products and 50 photos / 100 MiB | Free as customer acquisition within enforced caps; do not promise unlimited use or uptime guarantees. |
+| Free starter | One hosted catalog, WhatsApp inquiry/order flow, optional links to seller-managed checkout, Catalove attribution, up to 25 products and 50 photos / 100 MiB | Free as customer acquisition within enforced caps; do not promise unlimited use or uptime guarantees. |
 | Business — mulai Rp299rb | Guided setup and customization scoped via WhatsApp | Display as an indicative starting price; confirm billing cadence, scope, hosting/domain renewal and support before purchase. |
 | Enterprise — mulai Rp799rb | Custom branding and setup scoped with the client | Quote through WhatsApp with written scope, delivery date, revisions, and ongoing infrastructure cost. |
 
@@ -26,9 +26,10 @@ Do not sell “unlimited” storage, products, traffic, support, or custom work.
 
 - Current intended production host is Cloud Run Jakarta; it is not deployed. A Vercel PR preview exists, but the preview is access-protected and the current public production URL does not serve this branch. Review the chosen host's current commercial terms and project billing before the first paid customer.
 - Use a paid Supabase production project for real orders. The Free project can pause after a week of low activity and lacks automatic backups. Keep the project owner account under Catalove control and enable spend/usage alerts.
-- The dedicated Catalove Supabase project is currently Free. Four migrations are applied; the fifth unbranded-demo-art migration is pending approval. It contains one published showcase store with six active sample products and no owner memberships or order requests. The Auth project exists, but no owner membership has been bootstrapped. Cloud Run project/deployment and billing setup are not verified. Treat the current app as a preview until those services and the real order path are configured and verified.
+- The dedicated Catalove Supabase project is currently Free. Four migrations are applied; the unbranded-art and external-checkout migrations are pending approval. It contains one published showcase store with six active sample products and no owner memberships or order requests. The Auth project exists, but no owner membership has been bootstrapped. Cloud Run project/deployment and billing setup are not verified. Treat the current app as a preview until those services and a real order or external checkout journey are configured and verified.
 - Never reuse SofizCake’s Supabase project, credentials, buckets, or database. Catalove secrets remain server-side and separate.
 - Keep customer orders private. They include phone numbers and may include addresses/notes. Limit access, collect only what fulfillment needs, do not use order contacts for ads, and agree on retention and deletion with the client.
+- Seller-managed checkout links open on the seller's platform. The seller must own the destination and handle its terms, price, payment, digital delivery, privacy, refunds, and customer support; Catalove does not verify payment or fulfillment.
 - Product photos are intentionally public in the current bucket. Never place invoices, identity documents, or private customer photos in that bucket.
 - Upload errors must remain visible. Never label browser-only or base64 content as a hosted image.
 - Before onboarding store #2 into a shared project, prove with separate test accounts that one tenant cannot read, change, export, or delete another tenant’s catalog, settings, media, or orders.

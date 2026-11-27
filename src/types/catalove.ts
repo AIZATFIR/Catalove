@@ -180,6 +180,7 @@ export interface Product {
   flavor_notes: string[]; // Backwards-compatible tag list
   base_price: number;
   compare_at_price?: number;
+  external_checkout_url?: string | null;
   is_active: boolean;
   is_featured: boolean;
   display_order: number;

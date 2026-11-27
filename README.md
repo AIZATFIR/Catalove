@@ -2,7 +2,7 @@
 
 Catalove is a multi-tenant product catalog and storefront for small businesses. A merchant can publish a catalog, manage products and stock, and capture an order before opening a pre-filled WhatsApp message. There is no payment processing in the app.
 
-The repo contains the tenant-aware application, database migrations, image quotas, store export, and Cloud Run build/deploy pipeline. The dedicated Catalove Supabase project (`vrugrxcajlkhsvmnayfc`) is connected: four migrations are applied and in sync; a fifth, narrowly scoped demo-art migration is pending explicit remote approval. The project has one published Free showcase store, six active sample products, and no memberships or order requests. It is still a preview setup: the project is on Free, no Catalove owner membership exists yet, no Cloud Run deployment or backup/restore drill is verified, and the current Vercel production URL is not serving this branch. Do not use it for real client orders.
+The repo contains the tenant-aware application, database migrations, image quotas, store export, and Cloud Run build/deploy pipeline. The dedicated Catalove Supabase project (`vrugrxcajlkhsvmnayfc`) is connected: four migrations are applied and in sync; two migrations are pending explicit remote approval (original demo art and optional seller-managed checkout links). The project has one published Free showcase store, six active sample products, and no memberships or order requests. It is still a preview setup: the project is on Free, no Catalove owner membership exists yet, no Cloud Run deployment or backup/restore drill is verified, and the current Vercel production URL is not serving this branch. Do not use it for real client orders.
 
 ## Local development
 
@@ -35,6 +35,7 @@ npm run test:tenant-db
 - One Catalove-owned Supabase Pro project for Postgres, Auth, and public product images; every merchant row is scoped by `store_id` and RLS.
 - Free catalog limits are enforced in the database: 25 products, 50 images, 2 MiB per image, and 100 MiB total image storage.
 - Orders include customer contact and fulfillment details. Keep them private; the merchant can manage its own orders. Public order lookup uses a high-entropy reference.
+- Products can link to a seller's HTTPS checkout page. Payment, digital-file delivery, refunds, and the external platform's privacy terms stay with the seller; Catalove does not process them.
 - Product photos are public by design. Never upload invoices, identity documents, or private customer photos.
 - No third-party ads are injected into client storefronts. Free catalogs show Catalove attribution. Paid setup/branding prices are indicative starting points; agree billing cadence, scope, hosting, domain, and support via WhatsApp before accepting payment.
 
@@ -45,7 +46,7 @@ Do not use SofizCake's Supabase project, secrets, storage, or database for Catal
 Use the dedicated Catalove Supabase project only for preview/testing until its owner account, plan, backups, and recovery are verified. It is currently on Free and may pause after inactivity; it has no automatic backups. Keep project access and recovery under Catalove control.
 
 1. The dedicated project is `vrugrxcajlkhsvmnayfc` in Singapore. Confirm the ref in the dashboard and keep the project under Catalove's owner account. Set the production site URL and redirect URLs for the final Catalove domain.
-2. Four migrations currently match the remote history. The fifth migration only replaces two showcase image URLs; it is pending remote approval. Before applying it, authenticate and link only the dedicated Catalove project, inspect the remote dry run, confirm the target ref, then apply it with `npx supabase db push --remote --yes` after explicit approval. For future migrations, repeat the same target and dry-run checks before applying. The CLI may ask for the database password; enter it only in the terminal prompt:
+2. Four migrations currently match the remote history. Two are pending explicit approval: one replaces two showcase image URLs, and one adds optional HTTPS seller-checkout links. Confirm the linked project ref and review the dry run. Apply with `npx supabase db push --remote --yes` only after approving the exact pending set. For future migrations, repeat the same target and dry-run checks before applying. The CLI may ask for the database password; enter it only in the terminal prompt:
 
    ```sh
    npx supabase login
