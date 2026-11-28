@@ -21,6 +21,7 @@ Last reviewed: 28 November 2026
 7. Handover includes owner login, editing products/stock, reviewing requests, export, support contact, and cancellation route.
 
 Never treat a WhatsApp draft or a verbal “looks good” as payment, approval to publish, or acceptance of recurring charges.
+Use the [quote template](CATALOVE-QUOTE-TEMPLATE.md) for every paid offer; remove placeholders and verify each cost and promise before sending it.
 
 ## Server decision for first pilots
 
