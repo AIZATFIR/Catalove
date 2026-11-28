@@ -50,7 +50,8 @@ assert.equal(generateCartWhatsAppUrl({ storeName: "Toko Klien", whatsappNumber: 
 const genericInquiry = buildCataloveInquiryWhatsAppUrl("+62 859-4668-9168");
 assert.ok(genericInquiry.startsWith("https://wa.me/6285946689168?text="), "Inquiry URL must use the configured phone digits");
 assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("paket"), "Generic inquiry must ask about Catalove packages");
-assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("hosting/domain"), "Generic inquiry must ask for hosting and domain details");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("server/hosting Catalove"), "Inquiry must ask for the shared hosting cost");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("domain khusus"), "Inquiry must ask for custom domain cost");
 assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("periode tagihan"), "Generic inquiry must ask for billing cadence");
 assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("belum menyetujui biaya"), "Inquiry must not imply the buyer has agreed to charges");
 

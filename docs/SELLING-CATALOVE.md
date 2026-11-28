@@ -24,7 +24,7 @@ Never treat a WhatsApp draft or a verbal “looks good” as payment, approval t
 
 ## Server decision for first pilots
 
-Use **one Catalove-managed shared production stack** for the first small cohort, with tenant isolation and one agreed recurring hosting/operations line in each paid quote. Do not create one database project per free client: that multiplies fixed compute. Keep the customer’s catalog and order data tenant-scoped and exportable. The client should not need a cloud account to use the catalog.
+Use **one Catalove-managed shared production stack** for the first small cohort, with tenant isolation and one agreed recurring hosting/operations line in each paid quote. Catalove pays the provider bill; clients do not need cloud accounts. State the monthly amount, service limits and support/recovery scope before acceptance. Quote a custom domain and its renewal separately if requested. Do not create one database project per free client: that multiplies fixed compute. Keep the customer’s catalog and order data tenant-scoped and exportable.
 
 The current public Vercel project is appropriate as a marketing/demo surface only. Vercel’s current Terms prohibit using its Services for a third-party service bureau or making the Services available to third parties. Do not use it to host client catalogs unless Vercel confirms in writing that the Catalove arrangement is allowed. The planned client-catalog host is Cloud Run in Jakarta (`asia-southeast2`) with the dedicated Catalove Supabase project; Cloud Run and production recovery are not yet operationally verified. This hosting choice is an operating recommendation, not a legal opinion. Recheck provider terms before launch.
 
