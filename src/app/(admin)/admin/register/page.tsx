@@ -49,7 +49,7 @@ export default function RegisterStorePage() {
             <Store className="w-7 h-7 text-caramel-800" />
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-cocoa-950 dark:text-white">Mulai katalog tokomu</h1>
-          <p className="text-sm text-cocoa-600 dark:text-stone-300">Buat satu katalog Free hingga 25 produk dan 50 foto (100 MiB). Atur katalog sendiri atau hubungi kami untuk bantuan setup dan branding.</p>
+          <p className="text-sm text-cocoa-600 dark:text-stone-300">Buat satu katalog Free hingga 25 produk dan 50 foto (100 MiB). Ini masih preview: isi dengan data contoh dulu dan jangan gunakan untuk menerima order penting sebelum layanan server produksi dan pemulihan data siap.</p>
         </div>
 
         {confirmationSent ? (
@@ -86,7 +86,7 @@ export default function RegisterStorePage() {
               <p className="text-[11px] text-cocoa-500 dark:text-stone-400">Minimal 10 karakter. Kami akan meminta verifikasi email sebelum katalog dibuat.</p>
             </div>
             <p className="text-[11px] leading-relaxed text-cocoa-500 dark:text-stone-400">
-              Detail biaya, scope bantuan, hosting, dan domain akan dibahas sebelum ada paket berbayar. Baca <Link href="/privacy" className="font-semibold underline underline-offset-2">Kebijakan Privasi</Link>.
+              Akun Free tidak dikenakan tagihan otomatis. Belum ada pembayaran langsung di website. Untuk paket berbayar, kami kirim penawaran tertulis termasuk biaya server/domain dan periode tagihannya; pengerjaan hanya dimulai setelah kamu menyetujuinya. Baca <Link href="/privacy" className="font-semibold underline underline-offset-2">Kebijakan Privasi</Link>.
             </p>
             {error && <p role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-200">{error}</p>}
             <Button type="submit" isLoading={loading} className="w-full py-3.5 gap-2 text-sm shadow-warm">

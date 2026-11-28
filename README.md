@@ -88,6 +88,6 @@ After validating that deployment, configure a Cloud Build GitHub trigger on the 
 
 ## Client operations and launch gates
 
-Review [commercial research](docs/COMMERCIAL-RESEARCH.md) and the [operations runbook](docs/COMMERCIAL-OPERATIONS.md) before onboarding clients. These cover plan caps, pricing honesty, media and order privacy, export/cancellation, backups, incidents, and ad placement.
+Review the [buyer and hosting model](docs/SELLING-CATALOVE.md), [commercial research](docs/COMMERCIAL-RESEARCH.md), and [operations runbook](docs/COMMERCIAL-OPERATIONS.md) before onboarding clients. These cover the WhatsApp quote flow, plan caps, pricing honesty, media and order privacy, export/cancellation, backups, incidents, and ad placement.
 
 Do not call the service production-ready until a dedicated Supabase project has the migrations applied, Cloud Run is deployed under Catalove billing, a restore has been practiced, the real order path works, and the owner has published support, retention, and client terms. The public privacy notice and provider list must match the infrastructure actually active in production.

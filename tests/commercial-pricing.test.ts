@@ -10,14 +10,18 @@ const cart = readFileSync(join(process.cwd(), "src/components/storefront/CartDra
 const privacy = readFileSync(join(process.cwd(), "src/app/(storefront)/privacy/page.tsx"), "utf8");
 
 assert.match(source, /tanpa iklan pihak ketiga di tokomu/i);
-assert.match(source, /href="\/admin\/register"[\s\S]*?Buat katalog gratis/);
+assert.match(source, /href="\/admin\/register"[\s\S]*?Coba gratis/);
 assert.match(hero, /href="\/admin\/register"[\s\S]*?primaryCta/);
 assert.match(navbar, /href="\/admin\/register"[\s\S]*?Buat katalog/);
 assert.match(hero, /Katalog online yang terasa seperti brandmu\./);
 assert.match(source, /Maksimal 25 produk dan 50 foto \(2 MiB per foto, total 100 MiB\)/);
 assert.match(source, /Business/);
 assert.match(source, /Enterprise/);
-assert.match(source, /Harga mulai; scope, biaya rutin, dan hosting dibahas via WhatsApp/);
+assert.match(source, /Harga mulai\. Periode tagihan dan scope final ditulis di penawaran/);
+assert.match(source, /Hosting dan domain belum termasuk; biaya rutin dirinci terpisah sebelum persetujuan/);
+assert.match(source, /Pilih Business atau Enterprise[\s\S]*?penawaran tertulis/);
+assert.match(source, /Belum ada pembayaran atau tagihan otomatis di website/);
+assert.match(source, /openCataloveWhatsApp\(selectedPlan\)/);
 assert.doesNotMatch(source, /Paket gratis didukung iklan platform/i);
 assert.doesNotMatch(source, /Harga final dibahas lewat WhatsApp/);
 assert.match(faq, /Pelanggan tetap perlu menekan tombol Kirim di WhatsApp/);

@@ -52,6 +52,7 @@ assert.ok(genericInquiry.startsWith("https://wa.me/6285946689168?text="), "Inqui
 assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("paket"), "Generic inquiry must ask about Catalove packages");
 assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("hosting/domain"), "Generic inquiry must ask for hosting and domain details");
 assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("periode tagihan"), "Generic inquiry must ask for billing cadence");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("belum menyetujui biaya"), "Inquiry must not imply the buyer has agreed to charges");
 
 const businessInquiry = buildCataloveInquiryWhatsAppUrl("628111222333", "business");
 assert.ok(decodeURIComponent(businessInquiry.split("?text=")[1]).includes("Business"), "Business inquiry must name the selected package");

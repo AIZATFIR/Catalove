@@ -4,11 +4,13 @@ This runbook is for the first managed-service stage. Tenant routing, `store_id` 
 
 ## Recommended service shape
 
+For the current early-access release, Free is a preview workspace only. Do not direct real customer orders to it until a production host, backup/restore, owner recovery, and the deployed order journey are verified. The public site must state this clearly; see [buyer and hosting model](SELLING-CATALOVE.md).
+
 | Tier | What the client receives | Honest limits / revenue |
 |---|---|---|
-| Free starter | One hosted catalog, WhatsApp inquiry/order flow, optional links to seller-managed checkout, Catalove attribution, up to 25 products and 50 photos / 100 MiB | Free as customer acquisition within enforced caps; do not promise unlimited use or uptime guarantees. |
-| Business — mulai Rp299rb | Guided setup and customization scoped via WhatsApp | Display as an indicative starting price; confirm billing cadence, scope, hosting/domain renewal and support before purchase. |
-| Enterprise — mulai Rp799rb | Custom branding and setup scoped with the client | Quote through WhatsApp with written scope, delivery date, revisions, and ongoing infrastructure cost. |
+| Free preview | One capped catalog workspace, up to 25 products and 50 photos / 100 MiB | No automatic charge; use sample data until production and recovery are verified. |
+| Business — mulai Rp299rb | Guided setup and customization scoped via WhatsApp | Indicative starting point; period, hosting/domain, scope and support must appear in the written quote. |
+| Enterprise — mulai Rp799rb | Custom branding and setup scoped with the client | Indicative starting point; quote scope, delivery date, revisions, and recurring infrastructure cost in writing. |
 
 Do not sell “unlimited” storage, products, traffic, support, or custom work. Keep free useful but capped. A free catalog should export to a common format and have an understandable cancellation path. The owner needs a cost dashboard and a support-time record before deciding final limits.
 
