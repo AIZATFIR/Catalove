@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { usePathname } from "next/navigation";
 import type { ThemeConfig } from "@/types/catalove";
 
 const FONT_HEADING_MAP: Record<string, string> = {
@@ -45,8 +46,8 @@ export const THEME_COLOR_MAP: Record<
     dark: { accent: "#F43F5E", glow: "rgba(244, 63, 94, 0.4)", bg: "#1A0E15", surface: "#281521", ink: "#FFF1F2" },
   },
   minimal_slate: {
-    light: { accent: "#0F172A", glow: "rgba(15, 23, 42, 0.25)", bg: "#FFFFFF", surface: "#F1F5F9", ink: "#0F172A" },
-    dark: { accent: "#38BDF8", glow: "rgba(56, 189, 248, 0.4)", bg: "#090D16", surface: "#111827", ink: "#F8FAFC" },
+    light: { accent: "#71877A", glow: "rgba(113, 135, 122, 0.25)", bg: "#FAFBFA", surface: "#EEF1EF", ink: "#26342D" },
+    dark: { accent: "#A6C0B0", glow: "rgba(166, 192, 176, 0.35)", bg: "#111714", surface: "#1C2721", ink: "#F2F5F3" },
   },
   sunset_terracotta: {
     light: { accent: "#EA580C", glow: "rgba(234, 88, 12, 0.35)", bg: "#FFFBF7", surface: "#FCEFE6", ink: "#2C170B" },
@@ -78,6 +79,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 function DynamicThemeBridge() {
   const settings = useBusinessSettings();
+  const pathname = usePathname();
   const themeConfig: ThemeConfig = settings?.theme_config || {
     font_heading: "playfair",
     font_body: "jakarta",
@@ -123,7 +125,8 @@ function DynamicThemeBridge() {
     );
 
     // Apply Dynamic Color Palette (custom hex overrides or curated presets)
-    const palette = THEME_COLOR_MAP[themeConfig.color_theme] || THEME_COLOR_MAP.warm_oat;
+    const landingPalette = pathname === "/" && themeConfig.color_theme === "warm_oat";
+    const palette = THEME_COLOR_MAP[landingPalette ? "minimal_slate" : themeConfig.color_theme] || THEME_COLOR_MAP.warm_oat;
     const custom = themeConfig.custom_colors;
 
     const applyColors = (darkNow: boolean) => {
@@ -164,7 +167,7 @@ function DynamicThemeBridge() {
 
     observer.observe(root, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
-  }, [themeConfig]);
+  }, [themeConfig, pathname]);
 
   return null;
 }

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowDown, Sliders, ShoppingBag } from "lucide-react";
+import { ArrowDown, Sliders, ShoppingBag, Sparkles } from "lucide-react";
 import type { Product } from "@/types/bakery";
 import type { BodyScaleOption, HeadingScaleOption } from "@/types/catalove";
 import { CakeCircularCarousel } from "@/components/storefront/CakeCircularCarousel";
@@ -198,6 +198,56 @@ export function Hero({
       )}
     </div>
   );
+
+  if (isCataloveLandingPage) {
+    return (
+      <section className="relative isolate overflow-hidden border-b border-[var(--storefront-line)] bg-[var(--storefront-background)] py-12 sm:py-20">
+        <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[var(--color-surface-tint)] blur-3xl" />
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 sm:px-8 lg:grid-cols-[1fr_0.9fr] lg:gap-16 lg:px-12">
+          <div className="relative z-10 order-1 flex flex-col items-start gap-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--storefront-line)] bg-white/70 px-3.5 py-2 text-xs font-medium tracking-wide text-[var(--storefront-ink)] shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-[var(--storefront-accent)]" />
+              Katalog digital untuk brand yang sedang tumbuh
+            </span>
+            <div className="space-y-4">
+              {isCanvasMode ? (
+                <textarea rows={2} value={title} onChange={(e) => updateHeroField("hero_title", e.target.value)} aria-label="Edit judul utama Hero" className={`w-full max-w-2xl resize-none rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/70 px-3 py-2 font-serif font-medium tracking-tight text-[var(--storefront-ink)] focus:outline-none ${headingSizeClass}`} />
+              ) : <h1 data-gsap-title className={`max-w-2xl font-serif font-medium tracking-[-0.035em] text-[var(--storefront-ink)] ${headingSizeClass}`}>{title}</h1>}
+              {isCanvasMode ? (
+                <input value={subtitle} onChange={(e) => updateHeroField("hero_subtitle", e.target.value)} aria-label="Edit subjudul Hero" className={`w-full max-w-xl rounded-xl border border-dashed border-[var(--storefront-accent)] bg-white/70 px-3 py-2 text-[var(--storefront-ink)] focus:outline-none ${bodySizeClass}`} />
+              ) : <p className={`max-w-xl text-[var(--storefront-ink)] opacity-75 ${bodySizeClass}`}>{subtitle}</p>}
+            </div>
+            {renderActionButtons(false)}
+            <p className="text-xs text-[var(--storefront-ink)] opacity-55">Mulai gratis · atur sendiri · bagikan satu tautan</p>
+          </div>
+
+          <div aria-label="Pratinjau gaya Catalove" className="relative order-2 mx-auto w-full max-w-xl">
+            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-white via-slate-100 to-emerald-50/70 blur-xl" />
+            <div className="relative overflow-hidden rounded-[1.6rem] border border-white bg-white/85 p-4 shadow-[0_30px_90px_-42px_rgba(15,23,42,.3)] backdrop-blur sm:p-6">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
+                <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#9db9ab]" /><span className="font-serif text-lg text-slate-800">catalove</span></div>
+                <span className="text-[10px] uppercase tracking-[.2em] text-slate-400">A little brand studio</span>
+              </div>
+              <div className="grid grid-cols-[1.1fr_.9fr] gap-3 pt-4 sm:gap-4">
+                <div className="flex min-h-48 flex-col justify-between rounded-2xl bg-[#f4f5f3] p-4 sm:min-h-60 sm:p-6">
+                  <span className="text-[10px] uppercase tracking-[.22em] text-slate-400">Material / 01</span>
+                  <div><p className="font-serif text-2xl leading-tight text-slate-800 sm:text-4xl">Your work,<br/>beautifully shown.</p><div className="mt-4 h-px w-12 bg-[#7f9f8d]" /></div>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-1 flex-col justify-between rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-100 to-[#edf3ef] p-4">
+                    <span className="text-[10px] uppercase tracking-[.2em] text-slate-400">Palette / 02</span>
+                    <div className="flex gap-2">{["#f8f9f8", "#d9dedb", "#aebbb4", "#71877a", "#26342d"].map((color) => <span key={color} className="h-6 w-6 rounded-full border border-black/5 shadow-sm sm:h-8 sm:w-8" style={{ backgroundColor: color }} />)}</div>
+                  </div>
+                  <div className="rounded-2xl bg-[#edf2ee] p-4"><span className="text-[10px] uppercase tracking-[.2em] text-slate-400">Details / 03</span><p className="mt-3 font-serif text-lg text-slate-700">Soft edges. Clear stories.</p><div className="mt-3 flex gap-2"><span className="h-1.5 w-14 rounded-full bg-[#829a8b]"/><span className="h-1.5 w-8 rounded-full bg-slate-300"/><span className="h-1.5 w-5 rounded-full bg-slate-200"/></div></div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200/80 px-4 py-3"><span className="text-xs text-slate-500">A calm space for every kind of catalog</span><span className="rounded-full bg-[#71877a] px-3 py-1.5 text-[10px] font-medium text-white">Explore</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   /* MINIMAL CENTER HERO STYLE */
   if (heroStyle === "minimal_center") {

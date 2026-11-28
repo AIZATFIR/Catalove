@@ -230,14 +230,15 @@ export function PricingSection({
                     ))}
                   </ul>
                 </div>
-                <div className="pt-8">
-                  <button type="button" onClick={() => openCataloveWhatsApp(plan)} className="w-full touch-target rounded-full bg-[var(--storefront-accent)] px-6 py-3.5 text-sm font-bold text-white hover:opacity-95 transition-opacity">
-                    Tanya paket {details.name}
-                  </button>
-                </div>
               </article>
             );
           })}
+        </div>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <button type="button" onClick={() => openCataloveWhatsApp()} className="touch-target rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+            Bahas paket Business atau Enterprise
+          </button>
+          <p className="text-xs text-[var(--storefront-ink)] opacity-60">Ceritakan kebutuhanmu, lalu kita bahas scope dan biayanya lewat WhatsApp.</p>
         </div>
       </div>
     </section>

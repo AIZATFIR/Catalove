@@ -761,7 +761,7 @@ export default function AdminSettingsPage() {
                   { id: "warm_oat", label: "Warm Oat & Coffee", color: "#C27838" },
                   { id: "matcha_sage", label: "Matcha & Sage", color: "#15803D" },
                   { id: "rose_velvet", label: "Rose & Velvet", color: "#BE185D" },
-                  { id: "minimal_slate", label: "Minimalist Slate", color: "#0F172A" },
+                  { id: "minimal_slate", label: "Ceramic Jade", color: "#71877A" },
                   { id: "sunset_terracotta", label: "Sunset Terracotta", color: "#EA580C" },
                   { id: "cyber_neo", label: "Cyber Neo", color: "#0284C7" },
                 ].map((c) => (

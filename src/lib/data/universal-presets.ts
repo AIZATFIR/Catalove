@@ -9,7 +9,7 @@ import {
 export const DEFAULT_THEME_CONFIG: ThemeConfig = {
   font_heading: "playfair",
   font_body: "jakarta",
-  color_theme: "warm_oat",
+  color_theme: "minimal_slate",
   card_style: "clean_flat",
   hero_style: "rotating_showcase",
   catalog_layout: "pinterest_masonry",
@@ -126,7 +126,7 @@ export const INDUSTRY_PRESETS: Record<IndustryPreset, PresetBundle> = {
       theme_config: {
         font_heading: "playfair",
         font_body: "jakarta",
-        color_theme: "warm_oat",
+        color_theme: "minimal_slate",
         card_style: "modern_glass",
         hero_style: "split_dynamic",
         catalog_layout: "pinterest_masonry",

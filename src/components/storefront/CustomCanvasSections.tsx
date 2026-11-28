@@ -462,7 +462,7 @@ export function StatementBannerSection({
           )
         )}
 
-        <div className="pt-2">
+        {(isTenantStore || isCanvasMode) && <div className="pt-2">
           {isCanvasMode ? (
             <div className="inline-flex items-center rounded-full bg-[var(--storefront-accent)] px-6 py-2.5 text-white">
               <input
@@ -483,7 +483,7 @@ export function StatementBannerSection({
               {ctaText}
             </button>
           )}
-        </div>
+        </div>}
       </div>
     </section>
   );

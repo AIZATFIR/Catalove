@@ -29,7 +29,7 @@ export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
     ctaConfig?.subtitle ??
     settings.story_p1 ??
     isTenantStore ? `Kami memilih produk dengan perhatian pada detail.` : "Simple yet interesting catalog for your brand.";
-  const buttonText = ctaConfig?.cta_text ?? (isTenantStore ? "Hubungi Toko" : "Pesan Catalove");
+  const buttonText = ctaConfig?.cta_text ?? "Hubungi Toko";
   const imageUrl =
     ctaConfig?.image_url ||
     settings.story_image_url ||
@@ -129,7 +129,7 @@ export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
             )
           )}
 
-          <div>
+          {isTenantStore && <div>
             {isCanvasMode ? (
               <div className="inline-flex items-center rounded-full bg-[var(--storefront-accent)] px-6 py-2.5 text-white">
                 <input
@@ -150,7 +150,7 @@ export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
                 {buttonText || (isTenantStore ? "Hubungi Toko" : "Pesan Catalove")}
               </button>
             )}
-          </div>
+          </div>}
         </div>
       </div>
     </section>

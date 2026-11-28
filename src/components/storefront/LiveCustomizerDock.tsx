@@ -129,7 +129,7 @@ const COLOR_SWATCHES: {
   { id: "noir_gold", label: "Noir", hex: "#D97706" },
   { id: "matcha_sage", label: "Matcha", hex: "#15803D" },
   { id: "rose_velvet", label: "Rose", hex: "#BE185D" },
-  { id: "minimal_slate", label: "Slate", hex: "#0F172A" },
+  { id: "minimal_slate", label: "Ceramic Jade", hex: "#71877A" },
   { id: "sunset_terracotta", label: "Terra", hex: "#EA580C" },
   { id: "cyber_neo", label: "Neo", hex: "#0284C7" },
 ];
