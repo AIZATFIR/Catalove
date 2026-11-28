@@ -13,17 +13,17 @@ export default function PrivacyPage() {
       <Link href="/" className="text-sm font-semibold text-[var(--storefront-accent)]">← Kembali ke Catalove</Link>
       <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Privasi</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Kebijakan Privasi</h1>
-      <p className="mt-4 text-sm text-stone-500">Terakhir diperbarui: 27 November 2026</p>
+      <p className="mt-4 text-sm text-stone-500">Terakhir diperbarui: 28 November 2026</p>
 
       <aside className="mt-8 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
         <h2 className="font-bold">Preview Catalove</h2>
-        <p className="mt-1">Katalog contoh dan editor demo ini belum untuk pesanan atau data pelanggan sungguhan. Preview memakai project Supabase khusus Catalove pada paket Free; project dapat dipause setelah tidak aktif dan tidak memiliki backup otomatis. Perubahan katalog demo tersimpan di browser ini. Jangan masukkan alamat, nomor WhatsApp, atau catatan milik pembeli sungguhan.</p>
+        <p className="mt-1">Catalove masih preview dan belum untuk pesanan atau data pelanggan sungguhan. Jika kamu mendaftar dan menyimpan katalog, data akun serta katalog dikirim ke project Supabase khusus Catalove pada paket Free; project dapat dipause setelah tidak aktif dan tidak memiliki backup otomatis. Mode demo lokal dapat menyimpan sebagian perubahan hanya di browser ini. Jangan masukkan alamat, nomor WhatsApp, atau catatan milik pembeli sungguhan.</p>
       </aside>
 
       <div className="mt-10 space-y-8 text-sm leading-7 text-stone-700 dark:text-stone-300">
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Data yang digunakan</h2>
-          <p>Pendaftaran pengelola menggunakan alamat email, kata sandi yang diproses oleh Supabase Auth, nama brand, dan alamat katalog. Pengelola juga dapat menyimpan nama produk, harga, variasi, stok, foto, nomor WhatsApp toko, dan pengaturan tampilan. Formulir permintaan order dapat meminta nama, nomor WhatsApp, produk dan jumlah, tanggal, metode pemenuhan, alamat, serta catatan. Jangan gunakan form order demo untuk pembeli sungguhan.</p>
+          <p>Pendaftaran pengelola menggunakan alamat email, kata sandi yang diproses oleh Supabase Auth, nama brand, dan alamat katalog. Pengelola juga dapat menyimpan nama produk, harga, variasi, stok, foto, nomor WhatsApp toko, dan pengaturan tampilan. Foto produk di katalog bersifat publik. Formulir permintaan order dapat meminta nama, nomor WhatsApp, produk dan jumlah, tanggal, metode pemenuhan, alamat, serta catatan. Jangan gunakan form order demo untuk pembeli sungguhan.</p>
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Pengelolaan data pesanan</h2>
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Penyedia layanan</h2>
-          <p>Preview menggunakan Supabase untuk autentikasi, database, dan foto katalog, serta Vercel untuk deployment preview. Aplikasi produksi Cloud Run belum dikonfigurasi. Supabase Free tidak menyediakan backup otomatis dan dapat dipause setelah periode tidak aktif. Saat membuka tautan WhatsApp, kamu berpindah ke layanan WhatsApp dan tunduk pada kebijakan layanan tersebut. Penyedia aktif dan lokasi pemrosesan harus diperbarui sebelum layanan klien diluncurkan.</p>
+          <p>Situs publik dan preview saat ini di-host di Vercel; Supabase digunakan untuk autentikasi, database, dan foto katalog. Layanan produksi katalog klien di Cloud Run belum dikonfigurasi dan belum dibuka. Supabase Free tidak menyediakan backup otomatis dan dapat dipause setelah periode tidak aktif. Saat membuka tautan WhatsApp, kamu berpindah ke layanan WhatsApp dan tunduk pada kebijakan layanan tersebut. Penyedia aktif dan lokasi pemrosesan harus diperbarui sebelum layanan klien diluncurkan.</p>
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Saran AI dari foto</h2>
@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Pembayaran</h2>
-          <p>Catalove tidak meminta detail kartu pembayaran. Pembayaran pesanan diatur langsung oleh masing-masing toko.</p>
+          <p>Belum ada checkout atau pembayaran paket Catalove di website. Tanya paket lewat WhatsApp; kami harus mengirim rincian harga, periode tagihan, dan biaya server/domain secara tertulis sebelum pengerjaan atau pembayaran. Catalove tidak meminta detail kartu. Pembayaran pesanan pelanggan diatur langsung oleh masing-masing toko.</p>
         </section>
         <section>
           <h2 className="font-bold text-stone-900 dark:text-white">Hubungi kami</h2>
