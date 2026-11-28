@@ -33,6 +33,7 @@ import {
   flushBusinessSettings,
 } from "@/lib/business-settings";
 import { THEME_COLOR_MAP } from "@/components/theme/ThemeProvider";
+import { withStoreSlug } from "@/lib/store-routing";
 import type {
   BodyScaleOption,
   BusinessSettings,
@@ -55,6 +56,7 @@ export default function AdminSettingsPage() {
   const [applyingPresetKey, setApplyingPresetKey] = useState<IndustryPreset | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [isSyncing, setIsSyncing] = useState(true);
+  const [storePlan, setStorePlan] = useState<"free" | "business" | "enterprise">("free");
   const importInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<
     "presets" | "workflow" | "theme" | "marquee" | "identity" | "content"
@@ -62,6 +64,14 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     setSettings(readBusinessSettings());
+    fetch(withStoreSlug("/api/stores"), { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data?.store?.plan === "free" || data?.store?.plan === "business" || data?.store?.plan === "enterprise") {
+          setStorePlan(data.store.plan);
+        }
+      })
+      .catch(() => {});
     fetchBusinessSettings().then((remote) => {
       if (remote) setSettings(remote);
       setIsSyncing(false);
@@ -751,7 +761,7 @@ export default function AdminSettingsPage() {
                   { id: "warm_oat", label: "Warm Oat & Coffee", color: "#C27838" },
                   { id: "matcha_sage", label: "Matcha & Sage", color: "#15803D" },
                   { id: "rose_velvet", label: "Rose & Velvet", color: "#BE185D" },
-                  { id: "minimal_slate", label: "Minimalist Slate", color: "#0F172A" },
+                  { id: "minimal_slate", label: "Ceramic Jade", color: "#71877A" },
                   { id: "sunset_terracotta", label: "Sunset Terracotta", color: "#EA580C" },
                   { id: "cyber_neo", label: "Cyber Neo", color: "#0284C7" },
                 ].map((c) => (
@@ -1570,11 +1580,13 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    value={settings.footer_badge || ""}
+                    value={storePlan === "free" ? "Powered by Catalove" : settings.footer_badge || ""}
                     placeholder="Contoh: Verified Store / Handcrafted with Love"
                     onChange={(e) => update("footer_badge", e.target.value)}
+                    disabled={storePlan === "free"}
                     className="w-full border-b border-stone-300 bg-transparent py-1 text-sm dark:border-white/20"
                   />
+                  {storePlan === "free" && <p className="mt-1 text-xs text-stone-500">Label Catalove tampil di katalog paket Free.</p>}
                 </div>
               </div>
             </div>

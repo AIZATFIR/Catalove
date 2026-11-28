@@ -74,7 +74,7 @@ export function CartDrawer() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
-  const [lastWaUrl, setLastWaUrl] = useState<string>("");
+  const [lastWaUrl, setLastWaUrl] = useState<string | null>(null);
   const [voucherInput, setVoucherInput] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<PromoVoucher | null>(null);
   const [voucherError, setVoucherError] = useState("");
@@ -170,8 +170,8 @@ export function CartDrawer() {
 
       const refCode = orderRes.order?.reference_code;
       const waUrl = generateCartWhatsAppUrl({
-        storeName: settings.store_name || "Catalove",
-        whatsappNumber: settings.seller_whatsapp || "6285946689168",
+        storeName: settings.store_name || "Toko",
+        whatsappNumber: settings.seller_whatsapp,
         currencySymbol: currency,
         referenceCode: refCode,
         customerName: customerName.trim(),
@@ -193,7 +193,7 @@ export function CartDrawer() {
       setAppliedVoucher(null);
       setVoucherInput("");
       clearCart();
-      window.open(waUrl, "_blank", "noopener,noreferrer");
+      if (waUrl) window.open(waUrl, "_blank", "noopener,noreferrer");
     } catch {
       setErrorMsg("Gagal memproses checkout. Silakan coba lagi.");
     } finally {
@@ -286,15 +286,19 @@ export function CartDrawer() {
                   </p>
                 </div>
 
-                <a
-                  href={lastWaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-[#25D366] text-white font-bold text-sm shadow-lg hover:opacity-95"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Buka WhatsApp Jika Belum Terbuka</span>
-                </a>
+                {lastWaUrl ? (
+                  <a
+                    href={lastWaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-[#25D366] text-white font-bold text-sm shadow-lg hover:opacity-95"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Buka WhatsApp Jika Belum Terbuka</span>
+                  </a>
+                ) : (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">Pesanan tercatat, tetapi toko belum mengatur nomor WhatsApp. Hubungi toko melalui informasi kontak yang tersedia.</p>
+                )}
 
                 <button
                   type="button"
@@ -572,6 +576,9 @@ export function CartDrawer() {
                     placeholder="Catatan pesanan (opsional: warna, kartu ucapan, request...)"
                     className="w-full px-3 py-2.5 rounded-xl border border-stone-300 dark:border-white/15 bg-white dark:bg-white/5 text-xs outline-none focus:border-[var(--storefront-accent)]"
                   />
+                  <p className="text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
+                    Checkout mencatat nama, nomor WhatsApp, dan detail pesanan di dashboard toko. WhatsApp membuka draft pesan; kamu yang menekan Kirim. Baca <Link href="/privacy" className="underline underline-offset-2">Kebijakan Privasi</Link>.
+                  </p>
                 </form>
               </>
             )

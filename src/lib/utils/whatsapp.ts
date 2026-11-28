@@ -1,6 +1,7 @@
 import { FulfillmentMethod, OrderRequest } from "@/types/bakery";
 import { formatPrice, formatDateIndonesian } from "./formatters";
 import { INITIAL_SETTINGS } from "@/lib/data/universal-presets";
+import { normalizeWhatsAppNumber } from "@/lib/utils/store-whatsapp";
 
 function formatFulfillmentLabel(method: FulfillmentMethod): string {
   switch (method) {
@@ -76,8 +77,9 @@ export function buildWhatsAppUrl(
   phoneNumber: string = INITIAL_SETTINGS.seller_whatsapp,
   storeName: string = INITIAL_SETTINGS.store_name || "Catalove",
   currencySymbol: string = INITIAL_SETTINGS.currency_symbol || "Rp"
-): string {
-  const cleanPhone = (phoneNumber || "6285946689168").replace(/[^0-9]/g, "");
+): string | null {
+  const cleanPhone = normalizeWhatsAppNumber(phoneNumber);
+  if (!cleanPhone) return null;
   const message = buildWhatsAppMessage(order, storeName, currencySymbol);
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
@@ -101,9 +103,10 @@ export interface CartWhatsAppPayload {
   totalAmount: number;
 }
 
-export function generateCartWhatsAppUrl(payload: CartWhatsAppPayload): string {
+export function generateCartWhatsAppUrl(payload: CartWhatsAppPayload): string | null {
   const symbol = payload.currencySymbol || "Rp";
-  const cleanPhone = (payload.whatsappNumber || "6285946689168").replace(/[^0-9]/g, "");
+  const cleanPhone = normalizeWhatsAppNumber(payload.whatsappNumber);
+  if (!cleanPhone) return null;
   const itemsText = payload.items
     .map(
       (it, idx) =>
@@ -142,8 +145,9 @@ export function buildQuickProductWhatsAppUrl(params: {
   price: number;
   currencySymbol?: string;
   isInquiry?: boolean;
-}): string {
-  const cleanPhone = (params.whatsappNumber || "6285946689168").replace(/[^0-9]/g, "");
+}): string | null {
+  const cleanPhone = normalizeWhatsAppNumber(params.whatsappNumber);
+  if (!cleanPhone) return null;
   const formatted = formatPrice(params.price, params.currencySymbol || "Rp");
   const variantLine = params.variantName ? ` (Varian: ${params.variantName})` : "";
   const message = params.isInquiry

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cakeService } from "@/lib/services/cake-service";
 import { verifyServerSession } from "@/lib/services/server-auth";
+import { getRequestedStoreSlug, getStoreSlugFromRequest, resolveStoreBySlug } from "@/lib/services/store-service";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const categories = await cakeService.getCategories();
+    const session = await verifyServerSession(getRequestedStoreSlug(req));
+    const store = await resolveStoreBySlug(getStoreSlugFromRequest(req), Boolean(session));
+    if (!store) return NextResponse.json({ error: "Katalog tidak ditemukan." }, { status: 404 });
+    const categories = await cakeService.getCategories(store.id);
     return NextResponse.json({ success: true, categories });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to load categories";
@@ -16,8 +20,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const isSeller = await verifyServerSession();
-    if (!isSeller) {
+    const session = await verifyServerSession(getRequestedStoreSlug(req));
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -30,7 +34,7 @@ export async function POST(req: NextRequest) {
       name: body.name.trim(),
       slug: body.slug,
       description: body.description,
-    });
+    }, session.storeId);
 
     return NextResponse.json({ success: true, category });
   } catch (err: unknown) {
@@ -41,8 +45,8 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const isSeller = await verifyServerSession();
-    if (!isSeller) {
+    const session = await verifyServerSession(getRequestedStoreSlug(req));
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -52,7 +56,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Category ID is required" }, { status: 400 });
     }
 
-    const success = await cakeService.deleteCategory(id);
+    const success = await cakeService.deleteCategory(id, session.storeId);
     return NextResponse.json({ success });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to delete category";

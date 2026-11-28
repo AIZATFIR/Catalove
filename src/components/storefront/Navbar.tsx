@@ -8,28 +8,26 @@ import { Skiper24 } from "@/components/ui/skiper-ui/skiper24";
 import { Skiper25 } from "@/components/ui/skiper-ui/skiper25";
 import { Skiper26 } from "@/components/ui/skiper-ui/skiper26";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
 import { saveBusinessSettings } from "@/lib/business-settings";
-import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
+import { openStorefrontWhatsApp } from "@/components/storefront/PricingSection";
 import { useCart } from "@/context/CartContext";
+import { getStorefrontNavigationLinks, isTenantStorefrontPath } from "@/lib/store-routing";
 
 interface NavbarProps {
   onOpenQuiz?: () => void;
 }
-
-const links = [
-  { href: "/#discovery-feed", label: "Katalog" },
-  { href: "/#harga", label: "Harga & Skema" },
-  { href: "/catalog", label: "Semua Sample" },
-  { href: "/bio", label: "Bio" },
-];
 
 export function Navbar({ onOpenQuiz }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
   const [editingBrand, setEditingBrand] = useState(false);
   const pathname = usePathname();
+  const isCataloveLandingPage = pathname === "/";
+  const links = getStorefrontNavigationLinks(pathname || "/");
   const router = useRouter();
   const settings = useBusinessSettings();
+  const canEditStorefront = useStorefrontEditorAccess();
   const { totalItems, savedIds, openCart, openWishlist } = useCart();
 
   useEffect(() => {
@@ -47,7 +45,7 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
   }, []);
 
   const handleToggleCanvas = () => {
-    if (pathname !== "/") {
+    if (pathname !== "/" && !isTenantStorefrontPath(pathname || "/")) {
       router.push("/#canvas");
       return;
     }
@@ -122,24 +120,26 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
               Bantu Pilih
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleToggleCanvas}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              isCanvasMode
-                ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white shadow-sm"
-                : "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Mode Kanvas</span>
-          </button>
+          {canEditStorefront && (
+            <button
+              type="button"
+              onClick={handleToggleCanvas}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
+                isCanvasMode
+                  ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                  : "border-[var(--storefront-line)] bg-[var(--storefront-surface)] text-[var(--storefront-ink)]"
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Mode Kanvas</span>
+            </button>
+          )}
         </nav>
 
         {/* Controls */}
         <div className="hidden items-center gap-2 lg:flex">
-          <Skiper24 />
-          <Skiper25 />
+          {!isCataloveLandingPage && <Skiper24 />}
+          {!isCataloveLandingPage && <Skiper25 />}
           <Skiper26 />
 
           <button
@@ -170,32 +170,51 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
-            className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-bold tracking-wide text-white transition-opacity hover:opacity-90 whitespace-nowrap"
-          >
-            {settings.nav_cta_text || "Pesan Catalove"}
-          </button>
+          {isCataloveLandingPage ? (
+            <>
+              <Link
+                href="/admin/login"
+                className="touch-target inline-flex items-center px-2 text-xs font-medium text-[var(--storefront-muted)] transition-colors hover:text-[var(--storefront-ink)]"
+              >
+                Masuk
+              </Link>
+              <Link
+                href="/admin/register"
+                className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:brightness-95 whitespace-nowrap"
+              >
+                Buat katalog
+              </Link>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name)}
+              className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:brightness-95 whitespace-nowrap"
+            >
+              {settings.nav_cta_text || "Hubungi via WhatsApp"}
+            </button>
+          )}
         </div>
 
         {/* Mobile Quick Controls & Menu Button */}
         <div className="flex items-center gap-1.5 lg:hidden">
-          <Skiper24 className="hidden sm:flex" />
+          {!isCataloveLandingPage && <Skiper24 className="hidden sm:flex" />}
           <Skiper26 />
 
-          <button
-            type="button"
-            onClick={handleToggleCanvas}
-            className={`hidden sm:inline-flex md:hidden items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
-              isCanvasMode
-                ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
-                : "border-[var(--storefront-accent)] bg-[var(--color-surface-tint)] text-[var(--storefront-accent)]"
-            }`}
-          >
-            <Sliders className="w-3 h-3" />
-            <span>Kanvas</span>
-          </button>
+          {canEditStorefront && (
+            <button
+              type="button"
+              onClick={handleToggleCanvas}
+              className={`hidden sm:inline-flex md:hidden items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                isCanvasMode
+                  ? "border-[var(--storefront-accent)] bg-[var(--storefront-accent)] text-white"
+                  : "border-[var(--storefront-line)] bg-[var(--storefront-surface)] text-[var(--storefront-ink)]"
+              }`}
+            >
+              <Sliders className="w-3 h-3" />
+              <span>Kanvas</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -240,12 +259,14 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="border-t border-[#DBD0C5] bg-[#FCFAF6] px-4 pb-5 md:hidden dark:border-white/10 dark:bg-[#1A1412]">
-          <div className="flex items-center justify-between border-b border-[#DBD0C5] py-2.5 dark:border-white/10">
-            <span className="text-xs font-semibold text-[#8D624C] dark:text-[#D1A686]">
-              Audio
-            </span>
-            <Skiper25 />
-          </div>
+          {!isCataloveLandingPage && (
+            <div className="flex items-center justify-between border-b border-[#DBD0C5] py-2.5 dark:border-white/10">
+              <span className="text-xs font-semibold text-[#8D624C] dark:text-[#D1A686]">
+                Audio
+              </span>
+              <Skiper25 />
+            </div>
+          )}
           <nav
             aria-label="Navigasi mobile"
             className="flex flex-col divide-y divide-[#DBD0C5] dark:divide-white/10 pt-1"
@@ -272,24 +293,45 @@ export function Navbar({ onOpenQuiz }: NavbarProps) {
                 Bantu Pilih
               </button>
             )}
-            <Link
-              href="/admin/settings"
-              onClick={() => setMobileMenuOpen(false)}
-              className="touch-target flex items-center gap-2 text-sm font-semibold text-[var(--storefront-accent)] py-2.5"
-            >
-              <Palette className="w-4 h-4" />
-              <span>Studio</span>
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                openCataloveWhatsApp(settings.seller_whatsapp);
-              }}
-              className="touch-target flex items-center text-left text-sm font-bold text-[#25D366] py-2.5"
-            >
-              Pesan Catalove
-            </button>
+            {isCataloveLandingPage ? (
+              <Link
+                href="/admin/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="touch-target flex items-center gap-2 text-sm font-medium text-[var(--storefront-ink)] py-2.5"
+              >
+                <Palette className="w-4 h-4" />
+                <span>Masuk</span>
+              </Link>
+            ) : canEditStorefront ? (
+              <Link
+                href="/admin/settings"
+                onClick={() => setMobileMenuOpen(false)}
+                className="touch-target flex items-center gap-2 text-sm font-medium text-[var(--storefront-accent)] py-2.5"
+              >
+                <Palette className="w-4 h-4" />
+                <span>Studio</span>
+              </Link>
+            ) : null}
+            {isCataloveLandingPage ? (
+              <Link
+                href="/admin/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="touch-target flex items-center text-sm font-semibold text-[var(--storefront-accent)] py-2.5"
+              >
+                Buat katalog gratis
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name);
+                }}
+                className="touch-target flex items-center text-left text-sm font-semibold text-[var(--storefront-accent)] py-2.5"
+              >
+                {settings.nav_cta_text || "Hubungi Kami"}
+              </button>
+            )}
           </nav>
         </div>
       )}

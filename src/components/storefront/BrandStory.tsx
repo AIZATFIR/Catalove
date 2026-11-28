@@ -2,17 +2,21 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Image as ImageIcon } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { saveBusinessSettings } from "@/lib/business-settings";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
-import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
+import { openStorefrontWhatsApp } from "@/components/storefront/PricingSection";
+import { isTenantStorefrontPath } from "@/lib/store-routing";
 
 interface BrandStoryProps {
   isCanvasMode?: boolean;
 }
 
 export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
+  const pathname = usePathname() || "/";
+  const isTenantStore = isTenantStorefrontPath(pathname);
   const settings = useBusinessSettings();
   const [editingImage, setEditingImage] = useState(false);
 
@@ -20,12 +24,12 @@ export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
   const titleText =
     ctaConfig?.title ??
     settings.story_title ??
-    "Pesan Catalove mu untuk brand mu sendiri.";
+    isTenantStore ? `Cerita ${settings.store_name || "toko kami"}` : "Pesan Catalove mu untuk brand mu sendiri.";
   const bodyText =
     ctaConfig?.subtitle ??
     settings.story_p1 ??
-    "Simple yet interesting catalog for your brand.";
-  const buttonText = ctaConfig?.cta_text ?? "Pesan Catalove";
+    isTenantStore ? `Kami memilih produk dengan perhatian pada detail.` : "Simple yet interesting catalog for your brand.";
+  const buttonText = ctaConfig?.cta_text ?? "Hubungi Toko";
   const imageUrl =
     ctaConfig?.image_url ||
     settings.story_image_url ||
@@ -125,7 +129,7 @@ export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
             )
           )}
 
-          <div>
+          {isTenantStore && <div>
             {isCanvasMode ? (
               <div className="inline-flex items-center rounded-full bg-[var(--storefront-accent)] px-6 py-2.5 text-white">
                 <input
@@ -140,13 +144,13 @@ export function BrandStory({ isCanvasMode = false }: BrandStoryProps) {
             ) : (
               <button
                 type="button"
-                onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+                onClick={() => openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name)}
                 className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-7 py-3.5 text-sm font-bold text-white hover:opacity-90 transition-opacity"
               >
-                {buttonText || "Pesan Catalove"}
+                {buttonText || (isTenantStore ? "Hubungi Toko" : "Pesan Catalove")}
               </button>
             )}
-          </div>
+          </div>}
         </div>
       </div>
     </section>

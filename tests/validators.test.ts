@@ -64,5 +64,7 @@ const validProduct = {
 };
 const parsedProduct = ProductInputSchema.safeParse(validProduct);
 assert.strictEqual(parsedProduct.success, true, "Valid product should pass validation");
+assert.strictEqual(ProductInputSchema.safeParse({ ...validProduct, images: [{ storage_path: "javascript:alert(1)" }] }).success, false, "product images must use a safe web URL");
+assert.strictEqual(ProductInputSchema.safeParse({ ...validProduct, images: Array.from({ length: 11 }, () => validProduct.images[0]) }).success, false, "product image count must match the supported limit");
 
 console.log("✅ All validator tests passed!");

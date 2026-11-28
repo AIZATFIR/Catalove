@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 900" fill="none">
+  <defs>
+    <linearGradient id="glass" x1="213" y1="302" x2="488" y2="621" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4D49D" stop-opacity=".92"/>
+      <stop offset=".56" stop-color="#B9783E" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#70452F"/>
+    </linearGradient>
+  </defs>
+  <path fill="#E9DED1" d="M0 0h720v900H0z"/>
+  <path fill="#F4EEE5" d="M52 72h616v756H52z"/>
+  <path d="M87 690c117-39 186-26 273 0 85 25 166 36 273-4v142H87V690Z" fill="#D8C4AE" fill-opacity=".58"/>
+  <ellipse cx="353" cy="674" rx="139" ry="27" fill="#5B4030" fill-opacity=".15"/>
+  <rect x="302" y="202" width="105" height="99" fill="#C7A374"/>
+  <path d="M313 181h84v31h-84z" fill="#A78356"/>
+  <path d="M321 181v-26h68v26" stroke="#8A6745" stroke-width="7" stroke-linecap="round"/>
+  <path d="M271 301h167v40H271z" fill="#D7B57D"/>
+  <path d="M247 341h215v267c0 27-22 49-49 49h-117c-27 0-49-22-49-49V341Z" fill="url(#glass)" stroke="#80563B" stroke-width="7"/>
+  <path d="M264 365v222c0 24 15 42 36 47" stroke="#FFF5E3" stroke-opacity=".7" stroke-width="13" stroke-linecap="round"/>
+  <rect x="287" y="443" width="135" height="97" fill="#EFE2D0" fill-opacity=".88"/>
+  <path d="M306 464h97" stroke="#B18B64" stroke-width="2"/>
+  <text x="354" y="493" fill="#624A3B" font-family="Georgia,serif" font-size="15" letter-spacing="1.5" text-anchor="middle">SAMPLE 03</text>
+  <text x="354" y="518" fill="#8C6C4F" font-family="Arial,sans-serif" font-size="9" letter-spacing="2" text-anchor="middle">SCENT STUDY</text>
+  <circle cx="144" cy="225" r="52" fill="#E6CDAF" fill-opacity=".45"/>
+  <circle cx="561" cy="622" r="74" fill="#D5B999" fill-opacity=".28"/>
+  <path d="M116 575c21-31 40-39 67-25m345-229c19-25 41-31 65-17" stroke="#AD9277" stroke-opacity=".48" stroke-width="2" stroke-linecap="round"/>
+</svg>

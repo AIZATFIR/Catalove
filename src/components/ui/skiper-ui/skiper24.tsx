@@ -12,7 +12,7 @@ export interface AccentPalette {
 }
 
 export const ACCENT_PALETTES: AccentPalette[] = [
-  { id: "amber", name: "Amber Flame", color: "#ff6f1e", glow: "rgba(255, 111, 30, 0.4)" },
+  { id: "amber", name: "Amber Flame", color: "#B45309", glow: "rgba(180, 83, 9, 0.22)" },
   { id: "cyan", name: "Electric Cyan", color: "#00d2ff", glow: "rgba(0, 210, 255, 0.4)" },
   { id: "emerald", name: "Emerald Mint", color: "#10b981", glow: "rgba(16, 185, 129, 0.4)" },
   { id: "violet", name: "Cyber Violet", color: "#a855f7", glow: "rgba(168, 85, 247, 0.4)" },

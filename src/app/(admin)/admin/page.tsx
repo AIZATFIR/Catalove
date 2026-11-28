@@ -20,13 +20,24 @@ import { OrderRequest } from "@/types/bakery";
 import { formatDateIndonesian } from "@/lib/utils/formatters";
 import { buildWhatsAppUrl } from "@/lib/utils/whatsapp";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { getStorefrontPath, withStoreSlug } from "@/lib/store-routing";
+
+interface DashboardStore {
+  slug: string;
+  name: string;
+  status: "draft" | "published" | "suspended";
+  plan: "free" | "business" | "enterprise";
+}
 
 export default function AdminDashboardPage() {
   const settings = useBusinessSettings();
   const [stats, setStats] = useState({ pending: 0, contacted: 0, confirmed: 0, completed: 0 });
   const [pendingOrders, setPendingOrders] = useState<OrderRequest[]>([]);
   const [productCount, setProductCount] = useState<number>(0);
-  const [isTomorrowOpen, setIsTomorrowOpen] = useState(true);
+  const [store, setStore] = useState<DashboardStore | null>(null);
+  const [storeLoading, setStoreLoading] = useState(true);
+  const [storeSaving, setStoreSaving] = useState(false);
+  const [storeMessage, setStoreMessage] = useState("");
 
   const loadData = () => {
     orderService.getOrderStats().then(setStats);
@@ -40,6 +51,14 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     loadData();
+    fetch(withStoreSlug("/api/stores"), { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Status katalog tidak dapat dimuat.");
+        setStore(data.store as DashboardStore);
+      })
+      .catch((error: unknown) => setStoreMessage(error instanceof Error ? error.message : "Status katalog tidak dapat dimuat."))
+      .finally(() => setStoreLoading(false));
     window.addEventListener("catalove-catalog-updated", loadData);
     return () => window.removeEventListener("catalove-catalog-updated", loadData);
   }, []);
@@ -47,6 +66,27 @@ export default function AdminDashboardPage() {
   const handleQuickConfirm = async (orderId: string) => {
     await orderService.updateOrderStatus(orderId, "confirmed");
     loadData();
+  };
+
+  const toggleStorePublication = async () => {
+    if (!store) return;
+    setStoreSaving(true);
+    setStoreMessage("");
+    try {
+      const status = store.status === "published" ? "draft" : "published";
+      const response = await fetch(withStoreSlug("/api/stores"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Status katalog belum berhasil diubah.");
+      setStore(data.store as DashboardStore);
+    } catch (error: unknown) {
+      setStoreMessage(error instanceof Error ? error.message : "Status katalog belum berhasil diubah.");
+    } finally {
+      setStoreSaving(false);
+    }
   };
 
   const storeName = settings.store_name || "Catalove";
@@ -67,26 +107,43 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* Quick Tomorrow Availability Toggle */}
-        <div className="p-3 rounded-2xl bg-white dark:bg-[#2A221F] border border-caramel-200 dark:border-white/10 shadow-sm flex items-center justify-between sm:justify-start gap-4">
+        <Link href="/admin/availability" className="p-3 rounded-2xl bg-white dark:bg-[#2A221F] border border-caramel-200 dark:border-white/10 shadow-sm flex items-center justify-between gap-4 hover:border-caramel-400">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-caramel-600 dark:text-[#D1A686]" />
             <span className="text-xs font-semibold text-cocoa-900 dark:text-[#FAF4EE]">
-              Penerimaan Besok:
+              Atur stok &amp; tanggal
             </span>
           </div>
-          <button
-            onClick={() => setIsTomorrowOpen(!isTomorrowOpen)}
-            className={`touch-target px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-              isTomorrowOpen
-                ? "bg-emerald-600 text-white"
-                : "bg-rose-600 text-white"
-            }`}
-          >
-            {isTomorrowOpen ? "Buka (Menerima)" : "Tutup Sementara"}
-          </button>
-        </div>
+          <span className="text-xs font-semibold text-caramel-700 dark:text-[#D1A686]">Kelola →</span>
+        </Link>
       </div>
+
+      {store && (
+        <section className="flex flex-col gap-4 rounded-3xl border border-caramel-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#211B19] sm:flex-row sm:items-center sm:justify-between" aria-label="Status publikasi katalog">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-caramel-700 dark:text-[#D1A686]">
+              {store.status === "published" ? "Katalog tayang" : "Katalog belum tayang"} · Paket {store.plan}
+            </p>
+            <p className="mt-1 text-sm text-cocoa-700 dark:text-stone-200">
+              {store.status === "published" ? "Pembeli dapat melihat katalog tokomu." : "Isi WhatsApp toko dan tambahkan satu produk aktif untuk menerbitkannya."}
+            </p>
+            {storeMessage && <p role="alert" className="mt-2 text-sm text-rose-700 dark:text-rose-300">{storeMessage}</p>}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={withStoreSlug("/api/stores/export")} className="touch-target rounded-full border border-caramel-300 px-4 py-2 text-sm font-semibold text-cocoa-800 hover:bg-vanilla-50 dark:border-white/20 dark:text-white">
+              Unduh data toko
+            </Link>
+            {store.status === "published" && (
+              <Link href={getStorefrontPath("/", store.slug)} target="_blank" rel="noreferrer" className="touch-target rounded-full border border-caramel-300 px-4 py-2 text-sm font-semibold text-cocoa-800 hover:bg-vanilla-50 dark:border-white/20 dark:text-white">
+                Lihat katalog
+              </Link>
+            )}
+            <button type="button" onClick={toggleStorePublication} disabled={storeLoading || storeSaving || store.status === "suspended"} className="touch-target rounded-full bg-cocoa-950 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#D1A686] dark:text-[#1A1412]">
+              {storeSaving ? "Menyimpan…" : store.status === "published" ? "Jadikan draft" : "Terbitkan katalog"}
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Featured Shortcut: Studio Kustomisasi & Preset Usaha */}
       <Link
@@ -244,7 +301,7 @@ export default function AdminDashboardPage() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                    <a
+                    {waChatUrl && <a
                       href={waChatUrl}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -252,7 +309,7 @@ export default function AdminDashboardPage() {
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       <span>Chat WA</span>
-                    </a>
+                    </a>}
 
                     <button
                       onClick={() => handleQuickConfirm(order.id)}

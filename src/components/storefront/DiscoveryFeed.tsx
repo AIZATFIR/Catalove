@@ -576,7 +576,7 @@ function TikTokVerticalFeed({
             const liked = isLiked(product.id);
             const waQuickUrl = buildQuickProductWhatsAppUrl({
               storeName: settings.store_name || "Catalove",
-              whatsappNumber: settings.seller_whatsapp || "6285946689168",
+              whatsappNumber: settings.seller_whatsapp,
               productName: product.name,
               variantName: chosenVar?.name,
               price,
@@ -822,15 +822,17 @@ function TikTokVerticalFeed({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <a
-                        href={waQuickUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3.5 py-2 text-xs font-bold text-white shadow-lg hover:bg-[#20BD5A] transition-colors"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Pesan WA</span>
-                      </a>
+                      {waQuickUrl && (
+                        <a
+                          href={waQuickUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3.5 py-2 text-xs font-bold text-white shadow-lg hover:bg-[#20BD5A] transition-colors"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Pesan WA</span>
+                        </a>
+                      )}
                       <Link
                         href={`/product/${product.slug}`}
                         className="inline-flex items-center justify-center rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-3 py-2 text-xs font-bold text-white hover:bg-white/25"
@@ -964,7 +966,7 @@ function QuickViewModal({
   const price = selectedVariant ? selectedVariant.price : product.base_price;
   const waUrl = buildQuickProductWhatsAppUrl({
     storeName: settings.store_name || "Catalove",
-    whatsappNumber: settings.seller_whatsapp || "6285946689168",
+    whatsappNumber: settings.seller_whatsapp,
     productName: product.name,
     variantName: selectedVariant?.name,
     price: price * quantity,
@@ -1123,15 +1125,17 @@ function QuickViewModal({
             </div>
 
             <div className="flex gap-2">
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-2.5 px-4 rounded-full bg-[#25D366] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#20BD5A]"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>Pesan WA</span>
-              </a>
+              {waUrl && (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2.5 px-4 rounded-full bg-[#25D366] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#20BD5A]"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Pesan WA</span>
+                </a>
+              )}
               <Link
                 href={`/product/${product.slug}`}
                 onClick={onClose}

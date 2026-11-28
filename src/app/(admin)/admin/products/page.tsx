@@ -33,6 +33,8 @@ import { formatPrice } from "@/lib/utils/formatters";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { ProductImage as StorefrontProductImage } from "@/components/storefront/ProductImage";
 import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
+import { withStoreSlug } from "@/lib/store-routing";
+import { ExternalCheckoutUrlField } from "@/components/admin/ExternalCheckoutUrlField";
 
 interface EditModalState {
   isOpen: boolean;
@@ -43,6 +45,7 @@ interface EditModalState {
   categoryId: string;
   description: string;
   basePrice: number;
+  externalCheckoutUrl: string;
   compareAtPrice: number | "";
   leadTime: number;
   flavorNotesStr: string;
@@ -93,6 +96,7 @@ export default function AdminProductsPage() {
     categoryId: "",
     description: "",
     basePrice: 0,
+    externalCheckoutUrl: "",
     compareAtPrice: "",
     leadTime: 2,
     flavorNotesStr: "",
@@ -230,6 +234,7 @@ export default function AdminProductsPage() {
       categoryId: product.category_id || "",
       description: product.description,
       basePrice: product.base_price,
+      externalCheckoutUrl: product.external_checkout_url || "",
       compareAtPrice: product.compare_at_price ?? "",
       leadTime: product.minimum_lead_time_days,
       flavorNotesStr: (product.flavor_notes || []).join(", "),
@@ -278,7 +283,7 @@ export default function AdminProductsPage() {
       try {
         const formData = new FormData();
         formData.append("file", await prepareCatalogImage(file));
-        const res = await fetch("/api/upload", {
+        const res = await fetch(withStoreSlug("/api/upload"), {
           method: "POST",
           body: formData,
         });
@@ -336,6 +341,7 @@ export default function AdminProductsPage() {
         flavor_notes: flavorNotes.length > 0 ? flavorNotes : ["Best Seller"],
         specs: cleanSpecs,
         base_price: Number(editModal.basePrice),
+        external_checkout_url: editModal.externalCheckoutUrl.trim() || null,
         compare_at_price:
           editModal.compareAtPrice !== "" && Number(editModal.compareAtPrice) > 0
             ? Number(editModal.compareAtPrice)
@@ -823,6 +829,10 @@ export default function AdminProductsPage() {
                     />
                   </div>
                 </div>
+                <ExternalCheckoutUrlField
+                  value={editModal.externalCheckoutUrl}
+                  onChange={(externalCheckoutUrl) => setEditModal((prev) => ({ ...prev, externalCheckoutUrl }))}
+                />
               </div>
 
               {/* 2. Deskripsi */}

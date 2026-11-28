@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
+const scriptSrc = process.env.NODE_ENV === "development"
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  : "script-src 'self' 'unsafe-inline'";
+
 const nextConfig: NextConfig = {
+  output: "standalone",
   outputFileTracingRoot: path.join(__dirname),
   images: {
     remotePatterns: [
@@ -30,7 +35,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               "media-src 'self' blob:",
               "object-src 'none'",
-              "script-src 'self' 'unsafe-inline'",
+              scriptSrc,
               "style-src 'self' 'unsafe-inline'",
               "upgrade-insecure-requests",
             ].join("; "),

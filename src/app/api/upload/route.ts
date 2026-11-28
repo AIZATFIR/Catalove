@@ -4,11 +4,13 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getAdminSupabase } from "@/lib/supabase/server";
 import { verifyServerSession } from "@/lib/services/server-auth";
 import { MAX_SOURCE_IMAGE_BYTES, validateImageUpload } from "@/lib/image-upload-validation";
+import { getRequestedStoreSlug } from "@/lib/services/store-service";
+import { deleteUnreferencedStoreImage } from "@/lib/services/store-media-service";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const session = await verifyServerSession();
+  const session = await verifyServerSession(getRequestedStoreSlug(req));
   if (!session) {
     return NextResponse.json(
       { error: "Akses ditolak. Silakan masuk terlebih dahulu." },
@@ -63,7 +65,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: validation.status });
     }
 
-    const storagePath = `users/${session.id}/products/${randomUUID()}.${validation.extension}`;
+    const { data: reservationId, error: reservationError } = await admin.rpc("reserve_store_image_upload", {
+      p_store_id: session.storeId,
+      p_user_id: session.id,
+      p_byte_size: bytes.byteLength,
+    });
+    if (reservationError || !reservationId) {
+      const quotaReached = /batas paket|maksimal 2 MB/i.test(reservationError?.message || "");
+      console.error("Catalove image quota reservation failed", reservationError?.code || "no reservation");
+      return NextResponse.json(
+        { error: quotaReached ? "Batas penyimpanan foto katalog tercapai. Hapus foto lama atau hubungi Catalove." : "Batas penyimpanan belum siap. Coba lagi nanti." },
+        { status: quotaReached ? 413 : 503 }
+      );
+    }
+
+    const storagePath = `stores/${session.storeId}/products/${randomUUID()}.${validation.extension}`;
     let uploadFailed = false;
     let publicUrl = "";
     try {
@@ -80,6 +96,16 @@ export async function POST(req: NextRequest) {
       }
     } catch {
       uploadFailed = true;
+    } finally {
+      try {
+        const { error } = await admin.rpc("release_store_image_upload", {
+          p_reservation_id: reservationId,
+          p_store_id: session.storeId,
+        });
+        if (error) console.error("Catalove image quota reservation cleanup failed", error.code);
+      } catch {
+        console.error("Catalove image quota reservation cleanup failed");
+      }
     }
 
     if (uploadFailed) {
@@ -102,4 +128,29 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await verifyServerSession(getRequestedStoreSlug(req));
+  if (!session) return NextResponse.json({ error: "Akses ditolak." }, { status: 401 });
+  if (!isSupabaseConfigured()) return NextResponse.json({ error: "Penyimpanan foto belum dikonfigurasi." }, { status: 503 });
+
+  const body = await req.json().catch(() => null);
+  if (typeof body?.storage_path !== "string" || body.storage_path.length > 2048) {
+    return NextResponse.json({ error: "Alamat foto tidak valid." }, { status: 400 });
+  }
+
+  const admin = await getAdminSupabase();
+  if (!admin) return NextResponse.json({ error: "Penyimpanan foto belum siap." }, { status: 503 });
+  const result = await deleteUnreferencedStoreImage(
+    admin,
+    body.storage_path,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    session.storeId,
+    session.id
+  );
+  if (result === "invalid") return NextResponse.json({ error: "Foto itu bukan milik katalog ini." }, { status: 403 });
+  if (result === "referenced") return NextResponse.json({ error: "Foto masih dipakai produk. Simpan perubahan produk lebih dulu." }, { status: 409 });
+  if (result === "failed") return NextResponse.json({ error: "Foto belum berhasil dihapus dari penyimpanan." }, { status: 502 });
+  return NextResponse.json({ success: true });
 }

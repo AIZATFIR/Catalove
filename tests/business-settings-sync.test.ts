@@ -55,7 +55,7 @@ async function main() {
     addEventListener: () => undefined,
   };
   let releaseSettings!: (response: { ok: boolean; json: () => Promise<unknown> }) => void;
-  (globalThis as any).fetch = (input: string) => input === "/api/settings"
+  (globalThis as any).fetch = (input: string) => input.startsWith("/api/settings")
     ? new Promise((resolve) => { releaseSettings = resolve; })
     : Promise.resolve({ ok: true });
   const loading = fetchBusinessSettings();
@@ -112,6 +112,44 @@ async function main() {
     "Edit dalam sesi",
     "a later stale server snapshot cannot overwrite an unsynced session edit"
   );
+
+  const tenantValues = new Map<string, string>();
+  const tenantWrites: Array<{ url: string; body: string }> = [];
+  const location = { pathname: "/s/isolation-a", origin: "https://catalove.test" };
+  const browserGlobals = globalThis as unknown as {
+    window: {
+      location: typeof location;
+      localStorage: { getItem: (key: string) => string | null; setItem: (key: string, value: string) => void };
+      dispatchEvent: (event: Event) => boolean;
+      addEventListener: (type: string, listener: () => void) => void;
+    };
+    fetch: (input: string, init?: RequestInit) => Promise<{ ok: boolean; json: () => Promise<unknown> }>;
+  };
+  browserGlobals.window = {
+    location,
+    localStorage: {
+      getItem: (key: string) => tenantValues.get(key) ?? null,
+      setItem: (key: string, value: string) => tenantValues.set(key, value),
+    },
+    dispatchEvent: () => true,
+    addEventListener: () => undefined,
+  };
+  browserGlobals.fetch = async (input: string, init?: RequestInit) => {
+    if (init?.method === "POST") tenantWrites.push({ url: input, body: String(init.body) });
+    return { ok: true, json: async () => ({}) };
+  };
+  assert.equal(readBusinessSettings().seller_whatsapp, "", "a tenant without contact setup must never inherit Catalove's WhatsApp number");
+  assert.equal(readBusinessSettings().nav_cta_text, "Hubungi Kami", "a new tenant must start with merchant-facing copy");
+  saveBusinessSettings({ ...INITIAL_SETTINGS, hero_title: "Tenant A" });
+  location.pathname = "/s/isolation-b";
+  saveBusinessSettings({ ...INITIAL_SETTINGS, hero_title: "Tenant B" });
+  await pause(450);
+  const isolationWrites = tenantWrites.filter(({ url }) => /storeSlug=isolation-[ab]/.test(url));
+  assert.equal(isolationWrites.length, 2, "each tenant's pending settings save must survive navigation to another store");
+  assert.match(isolationWrites[0].url, /storeSlug=isolation-a/);
+  assert.match(isolationWrites[1].url, /storeSlug=isolation-b/);
+  assert.equal(JSON.parse(isolationWrites[0].body).hero_title, "Tenant A");
+  assert.equal(JSON.parse(isolationWrites[1].body).hero_title, "Tenant B");
 
   console.log("✅ All business settings sync tests passed!");
 }

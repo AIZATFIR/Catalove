@@ -15,6 +15,8 @@ import { formatPrice } from "@/lib/utils/formatters";
 import type { Product } from "@/types/bakery";
 import { ChevronRight, Clock, ShieldCheck, Heart, Tag, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { safeExternalCheckoutUrl } from "@/lib/utils/external-checkout";
+import { ExternalCheckoutAction } from "@/components/storefront/ExternalCheckoutAction";
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -134,6 +136,7 @@ export default function ProductDetailPage() {
   }
 
   const isReady = product.minimum_lead_time_days === 0;
+  const externalCheckoutUrl = safeExternalCheckoutUrl(product.external_checkout_url);
   const liked = isLiked(product.id);
   const likeCount = getLikeCount(product.id);
   const hasDiscount =
@@ -225,7 +228,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-[var(--storefront-accent)] shrink-0" />
-                  <span>Direct WhatsApp</span>
+                  <span>{externalCheckoutUrl ? "Checkout dikelola seller" : "Direct WhatsApp"}</span>
                 </div>
               </div>
             </div>
@@ -241,7 +244,9 @@ export default function ProductDetailPage() {
                     {product.category.name}
                   </Badge>
                 )}
-                {isReady ? (
+                {externalCheckoutUrl ? (
+                  <Badge variant="neutral" size="md">Checkout eksternal</Badge>
+                ) : isReady ? (
                   <Badge variant="ready" size="md">
                     Ready Stock
                   </Badge>
@@ -306,15 +311,24 @@ export default function ProductDetailPage() {
               <div className="mt-3.5 flex items-center gap-2 border-l-2 border-[var(--storefront-accent)] bg-[#F5EFE8] dark:bg-white/5 px-4 py-3 text-xs font-medium text-cocoa-900 dark:text-[#E8DDD4] rounded-r-xl">
                 <Clock className="w-4 h-4 text-[var(--storefront-accent)] shrink-0" />
                 <span>
-                  {isReady
-                    ? "Tersedia untuk pengantaran atau pengambilan hari ini."
-                    : `Produk memerlukan waktu persiapan minimal H-${product.minimum_lead_time_days} sebelum pengiriman.`}
+                  {externalCheckoutUrl
+                    ? "Akses produk dan ketentuan pembelian tersedia di platform seller."
+                    : isReady
+                      ? "Tersedia untuk pengantaran atau pengambilan hari ini."
+                      : `Produk memerlukan waktu persiapan minimal H-${product.minimum_lead_time_days} sebelum pengiriman.`}
                 </span>
               </div>
             </div>
 
-            {/* Order Form Component */}
-            <OrderForm product={product} />
+            {externalCheckoutUrl ? (
+              <ExternalCheckoutAction
+                checkoutUrl={externalCheckoutUrl}
+                storeName={settings.store_name || "toko ini"}
+                sellerWhatsApp={settings.seller_whatsapp}
+              />
+            ) : (
+              <OrderForm product={product} />
+            )}
           </div>
         </div>
 

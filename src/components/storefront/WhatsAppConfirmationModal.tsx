@@ -24,8 +24,8 @@ export const WhatsAppConfirmationModal: React.FC<WhatsAppConfirmationModalProps>
 
   if (!isOpen || !order) return null;
 
-  const storeName = settings.store_name || "Catalove";
-  const sellerWa = settings.seller_whatsapp || "6285946689168";
+  const storeName = settings.store_name || "Toko";
+  const sellerWa = settings.seller_whatsapp;
   const currency = settings.currency_symbol || "Rp";
 
   const item = order.items[0];
@@ -137,22 +137,26 @@ export const WhatsAppConfirmationModal: React.FC<WhatsAppConfirmationModalProps>
 
         {/* Primary Action Buttons */}
         <div className="space-y-3">
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="touch-target w-full flex items-center justify-center gap-2.5 py-3.5 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] font-bold text-sm shadow-warm transition-all duration-200 active:scale-[0.98]"
-          >
-            <PlugConnectedIcon
-              size={20}
-              color="white"
-              strokeWidth={2}
-              className="cursor-pointer"
-              aria-hidden="true"
-              focusable="false"
-            />
-            <span>Lanjut ke WhatsApp (Kirim Pesanan)</span>
-          </a>
+          {waUrl ? (
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="touch-target w-full flex items-center justify-center gap-2.5 py-3.5 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] font-bold text-sm shadow-warm transition-all duration-200 active:scale-[0.98]"
+            >
+              <PlugConnectedIcon
+                size={20}
+                color="white"
+                strokeWidth={2}
+                className="cursor-pointer"
+                aria-hidden="true"
+                focusable="false"
+              />
+              <span>Lanjut ke WhatsApp (Kirim Pesanan)</span>
+            </a>
+          ) : (
+            <p className="text-xs text-amber-700 dark:text-amber-300">Nomor WhatsApp toko belum tersedia. Simpan kode referensi untuk konfirmasi ke toko.</p>
+          )}
 
           <button
             onClick={handleCopy}

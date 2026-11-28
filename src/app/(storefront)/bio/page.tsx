@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -23,10 +24,15 @@ import { useCart } from "@/context/CartContext";
 import { cakeService } from "@/lib/services/cake-service";
 import { formatPrice } from "@/lib/utils/formatters";
 import { ProductImage } from "@/components/storefront/ProductImage";
-import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
+import { openStorefrontWhatsApp } from "@/components/storefront/PricingSection";
+import { buildCataloveInquiryWhatsAppUrl } from "@/lib/utils/catalove-whatsapp";
+import { buildStoreContactWhatsAppUrl } from "@/lib/utils/store-whatsapp";
+import { isTenantStorefrontPath } from "@/lib/store-routing";
 import type { Product } from "@/types/catalove";
 
 export default function BioLinkPage() {
+  const pathname = usePathname() || "/";
+  const isTenantStore = isTenantStorefrontPath(pathname);
   const settings = useBusinessSettings();
   const { addItem, openCart, toggleLike, isLiked } = useCart();
 
@@ -70,13 +76,9 @@ export default function BioLinkPage() {
   const storeAddress =
     settings.store_address || settings.kitchen_address || "Indonesia";
   const currency = settings.currency_symbol || "Rp";
-  const cleanWa = (settings.seller_whatsapp || "6285946689168").replace(/[^0-9]/g, "");
-  const isDefaultWa = cleanWa === "6285946689168";
-  const whatsappUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(
-    isDefaultWa
-      ? "Halo, saya mau pesan Catalove untuk brand saya."
-      : `Halo ${storeName}, saya ingin bertanya.`
-  )}`;
+  const whatsappUrl = isTenantStore
+    ? buildStoreContactWhatsAppUrl(settings.seller_whatsapp, storeName)
+    : buildCataloveInquiryWhatsAppUrl(settings.seller_whatsapp);
 
   const initials = storeName
     .split(" ")
@@ -167,7 +169,7 @@ export default function BioLinkPage() {
         <section aria-label="Tautan Utama" className="space-y-2.5">
           <button
             type="button"
-            onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+            onClick={() => openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name)}
             className="flex w-full items-center justify-between gap-3 rounded-2xl bg-[var(--storefront-accent)] px-4 py-3.5 text-left text-white shadow-md hover:opacity-95 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-3">
@@ -198,7 +200,7 @@ export default function BioLinkPage() {
             <ExternalLink className="h-4 w-4 shrink-0 opacity-60" />
           </Link>
 
-          <a
+          {whatsappUrl && <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -209,14 +211,14 @@ export default function BioLinkPage() {
                 <MessageCircle className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-sm font-bold leading-none">Pesan Catalove</p>
+                <p className="text-sm font-bold leading-none">{isTenantStore ? `Hubungi ${storeName}` : "Tanya paket Catalove"}</p>
                 <p className="text-[11px] text-white/90 mt-1">
-                  +62 859-4668-9168
+                  WhatsApp
                 </p>
               </div>
             </div>
             <ExternalLink className="h-4 w-4 shrink-0" />
-          </a>
+          </a>}
 
           <Link
             href="/#discovery-feed"

@@ -1,97 +1,58 @@
 ---
-title: 'Technical research: Catalove commercial operations and client safety'
+title: 'Commercial research: a safe first operating model for Catalove'
 type: technical
-topic: Catalove commercial operations and client safety
-decision: 'Choose an affordable, honest path to hosting real client catalogs without losing tenant data or hiding costs.'
+topic: multi-tenant catalogs, hosting costs, free plans and ads
+decision: 'Launch a capped free catalog on shared tenant-safe infrastructure; keep client pages ad-free.'
 source: user request
-status: complete
-preset: standard
-validation: normal
-verified_claims: 10
-unverified_claims: 0
+status: researched; production setup remains external
 created: 2026-11-25
-updated: 2026-11-25
+updated: 2026-11-27
 ---
 
-# Catalove commercial operations and client safety
+# Catalove commercial research
 
-**Decision this research serves:** Choose an affordable, honest path to hosting real client catalogs without losing tenant data or hiding costs.
+## Recommendation
 
-## Executive summary
+Run Catalove as a small managed catalog platform: one Catalove-owned Supabase production project, shared tenant-scoped Postgres rows protected by RLS, store-scoped public media, and Next.js on Cloud Run in Jakarta. The repository now has the tenant migration, data export, upload quotas and tenant authorization checks. A shared database keeps early costs lower than provisioning one database per client; it also makes RLS and backup recovery critical controls.
 
-Catalove should start as a small, managed catalog service with a clearly disclosed free tier, not an ad-funded marketplace. Keep one Catalove production database and move to tenant-scoped rows and RLS before onboarding unrelated businesses into that database. Supabase’s own guidance recommends a shared schema with a tenant ID on tenant-owned tables and database-enforced RLS; AWS guidance independently describes the pooled model and says PostgreSQL RLS is required to prevent cross-tenant access. The current Catalove schema is still a single-store model, so it is not safe to sell as a multi-client SaaS yet [1][7][10].
+Choose a **useful but capped Free** plan for acquisition: up to 25 products, 50 images, 2 MiB per image and 100 MiB total storage, WhatsApp contact/order flow, and visible Catalove attribution. Treat this as a costed acquisition expense. No “unlimited” or guaranteed uptime language. At current Supabase Pro pricing, expect a baseline of US$25/month before tax and overages for the shared production project. Do not use Supabase Free for live orders: projects pause after one week of inactivity and the plan has no automatic backups [1].
 
-Use Supabase Free only for testing: projects may pause after seven days of low activity and have no automatic backups [2][8]. A live order-taking service needs a paid, monitored production database. The currently published Pro baseline is US$25/month, includes 100 GB storage and 250 GB cached egress; additional projects run their own database instances and increase cost [2]. Compress images before upload, enforce file limits at both API and bucket, and never silently replace remote storage with base64 data that bloats browser storage. Supabase Storage already provides quotas/access rules; Cloudflare R2 is a later option when egress becomes the cost driver (10 GB-month and request allowances; no egress charge) [3][4].
+Do **not** place third-party ads in client product pages or checkout/WhatsApp flows. Attribution that can bring new clients is a better early return. If Catalove later owns a meaningful discovery audience, test clearly labeled, opt-in sponsored listings on Catalove-owned pages only. Publisher policy still applies to pages carrying ad code, including user-generated content [4]. Ads are uncertain revenue and must not fund baseline uptime or backups. Linktree's free ads after a visitor selects a link show one possible placement, not evidence that Catalove ads will cover infrastructure [5].
 
-The current Vercel Hobby plan is expressly for personal, non-commercial use. A revenue-generating Catalove service needs Vercel Pro or another host whose plan permits commercial use [5]. Do not promise “free forever” until a usage budget and abuse controls exist. No paid ads in a client’s catalog: the client’s brand and conversion matter, while user-generated pages also create publisher-policy obligations [6]. If a free plan needs monetization, keep the Catalove mark visible; later test clearly labeled sponsored placements only in Catalove-owned discovery, with client opt-in and moderation. Linktree’s free ad experiment is placed after a visitor selects a link, but this is not evidence that ad revenue will cover Catalove’s costs [9].
+Use Cloud Run in `asia-southeast2` for the Next.js service and a dedicated Catalove Supabase project for Auth, database and image storage. Cloud Run supports Next.js deploys and has a Jakarta region; that region is Tier 2 pricing. Cloud Run's published free compute allowance is based on `us-central1` pricing, while external internet egress, image storage/delivery, Artifact Registry, and Supabase still have costs [2][3]. This can keep an early low-traffic app inexpensive, but is not a zero-cost or fixed-cost guarantee. Set alerts and observe actual cost per catalog.
 
-**Critical caveat:** Catalove’s live production currently reports `persisted=false`; no dedicated production database is connected. The code remains single-store, so this research does not certify it for real client data.
+Google Cloud's current terms allow GCP services to be integrated into customer applications that have material value independent of GCP, and prohibit selling/reselling the GCP services themselves [3]. Catalove provides the catalog product and customer workflow; Cloud Run hosts it. This appears to fit that model better than Vercel's current terms, which prohibit making the services available to third parties or using them for service-bureau purposes; Hobby use is also restricted to personal/non-commercial use [6]. A Vercel Pro subscription alone does not resolve that separate third-party/service-bureau clause. This is an interpretation of provider terms, not legal advice. Recheck the terms and get written provider confirmation if considering Vercel for hosted client catalogs. Keep GCP/Supabase accounts under Catalove's control.
 
-## Findings
+## How client operations should work
 
-### Tenant and customer data
+1. Client signs up, verifies email, claims an available catalog URL, and gets a private draft catalog.
+2. Client enters the WhatsApp number and at least one active product, previews the storefront, then publishes. Orders route to that store's records and its WhatsApp handoff.
+3. Catalog data belongs to the client. Provide the store-scoped JSON export before cancellation; communicate which order data and media are deleted and when.
+4. Catalove checks image/database usage, support load, failed requests, backup status, and cloud spend monthly. When a cap is reached, explain it and provide upgrade/export steps; never silently remove content.
+5. If a store needs stronger isolation, custom domains, or a separate recovery boundary, scope and charge a dedicated project rather than making the shared free plan absorb that cost.
 
-The current migration gives every seller access to the same global products, orders, and settings. That is acceptable only for one owner/store. Before multiple businesses share a database, introduce `stores`/tenants, store memberships, and a `store_id` on products, categories, settings, availability, orders, variants, and media metadata. Enforce isolation with RLS on every tenant table and storage path; never rely only on a UI filter or a caller-provided store ID [1][7]. A shared database is the economical default; separate Supabase projects are a premium isolation option, not the default for free clients, because each project has its own Postgres instance [2].
+Orders contain personal data. Based on this product flow, the merchant chooses how to fulfill an order, while Catalove operates the software and has limited operational access; Catalove may separately decide purposes for account/security data. This is an operational inference, not a legal classification. Map each data flow and have the owner review applicable controller/processor roles, approved subprocessors, retention, deletion, rights-request handling, and incident response before onboarding. Indonesia's PDP Law requires processors to work under controller instructions and provides a written personal-data-failure notification deadline of 3×24 hours to data subjects and the institution; obtain qualified local advice on applicability and notification procedures [8].
 
-Operational order data contains customer names, WhatsApp numbers, delivery addresses, and notes. Collect only what is needed for an order, keep orders private, define a retention/export/deletion procedure, and never use client contact lists for advertising. Before taking live orders, publish plain-language ownership/support/contact and data-handling terms; obtain local professional advice for formal privacy/tax obligations.
+## Pricing honesty
 
-### Database and hosting cost
+Keep the accepted “Business mulai Rp299rb / Enterprise mulai Rp799rb; bahas via WhatsApp” as indicative starting prices; billing cadence is not finalized. Agree on scope, recurring infrastructure, domain renewal, content maintenance and support separately before acceptance. Do not market custom domains, analytics, team seats, branded removal, or guaranteed response times until implemented and costed.
 
-Supabase Free currently includes 500 MB database, 1 GB file storage, 5 GB egress, two active projects, and pauses projects with low activity over a seven-day window; free projects do not include automated backups [2][8]. Pro starts at US$25/month, with a first project and compute credit included; separate projects add compute. Pro includes daily backups retained for seven days, 100 GB storage, and 250 GB cached egress in the displayed plan [2]. These figures are provider list prices, not a complete Catalove cost: Vercel, domains, taxes, payment/admin time, support, and image transformations still matter.
+## Current launch gate
 
-Vercel Hobby allows only personal/non-commercial use. Its generous free allowance does not make it a compliant production plan for a service sold to clients [5]. Use Pro for commercial Catalove or compare another commercial host before customer launch. Put alerts on Vercel/Supabase usage, keep spend caps where available, and review cost per client monthly.
-
-### Images and media
-
-For the first small cohort, Supabase Storage bundled with the production project is simpler than introducing a second vendor. Resize/compress client images to a reasonable catalog rendition, limit accepted raster MIME and bytes in the API, enforce a bucket-level maximum, and store only public product images in a public bucket. Do not put order/private documents there. Supabase Storage applies RLS policies to file operations, while public URL downloads bypass read-policy checks; a public bucket therefore means anyone with an image URL can read that image [3][7].
-
-If media egress becomes a material bill, compare Cloudflare R2: current standard storage is US$0.015/GB-month, with the first 10 GB-month and request allowances free; internet egress has no charge. Requests, custom-domain/cache setup, image processing, and operator time are not free [4]. Do not migrate until actual metrics show the savings beat the added operational work.
-
-### Free plan, pricing, and ads
-
-Recommendation (commercial judgment, not a sourced market price): retain a genuinely usable free catalog with Catalove attribution, capped product count and upload storage, and WhatsApp inquiry/order links. Charge for removing Catalove attribution, more products/media, custom domain, analytics, team access, and hands-on setup. Keep prior accepted “Mulai Rp299rb / Rp799rb; bahas via WhatsApp” as indicative one-time Business/Enterprise setup, and disclose recurring hosting/domain charges separately once chosen. No “unlimited” claim. Provide export and cancellation steps so clients can leave with their catalog data.
-
-Ads should not appear between a buyer and the merchant’s products or checkout. Google requires all pages carrying its code—including user-generated content—to comply with publisher policies, and reserves the ability to restrict or suspend monetization [6]. Linktree’s current Free tier experiments with ads after link selection; that shows the placement can be separated from the creator’s primary page, not that it will fund Catalove reliably [9]. Consider sponsored placement only on Catalove’s own discovery surfaces after meaningful visitor volume, clearly labeled, opt-in, and moderated. Until then, free is a customer-acquisition cost with explicit caps; paid tiers subsidize it.
-
-## Recommended client operations
-
-1. Create a store record and one owner membership; verify contact email/WhatsApp and business identity manually at launch.
-2. Start from an industry template; client supplies product names, prices, availability, photos they have rights to use, fulfillment rules, and contact details.
-3. Preview on mobile and desktop; client confirms prices, dates, WhatsApp, and image rights before publishing.
-4. Use tenant-scoped database and storage access before onboarding client two. Test that account A cannot list, edit, export, or delete account B’s data.
-5. Agree on who maintains stock, how quickly Catalove responds to an outage, where orders go, and what happens at cancellation. Export data and remove access on exit.
-6. Review usage, failed uploads, backups, error logs, and per-client support time monthly. Raise tier limits or pause new uploads before exceeding the budget.
-
-## Implementation order
-
-1. Stop the current upload route from returning base64 as if a hosted upload succeeded; validate image signatures and size; compress in the browser before upload.
-2. Keep one production Supabase project for Catalove, with automated backups/alerts, before any real orders. The present deployment is demo-only until configured.
-3. Design and implement tenant schema + RLS + store routing as a dedicated migration/feature; migrate the sample catalog into an explicit Catalove demo store, then prove cross-tenant denial.
-4. Set commercial hosting before revenue (Vercel Pro or a commercial alternative); publish free/paid limits and support/exit policy.
-5. Consider R2 or sponsored discovery only after measuring usage and traffic.
+The dedicated Catalove Supabase project (`vrugrxcajlkhsvmnayfc`) is connected; all six migrations match remote history, including the showcase image replacement and optional seller-managed HTTPS checkout links. Read-only checks found one published Free showcase store, six active products, four active categories, ten product images, zero memberships, and zero order requests. The project remains on Free; owner bootstrap, backup/restore, Cloud Run, production billing, a deployed order round-trip, and an external checkout round-trip are unverified. The PR preview is Vercel-hosted and access-protected; the current public production URL did not serve this branch. Do not collect real client orders until the host/plan terms, recovery controls, owner access, production auth/storage, order journey, and client terms/privacy/contact/retention are confirmed. The Komdigi PSE FAQ describes private electronic system registration through OSS and lists NIB, relevant business licensing, and KBLI as prerequisites for the domestic path; confirm Catalove's exact applicability and category before commercial launch [9]. See [Cloud Run deployment and recovery](CLOUD-RUN-DEPLOYMENT.md) and [operations runbook](COMMERCIAL-OPERATIONS.md).
 
 ## Sources
 
-| Ref | Claim supported | Publisher | Publication date | Accessed | Confidence |
-|---|---|---|---|---|---|
-| [1] | Shared-schema tenant IDs with RLS is a common Supabase SaaS isolation pattern | [Supabase Knowledge Base](https://supabase.com/kb/faqs/database/multi-tenant-isolation) | Undated | 2026-11-25 | High |
-| [2] | Supabase Free/Pro prices, quotas, pausing and backups | [Supabase Pricing](https://supabase.com/pricing) | Current page | 2026-11-25 | High |
-| [3] | Storage RLS and public bucket semantics | [Supabase Storage Access Control](https://supabase.com/docs/guides/storage/security/access-control) | Undated | 2026-11-25 | High |
-| [4] | R2 storage/request rates and free egress | [Cloudflare R2 Pricing](https://developers.cloudflare.com/r2/pricing/) | Updated 2026-10-30 | 2026-11-25 | High |
-| [5] | Vercel Hobby only for personal/non-commercial use | [Vercel Terms of Service](https://vercel.com/legal/terms) | Current terms | 2026-11-25 | High |
-| [6] | Publisher policies apply to all site content, including user-generated content | [Google Publisher Policies](https://support.google.com/adsense/answer/10008391?hl=en) | Current help page | 2026-11-25 | High |
-| [7] | Database RLS must enforce the access model; browser query filters alone are insufficient | [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) | Undated | 2026-11-25 | High |
-| [8] | Supabase Free projects pause after low activity over a week | [Supabase Free Project Pausing](https://supabase.com/docs/guides/platform/free-project-pausing) | Updated 2026-09-22 | 2026-11-25 | High |
-| [9] | Linktree Free ads may appear after a visitor selects a link | [Linktree Help](https://linktr.ee/help/articles/12875121-ads-on-free-linktrees-beta) | Updated 2026-10-09 | 2026-11-25 | Medium |
-| [10] | In a pooled PostgreSQL SaaS model, RLS is required for tenant isolation | [AWS Prescriptive Guidance](https://docs.aws.amazon.com/prescriptive-guidance/latest/saas-multitenant-managed-postgresql/) | Undated | 2026-11-25 | High |
+| Ref | Claim | Source |
+|---|---|---|
+| [1] | Supabase Free/Pro price, quotas, pause behavior and backups | [Supabase pricing](https://supabase.com/pricing), accessed 2026-11-26 |
+| [2] | Cloud Run pricing/free allowance, request billing and Jakarta Tier 2 price | [Cloud Run pricing](https://cloud.google.com/run/pricing), accessed 2026-11-26 |
+| [3] | Next.js deployment, Jakarta region and app integration terms | [Next.js on Cloud Run](https://docs.cloud.google.com/run/docs/quickstarts/frameworks/deploy-nextjs-service), [Cloud Run locations](https://docs.cloud.google.com/run/docs/locations), [Google Cloud terms](https://cloud.google.com/terms), accessed 2026-11-26 |
+| [4] | Publisher policies apply to pages carrying publisher code, including user-generated content | [Google Publisher Policies](https://support.google.com/adsense/answer/10008391?hl=en), accessed 2026-11-26 |
+| [5] | Linktree Free ad placement behavior (not revenue viability) | [Linktree Help](https://linktr.ee/help/articles/12875121-ads-on-free-linktrees-beta), accessed 2026-11-26 |
+| [6] | Vercel Hobby restriction and third-party/service-bureau language | [Vercel Terms](https://vercel.com/legal/terms), updated 2026-10-19, accessed 2026-11-26 |
+| [7] | Tenant ID/RLS shared database guidance | [Supabase multi-tenant isolation](https://supabase.com/kb/faqs/database/multi-tenant-isolation), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), accessed 2026-11-26 |
+| [8] | Processor instructions and personal-data breach notifications (PDP Law Articles 46 and 51) | [Law No. 27 of 2022](https://jdih.komdigi.go.id/produk_hukum/view/id/832/t/undangundang%2Bnomor%2B27%2Btahun%2B2022), accessed 2026-11-26 |
+| [9] | PSE Lingkup Privat registration criteria and OSS prerequisites | [Komdigi PSE FAQ](https://pse.komdigi.go.id/pertanyaan-umum), [registration criteria](https://pse.komdigi.go.id/panduan/kriteria-pendaftaran-pse-lingkup-privat), accessed 2026-11-27 |
 
-## Open questions for the next business decision
-
-- What recurring hosting price can the client accept, and who owns the domain?
-- Which commercial Vercel team will own Catalove production, or should hosting move before launch?
-- What free-tier limits should be tested with real clients (products, image storage, and support response)?
-- Do clients require custom domains or should launch begin with `*.catalove` subdomains?
-
-## Staleness
-
-Using freshness windows of pricing 3 months, architecture 24 months, terms 3 months, platform policy 6 months, and competitive features 3 months, no claim is stale as of 2026-11-25. Earliest scheduled recheck is 2027-01-01 (R2 price and Linktree feature); recheck hosting and storage prices before publishing a package price.
+Recheck hosting/storage terms and pricing before publishing package prices, then at least quarterly.

@@ -11,14 +11,14 @@
     --storefront-ink: #33262A;
     --storefront-muted: #67575B;
     --storefront-line: #DBD0C5;
-    --storefront-accent: #ff6f1e;
-    --color-orange: #ff6f1e;
-    --color-orange-glow: rgba(255, 111, 30, 0.4);
-    --color-accent: #ff6f1e;
-    --color-accent-glow: rgba(255, 111, 30, 0.4);
+    --storefront-accent: #B45309;
+    --color-orange: #B45309;
+    --color-orange-glow: rgba(180, 83, 9, 0.22);
+    --color-accent: #B45309;
+    --color-accent-glow: rgba(180, 83, 9, 0.22);
     --color-card-bg: rgba(255, 255, 255, 0.85);
     --color-border: rgba(0, 0, 0, 0.08);
-    --color-surface-tint: rgba(255, 111, 30, 0.08);
+    --color-surface-tint: rgba(180, 83, 9, 0.08);
     --color-muted: #67575B;
     --color-text: #33262A;
   }
@@ -32,14 +32,14 @@
     --storefront-ink: #F2E7DC;
     --storefront-muted: #C7B7AB;
     --storefront-line: rgba(242, 231, 220, .16);
-    --storefront-accent: #ff6f1e;
-    --color-orange: #ff6f1e;
-    --color-orange-glow: rgba(255, 111, 30, 0.4);
-    --color-accent: #ff6f1e;
-    --color-accent-glow: rgba(255, 111, 30, 0.4);
+    --storefront-accent: #B45309;
+    --color-orange: #B45309;
+    --color-orange-glow: rgba(180, 83, 9, 0.28);
+    --color-accent: #B45309;
+    --color-accent-glow: rgba(180, 83, 9, 0.28);
     --color-card-bg: rgba(37, 30, 28, 0.85);
     --color-border: rgba(255, 255, 255, 0.12);
-    --color-surface-tint: rgba(255, 111, 30, 0.15);
+    --color-surface-tint: rgba(180, 83, 9, 0.15);
     --color-muted: #C7B7AB;
     --color-text: #F2E7DC;
   }

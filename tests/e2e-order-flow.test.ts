@@ -27,6 +27,7 @@ async function runE2E() {
     customerWhatsapp: "081122334455",
     requestedDate: validEventDate,
     fulfillmentMethod: "delivery",
+    candleCount: 0,
     deliveryAddress: "Jl. Senayan No. 10, Jakarta Selatan",
   });
 
@@ -37,7 +38,7 @@ async function runE2E() {
 
   // 4. WhatsApp handoff URL verification
   const waUrl = buildWhatsAppUrl(createdOrder);
-  assert.ok(waUrl.includes("wa.me"), "Must generate wa.me link");
+  assert.ok(waUrl?.includes("wa.me"), "Must generate wa.me link");
   const waMsg = buildWhatsAppMessage(createdOrder);
   assert.ok(waMsg.includes(createdOrder.reference_code), "WhatsApp text must contain reference code");
   assert.ok(waMsg.includes("Bunga Citra"), "WhatsApp text must contain customer name");

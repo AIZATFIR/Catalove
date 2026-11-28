@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpRight, Check, ChevronDown, Image as ImageIcon, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import type { Product } from "@/types/bakery";
 import type { CanvasSectionId, CustomContentBlock, SectionCustomConfig } from "@/types/catalove";
@@ -12,7 +13,8 @@ import { saveBusinessSettings } from "@/lib/business-settings";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils/formatters";
-import { openCataloveWhatsApp } from "@/components/storefront/PricingSection";
+import { openStorefrontWhatsApp } from "@/components/storefront/PricingSection";
+import { isTenantStorefrontPath } from "@/lib/store-routing";
 import {
   appendCustomContentBlock,
   isSafeCustomContentUrl,
@@ -416,14 +418,16 @@ export function StatementBannerSection({
 }: {
   isCanvasMode?: boolean;
 }) {
+  const pathname = usePathname() || "/";
+  const isTenantStore = isTenantStorefrontPath(pathname);
   const { settings, config, updateConfig } = useSectionConfig("statement_banner");
   const titleText =
     config.title ??
-    "Satu engine katalog, bebas ubah gaya sesuai karakter brandmu.";
+    (isTenantStore ? "Pilihan yang dibuat untukmu." : "Satu engine katalog, bebas ubah gaya sesuai karakter brandmu.");
   const subtitleText =
     config.subtitle ??
-    "Ganti tampilan Waterfall, Snap Feed, Grid, palet warna, hingga link Bio QR tanpa coding.";
-  const ctaText = config.cta_text ?? "Pesan Catalove";
+    (isTenantStore ? "Jelajahi koleksi kami dan hubungi toko untuk memesan." : "Ganti tampilan Waterfall, Snap Feed, Grid, palet warna, hingga link Bio QR tanpa coding.");
+  const ctaText = config.cta_text ?? (isTenantStore ? "Lihat Produk" : "Pesan Catalove");
 
   return (
     <section aria-label="Pernyataan Brand">
@@ -458,7 +462,7 @@ export function StatementBannerSection({
           )
         )}
 
-        <div className="pt-2">
+        {(isTenantStore || isCanvasMode) && <div className="pt-2">
           {isCanvasMode ? (
             <div className="inline-flex items-center rounded-full bg-[var(--storefront-accent)] px-6 py-2.5 text-white">
               <input
@@ -473,13 +477,13 @@ export function StatementBannerSection({
           ) : (
             <button
               type="button"
-              onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+              onClick={() => openStorefrontWhatsApp(settings.seller_whatsapp, settings.store_name)}
               className="touch-target inline-flex items-center justify-center rounded-full bg-[var(--storefront-accent)] px-8 py-3.5 text-sm font-bold text-white hover:opacity-90 transition-opacity"
             >
               {ctaText}
             </button>
           )}
-        </div>
+        </div>}
       </div>
     </section>
   );
@@ -494,12 +498,12 @@ const DEFAULT_FAQ_ITEMS: { q: string; a: string }[] = [
     a: "Bisa. Aktifkan Mode Kanvas untuk menggeser section, memilih font dan ukuran huruf, hingga mengganti foto serta harga langsung.",
   },
   {
-    q: "Apa beda Paket Mandiri dan Terima Jadi?",
-    a: "Paket Mandiri (Rp 299rb) memberi kamu kendali setup sendiri lewat Kanvas & Admin Studio. Paket Terima Jadi (Rp 799rb) kami siapkan dari nol sesuai brandingmu.",
+    q: "Apa beda layanan Business dan Enterprise?",
+    a: "Business mulai Rp299rb untuk bantuan setup katalog. Enterprise mulai Rp799rb untuk scope branding dan kurasi yang lebih khusus. Harga, periode tagihan, hosting, dan pekerjaan yang termasuk dibahas lewat WhatsApp sebelum kamu menyetujui.",
   },
   {
     q: "Apakah order pelanggan langsung masuk ke WhatsApp saya?",
-    a: "Ya, setiap checkout keranjang atau tombol pesan cepat otomatis terformat rapi dan masuk langsung ke nomor WhatsApp brandmu.",
+    a: "Checkout tersimpan di dashboard toko dan WhatsApp terbuka dengan pesan yang sudah disiapkan ke nomor brandmu. Pelanggan tetap perlu menekan tombol Kirim di WhatsApp.",
   },
 ];
 
@@ -508,16 +512,24 @@ export function FaqMinimalSection({
 }: {
   isCanvasMode?: boolean;
 }) {
+  const pathname = usePathname() || "/";
+  const isTenantStore = isTenantStorefrontPath(pathname);
   const { config, updateConfig } = useSectionConfig("faq_minimal");
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const titleText = config.title ?? "Pertanyaan Umum";
-  const subtitleText =
-    config.subtitle ?? "Jawaban ringkas sebelum mulai pakai Catalove.";
+  const subtitleText = config.subtitle ?? (isTenantStore
+    ? "Informasi singkat sebelum kamu memesan."
+    : "Jawaban ringkas sebelum mulai pakai Catalove.");
+  const tenantFaqItems = [
+    { q: "Bagaimana cara memesan?", a: "Pilih produk, isi detail pesanan, lalu lanjutkan ke WhatsApp untuk konfirmasi dengan toko." },
+    { q: "Apakah produk selalu tersedia?", a: "Stok dapat berubah. Hubungi toko lewat WhatsApp untuk memastikan ketersediaan." },
+    { q: "Bagaimana pengiriman atau pengambilan?", a: "Pilih metode yang tersedia saat memesan, lalu konfirmasi detailnya dengan toko." },
+  ];
   const items =
     config.faq_items && config.faq_items.length > 0
       ? config.faq_items
-      : DEFAULT_FAQ_ITEMS;
+      : isTenantStore ? tenantFaqItems : DEFAULT_FAQ_ITEMS;
 
   const updateItem = (idx: number, field: "q" | "a", value: string) => {
     const next = items.map((item, i) =>
@@ -846,11 +858,15 @@ export function FeatureComparisonSection({
 }: {
   isCanvasMode?: boolean;
 }) {
+  const pathname = usePathname() || "/";
+  const isTenantStore = isTenantStorefrontPath(pathname);
   const { config, updateConfig } = useSectionConfig("feature_comparison");
   const eyebrowText = config.eyebrow ?? "Keunggulan";
-  const titleText = config.title ?? "Kenapa Brand Memilih Catalove";
+  const titleText = config.title ?? (isTenantStore ? "Kenapa pelanggan memilih kami" : "Kenapa Brand Memilih Catalove");
   const subtitleText =
-    config.subtitle ?? "Fokus pada visual produk yang menjual, tanpa biaya langganan berat.";
+    config.subtitle ?? (isTenantStore
+      ? "Produk pilihan dan informasi yang jelas, agar kamu mudah menentukan pesanan."
+      : "Fokus pada visual produk yang menjual, tanpa biaya langganan berat.");
   const items =
     config.comparison_items && config.comparison_items.length > 0
       ? config.comparison_items
@@ -999,15 +1015,17 @@ export function SponsorSlotSection({
 }: {
   isCanvasMode?: boolean;
 }) {
+  const pathname = usePathname() || "/";
+  const isTenantStore = isTenantStorefrontPath(pathname);
   const { config, updateConfig } = useSectionConfig("sponsor_slot");
-  const eyebrowText = config.eyebrow ?? "Partner & Promo";
+  const eyebrowText = config.eyebrow ?? (isTenantStore ? "Info Pilihan" : "Partner & Promo");
   const titleText =
-    config.title ?? "Pasang Link Eksternal, Promo Marketplace, atau Slot Sponsor";
+    config.title ?? (isTenantStore ? "Promo dan tautan pilihan" : "Pasang Link Eksternal, Promo Marketplace, atau Slot Sponsor");
   const subtitleText =
     config.subtitle ??
-    "Bisa dipakai sebagai banner affiliate, tautan Shopee/Tokopedia, atau slot iklan native di versi gratis.";
+    (isTenantStore ? "Lihat informasi dan kanal lain dari toko kami." : "Bisa dipakai sebagai banner affiliate, tautan marketplace, atau slot sponsor.");
   const ctaText = config.cta_text ?? "Kunjungi Tautan";
-  const ctaUrl = config.cta_url ?? "https://wa.me/6285946689168";
+  const ctaUrl = config.cta_url ?? "/catalog";
   const safeHref = /^https?:\/\//i.test(ctaUrl) || ctaUrl.startsWith("/") ? ctaUrl : "/catalog";
 
   return (

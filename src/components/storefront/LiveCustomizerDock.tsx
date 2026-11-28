@@ -20,12 +20,11 @@ import {
   X,
 } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
 import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
 import {
-  addCanvasSectionToTheme,
-  moveCanvasSection,
   normalizeCanvasSections,
-  removeCanvasSection,
+  updateCanvasSectionOrder,
 } from "@/lib/canvas-sections";
 import {
   DEFAULT_THEME_CONFIG,
@@ -40,6 +39,8 @@ import {
   DEFAULT_SHOWCASE_ORDER,
   openCataloveWhatsApp,
 } from "@/components/storefront/PricingSection";
+import { getAllowedStorefrontSections } from "@/lib/storefront-sections";
+import { isTenantStorefrontPath } from "@/lib/store-routing";
 import type {
   BodyScaleOption,
   BusinessSettings,
@@ -56,10 +57,6 @@ import type {
 } from "@/types/catalove";
 
 type DockTab = "posisi" | "warna" | "model" | "brand";
-
-const VALID_SECTION_IDS = new Set<CanvasSectionId>(
-  ALL_CANVAS_SECTIONS.map((s) => s.id)
-);
 
 const SECTION_LABELS: Record<CanvasSectionId, string> =
   ALL_CANVAS_SECTIONS.reduce((acc, item) => {
@@ -132,7 +129,7 @@ const COLOR_SWATCHES: {
   { id: "noir_gold", label: "Noir", hex: "#D97706" },
   { id: "matcha_sage", label: "Matcha", hex: "#15803D" },
   { id: "rose_velvet", label: "Rose", hex: "#BE185D" },
-  { id: "minimal_slate", label: "Slate", hex: "#0F172A" },
+  { id: "minimal_slate", label: "Ceramic Jade", hex: "#71877A" },
   { id: "sunset_terracotta", label: "Terra", hex: "#EA580C" },
   { id: "cyber_neo", label: "Neo", hex: "#0284C7" },
 ];
@@ -150,6 +147,7 @@ const HEADING_FONTS: { id: FontHeadingOption; label: string }[] = [
 export function LiveCustomizerDock() {
   const settings = useBusinessSettings();
   const pathname = usePathname();
+  const canEditStorefront = useStorefrontEditorAccess();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DockTab>("posisi");
@@ -197,21 +195,29 @@ export function LiveCustomizerDock() {
   );
 
   const orderField = "canvas_draft_order" as const;
+  const allowedSections = useMemo(
+    () => getAllowedStorefrontSections(pathname || "/", ALL_CANVAS_SECTIONS),
+    [pathname]
+  );
+  const allowedSectionIds = useMemo(
+    () => new Set(allowedSections.map((section) => section.id)),
+    [allowedSections]
+  );
 
   const sectionOrder: CanvasSectionId[] = useMemo(() => {
     const saved = activeTheme.canvas_draft_order;
     const fallback = DEFAULT_CANVAS_ORDER;
     return normalizeCanvasSections(
       saved,
-      VALID_SECTION_IDS,
+      allowedSectionIds,
       fallback,
       activeTheme.hidden_sections
     );
-  }, [activeTheme.canvas_draft_order, activeTheme.hidden_sections]);
+  }, [activeTheme.canvas_draft_order, activeTheme.hidden_sections, allowedSectionIds]);
 
   const availableToAdd = useMemo(
-    () => ALL_CANVAS_SECTIONS.filter((sec) => !sectionOrder.includes(sec.id)),
-    [sectionOrder]
+    () => allowedSections.filter((sec) => !sectionOrder.includes(sec.id)),
+    [allowedSections, sectionOrder]
   );
 
   const presetBasePalette =
@@ -225,10 +231,12 @@ export function LiveCustomizerDock() {
     ink: activeTheme.custom_colors?.ink || presetBasePalette.ink,
   };
 
-  if (pathname === "/privacy" || pathname === "/contact") return null;
+  const isTenantStorefront = isTenantStorefrontPath(pathname || "/");
+  if (pathname !== "/" && !isTenantStorefront) return null;
+  if (!canEditStorefront) return null;
 
   const handleToggleCanvas = () => {
-    if (pathname !== "/") {
+    if (pathname !== "/" && !isTenantStorefront) {
       router.push("/#canvas");
       return;
     }
@@ -236,28 +244,30 @@ export function LiveCustomizerDock() {
   };
 
   const updateTheme = (patch: Partial<typeof activeTheme>) => {
+    const latest = readBusinessSettings();
+    const latestTheme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
     saveBusinessSettings({
-      ...settings,
+      ...latest,
       theme_config: {
-        ...activeTheme,
+        ...latestTheme,
         ...patch,
       },
     });
   };
 
-  const handleMoveSection = (id: CanvasSectionId, direction: -1 | 1) => {
-    updateTheme({ [orderField]: moveCanvasSection(sectionOrder, id, direction) });
-  };
-
-  const handleAddSection = (id: CanvasSectionId) => {
-    // Read the latest draft at click time so rapid section edits never build
-    // from an older React render and silently replace a more recent change.
+  const handleSectionOrderChange = (
+    action: "add" | "remove" | "move-up" | "move-down",
+    id: CanvasSectionId
+  ) => {
+    // Read the latest saved state on every click. React can batch rapid clicks,
+    // so deriving edits from the last rendered order could discard a previous edit.
     const latest = readBusinessSettings();
     const theme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
-    const updatedTheme = addCanvasSectionToTheme(
+    const updatedTheme = updateCanvasSectionOrder(
       theme,
+      action,
       id,
-      VALID_SECTION_IDS,
+      allowedSectionIds,
       DEFAULT_CANVAS_ORDER
     );
     saveBusinessSettings({
@@ -266,6 +276,10 @@ export function LiveCustomizerDock() {
         ...updatedTheme,
       },
     });
+  };
+
+  const handleAddSection = (id: CanvasSectionId) => {
+    handleSectionOrderChange("add", id);
     // The storefront owns Canvas mode state. Notify it so the new draft is
     // rendered immediately, including when the dock was opened while OFF.
     window.dispatchEvent(
@@ -275,14 +289,14 @@ export function LiveCustomizerDock() {
 
   const handleRemoveSection = (id: CanvasSectionId) => {
     if (sectionOrder.length <= 1) return;
-    updateTheme({ [orderField]: removeCanvasSection(sectionOrder, id) });
+    handleSectionOrderChange("remove", id);
   };
 
   const handleLoadShowcaseSections = () => {
     updateTheme({
       [orderField]: normalizeCanvasSections(
         DEFAULT_SHOWCASE_ORDER,
-        VALID_SECTION_IDS,
+        allowedSectionIds,
         DEFAULT_CANVAS_ORDER
       ),
       hidden_sections: [],
@@ -296,7 +310,7 @@ export function LiveCustomizerDock() {
       const merged: BusinessSettings = {
         ...settings,
         ...bundle.settings,
-        seller_whatsapp: settings.seller_whatsapp || "6285946689168",
+        seller_whatsapp: settings.seller_whatsapp,
         industry_preset: presetKey,
         theme_config: {
           ...DEFAULT_THEME_CONFIG,
@@ -516,7 +530,7 @@ export function LiveCustomizerDock() {
                         <button
                           type="button"
                           disabled={idx === 0}
-                          onClick={() => handleMoveSection(secId, -1)}
+                          onClick={() => handleSectionOrderChange("move-up", secId)}
                           aria-label={`Geser atas ${SECTION_LABELS[secId]}`}
                           className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
                         >
@@ -525,7 +539,7 @@ export function LiveCustomizerDock() {
                         <button
                           type="button"
                           disabled={idx === sectionOrder.length - 1}
-                          onClick={() => handleMoveSection(secId, 1)}
+                          onClick={() => handleSectionOrderChange("move-down", secId)}
                           aria-label={`Geser bawah ${SECTION_LABELS[secId]}`}
                           className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
                         >
@@ -1005,7 +1019,7 @@ export function LiveCustomizerDock() {
             </Link>
             <button
               type="button"
-              onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+              onClick={() => openCataloveWhatsApp()}
               className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--storefront-accent)] py-2.5 px-3 text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity"
             >
               <span>Pesan Desain Ini</span>

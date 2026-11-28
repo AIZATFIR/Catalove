@@ -7,12 +7,14 @@ import { Store, Lock, ArrowRight, Mail } from "lucide-react";
 import { authService } from "@/lib/services/auth-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/Button";
+import { getSafeAdminRedirectPath } from "@/lib/utils/safe-admin-redirect";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const settings = useBusinessSettings();
-  const nextUrl = searchParams.get("next") || "/admin";
+  const nextUrl = getSafeAdminRedirectPath(searchParams.get("next"));
+  const loginReason = searchParams.get("reason");
 
   const [email, setEmail] = useState("owner@catalove.id");
   const [password, setPassword] = useState("");
@@ -51,6 +53,17 @@ function LoginForm() {
           Masuk untuk mengelola produk, tampilan brand, jadwal, dan pesanan toko Anda.
         </p>
       </div>
+
+      {loginReason === "access-denied" && (
+        <p role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+          Akun ini belum terdaftar sebagai pengelola toko Catalove.
+        </p>
+      )}
+      {loginReason === "access-check-failed" && (
+        <p role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+          Akses toko belum dapat diverifikasi. Periksa koneksi, lalu coba lagi.
+        </p>
+      )}
 
       {error && (
         <div role="alert" className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 text-center font-medium">
@@ -120,6 +133,9 @@ export default function AdminLoginPage() {
       <React.Suspense fallback={<div className="text-sm text-cocoa-600">Memuat formulir...</div>}>
         <LoginForm />
       </React.Suspense>
+      <Link href="/admin/register" className="text-xs font-semibold text-caramel-800 underline underline-offset-4 dark:text-amber-200">
+        Buat katalog dan akun toko
+      </Link>
       <Link href="/" className="text-xs font-semibold text-caramel-800 underline underline-offset-4 dark:text-amber-200">
         Kembali ke halaman utama Catalove
       </Link>

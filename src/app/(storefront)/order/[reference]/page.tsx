@@ -1,9 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { Navbar } from "@/components/storefront/Navbar";
 import { Footer } from "@/components/storefront/Footer";
 import { orderService } from "@/lib/services/order-service";
+import { resolveStoreBySlug } from "@/lib/services/store-service";
+import { getAdminSupabase } from "@/lib/supabase/server";
 import { formatIDR, formatDateIndonesian } from "@/lib/utils/formatters";
 import { buildWhatsAppUrl } from "@/lib/utils/whatsapp";
 import {
@@ -16,6 +19,10 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
 interface OrderPageProps {
   params: Promise<{
     reference: string;
@@ -25,14 +32,30 @@ interface OrderPageProps {
 export default async function OrderDetailPage({ params }: OrderPageProps) {
   const { reference } = await params;
   const decodedRef = decodeURIComponent(reference);
-  const order = await orderService.getOrderByReference(decodedRef);
+  const storeSlug = (await headers()).get("x-catalove-store-slug") || "catalove";
+  const store = await resolveStoreBySlug(storeSlug);
+  if (!store) notFound();
+  const order = await orderService.getOrderByReference(decodedRef, store.id);
 
   if (!order) {
     notFound();
   }
 
   const item = order.items[0];
-  const waUrl = buildWhatsAppUrl(order);
+  const admin = await getAdminSupabase();
+  const { data: storeSettings } = admin
+    ? await admin
+        .from("business_settings")
+        .select("store_name,seller_whatsapp,currency_symbol")
+        .eq("store_id", store.id)
+        .maybeSingle()
+    : { data: null };
+  const waUrl = buildWhatsAppUrl(
+    order,
+    storeSettings?.seller_whatsapp ?? "",
+    storeSettings?.store_name || store.name,
+    storeSettings?.currency_symbol || "Rp"
+  );
 
   const statusConfig = {
     pending: {
@@ -205,15 +228,19 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
 
           {/* WhatsApp Action */}
           <div className="pt-6 border-t border-caramel-100 space-y-3">
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="touch-target w-full flex items-center justify-center gap-2.5 py-4 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] font-bold text-sm shadow-warm transition-all duration-200 active:scale-[0.98]"
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span>Hubungi toko di WhatsApp</span>
-            </a>
+            {waUrl ? (
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="touch-target w-full flex items-center justify-center gap-2.5 py-4 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] font-bold text-sm shadow-warm transition-all duration-200 active:scale-[0.98]"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span>Hubungi toko di WhatsApp</span>
+              </a>
+            ) : (
+              <p className="text-xs text-center text-amber-700">Nomor WhatsApp toko belum tersedia. Gunakan kode pesanan saat menghubungi toko.</p>
+            )}
 
             <p className="text-[11px] text-center text-cocoa-500">
               Pertanyaan seputar penyesuaian jadwal atau pembayaran dapat disampaikan langsung melalui WhatsApp toko.

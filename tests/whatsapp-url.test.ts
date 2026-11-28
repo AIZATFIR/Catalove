@@ -1,6 +1,7 @@
 import assert from "node:assert";
-import { buildWhatsAppMessage, buildWhatsAppUrl } from "../src/lib/utils/whatsapp";
+import { buildWhatsAppMessage, buildWhatsAppUrl, buildQuickProductWhatsAppUrl, generateCartWhatsAppUrl } from "../src/lib/utils/whatsapp";
 import { buildCataloveInquiryWhatsAppUrl } from "../src/lib/utils/catalove-whatsapp";
+import { buildStoreContactWhatsAppUrl } from "../src/lib/utils/store-whatsapp";
 import { OrderRequest } from "../src/types/bakery";
 
 console.log("Running whatsapp-url.test.ts...");
@@ -41,16 +42,29 @@ assert.ok(message.includes("Estimasi subtotal: Rp 245.000"), "Message must cont
 assert.ok(message.includes("Mohon konfirmasi"), "Message must contain confirmation request");
 
 const url = buildWhatsAppUrl(mockOrder, "6281234567890");
-assert.ok(url.startsWith("https://wa.me/6281234567890?text="), "URL must format with wa.me and phone");
+assert.ok(url?.startsWith("https://wa.me/6281234567890?text="), "URL must format with wa.me and phone");
+assert.equal(buildWhatsAppUrl(mockOrder, "", "Toko Klien"), null, "missing merchant phone must not use Catalove's phone");
+assert.equal(buildQuickProductWhatsAppUrl({ storeName: "Toko Klien", whatsappNumber: "", productName: "Produk", price: 1 }), null);
+assert.equal(generateCartWhatsAppUrl({ storeName: "Toko Klien", whatsappNumber: "", customerName: "A", customerPhone: "08123456789", deliveryType: "pickup", items: [], totalAmount: 0 }), null);
 
 const genericInquiry = buildCataloveInquiryWhatsAppUrl("+62 859-4668-9168");
 assert.ok(genericInquiry.startsWith("https://wa.me/6285946689168?text="), "Inquiry URL must use the configured phone digits");
 assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("paket"), "Generic inquiry must ask about Catalove packages");
-assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("hosting/domain"), "Generic inquiry must ask for hosting and domain details");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("server bersama yang dibayar ke Catalove"), "Inquiry must ask for the shared hosting fee paid to Catalove");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("domain khusus"), "Inquiry must ask for custom domain cost");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("periode tagihan"), "Generic inquiry must ask for billing cadence");
+assert.ok(decodeURIComponent(genericInquiry.split("?text=")[1]).includes("belum menyetujui biaya"), "Inquiry must not imply the buyer has agreed to charges");
 
 const businessInquiry = buildCataloveInquiryWhatsAppUrl("628111222333", "business");
 assert.ok(decodeURIComponent(businessInquiry.split("?text=")[1]).includes("Business"), "Business inquiry must name the selected package");
 assert.ok(decodeURIComponent(businessInquiry.split("?text=")[1]).includes("Rp299rb"), "Business inquiry must include its starting price");
+
+const storeContact = buildStoreContactWhatsAppUrl("+62 812-3456-7890", "Toko Bunga Melati");
+assert.ok(storeContact?.startsWith("https://wa.me/6281234567890?text="), "Store contact must use the merchant's own WhatsApp number");
+assert.ok(decodeURIComponent(storeContact!.split("?text=")[1]).includes("Toko Bunga Melati"), "Store contact message must identify the merchant");
+assert.equal(buildStoreContactWhatsAppUrl("", "Toko Bunga Melati"), null, "Missing merchant contact must not fall back to Catalove's WhatsApp");
+assert.equal(buildStoreContactWhatsAppUrl("123", "Toko Bunga Melati"), null, "Invalid merchant number must not create a broken WhatsApp link");
+assert.ok(buildStoreContactWhatsAppUrl("0812-3456-7890", "Toko Bunga Melati")?.startsWith("https://wa.me/6281234567890?text="), "Indonesian local phone numbers must be normalized to country code 62");
 
 const enterpriseInquiry = buildCataloveInquiryWhatsAppUrl("628111222333", "enterprise");
 assert.ok(decodeURIComponent(enterpriseInquiry.split("?text=")[1]).includes("Enterprise"), "Enterprise inquiry must name the selected package");

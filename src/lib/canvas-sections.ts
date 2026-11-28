@@ -1,5 +1,7 @@
 import type { CanvasSectionId, ThemeConfig } from "@/types/catalove";
 
+export type CanvasSectionEdit = "add" | "remove" | "move-up" | "move-down";
+
 export function normalizeCanvasSections(
   order: readonly CanvasSectionId[] | undefined,
   validIds: ReadonlySet<CanvasSectionId>,
@@ -61,4 +63,53 @@ export function moveCanvasSection(
   const next = [...order];
   [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
   return next;
+}
+
+export function updateCanvasSectionOrder(
+  theme: ThemeConfig,
+  action: CanvasSectionEdit,
+  id: CanvasSectionId,
+  validIds: ReadonlySet<CanvasSectionId>,
+  fallback: readonly CanvasSectionId[]
+): ThemeConfig {
+  if (action === "add") {
+    return addCanvasSectionToTheme(theme, id, validIds, fallback);
+  }
+
+  const order = normalizeCanvasSections(
+    theme.canvas_draft_order,
+    validIds,
+    fallback,
+    theme.hidden_sections
+  );
+
+  if (action === "remove") {
+    return { ...theme, canvas_draft_order: removeCanvasSection(order, id) };
+  }
+
+  return {
+    ...theme,
+    canvas_draft_order: moveCanvasSection(
+      order,
+      id,
+      action === "move-up" ? -1 : 1
+    ),
+  };
+}
+
+export function publishCanvasSectionOrder(
+  theme: ThemeConfig,
+  validIds: ReadonlySet<CanvasSectionId>,
+  fallback: readonly CanvasSectionId[]
+): ThemeConfig {
+  return {
+    ...theme,
+    section_order: normalizeCanvasSections(
+      theme.canvas_draft_order,
+      validIds,
+      fallback,
+      theme.hidden_sections
+    ),
+    hidden_sections: [],
+  };
 }

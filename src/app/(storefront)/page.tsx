@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/storefront/Navbar";
 import { Hero } from "@/components/storefront/Hero";
 import { CakeScrollShowcase } from "@/components/storefront/CakeScrollShowcase";
@@ -44,10 +45,15 @@ import type {
   SectionToneOption,
 } from "@/types/catalove";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
-import { saveBusinessSettings } from "@/lib/business-settings";
+import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
 import { cakeService } from "@/lib/services/cake-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { normalizeCanvasSections } from "@/lib/canvas-sections";
+import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
+import {
+  normalizeCanvasSections,
+  publishCanvasSectionOrder,
+} from "@/lib/canvas-sections";
+import { getAllowedStorefrontSections, getStorefrontSectionOrder } from "@/lib/storefront-sections";
 
 const SECTION_TITLE_MAP: Record<CanvasSectionId, string> = ALL_CANVAS_SECTIONS.reduce(
   (acc, item) => {
@@ -157,7 +163,9 @@ const SPACING_WRAPPER_CLASS: Record<SectionSpacingOption, string> = {
 };
 
 export default function HomePage() {
+  const pathname = usePathname() || "/";
   const settings = useBusinessSettings();
+  const canEditStorefront = useStorefrontEditorAccess();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -166,12 +174,12 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("canvas") === "1" || window.location.hash === "#canvas") {
-        setIsCanvasMode(true);
-      }
+      const requestedCanvasMode = params.get("canvas") === "1" || window.location.hash === "#canvas";
+      setIsCanvasMode(requestedCanvasMode && canEditStorefront);
     }
 
     const handleToggleCanvas = (e: Event) => {
+      if (!canEditStorefront) return;
       const detail = (e as CustomEvent<{ open?: boolean }>).detail;
       if (typeof detail?.open === "boolean") {
         setIsCanvasMode(detail.open);
@@ -184,7 +192,7 @@ export default function HomePage() {
     return () => {
       window.removeEventListener("catalove-toggle-canvas", handleToggleCanvas);
     };
-  }, []);
+  }, [canEditStorefront]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -198,17 +206,15 @@ export default function HomePage() {
   useEffect(() => {
     let active = true;
     const loadCatalog = async () => {
-      const [prods, cats] = await Promise.all([
-        cakeService.getProducts({ includeInactive: false }),
-        cakeService.getCategories(),
-      ]);
+      const catalog = pathname === "/"
+        ? await cakeService.ensureMarketingDemoCatalog()
+        : {
+            products: await cakeService.getProducts({ includeInactive: false }),
+            categories: await cakeService.getCategories(),
+          };
       if (!active) return;
-      if (prods) {
-        setProducts(prods.filter((p) => p.is_active));
-      }
-      if (cats) {
-        setCategories(cats);
-      }
+      setProducts(catalog.products.filter((p) => p.is_active));
+      setCategories(catalog.categories);
     };
 
     loadCatalog();
@@ -227,7 +233,7 @@ export default function HomePage() {
       window.removeEventListener("catalove-settings-change", handleCatalogUpdate);
       window.removeEventListener("storage", handleCatalogUpdate);
     };
-  }, []);
+  }, [pathname]);
 
   const stickyCards = useMemo(() => {
     return products
@@ -263,7 +269,17 @@ export default function HomePage() {
     const fallback = isCanvasMode
       ? DEFAULT_CANVAS_ORDER
       : DEFAULT_SHOWCASE_ORDER;
-    return normalizeCanvasSections(
+    if (isCanvasMode) {
+      const allowedSections = getAllowedStorefrontSections(pathname, ALL_CANVAS_SECTIONS);
+      return normalizeCanvasSections(
+        saved,
+        new Set(allowedSections.map((section) => section.id)),
+        fallback,
+        activeTheme.hidden_sections
+      );
+    }
+    return getStorefrontSectionOrder(
+      pathname,
       saved,
       VALID_SECTION_IDS,
       fallback,
@@ -271,16 +287,19 @@ export default function HomePage() {
     );
   }, [
     isCanvasMode,
+    pathname,
     activeTheme.canvas_draft_order,
     activeTheme.section_order,
     activeTheme.hidden_sections,
   ]);
 
   const updateTheme = (patch: Partial<typeof activeTheme>) => {
+    const latest = readBusinessSettings();
+    const latestTheme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
     saveBusinessSettings({
-      ...settings,
+      ...latest,
       theme_config: {
-        ...activeTheme,
+        ...latestTheme,
         ...patch,
       },
     });
@@ -290,7 +309,11 @@ export default function HomePage() {
     id: CanvasSectionId,
     patch: Partial<SectionCustomConfig>
   ) => {
-    const currentConfigs = activeTheme.section_configs || {};
+    const latestTheme = {
+      ...DEFAULT_THEME_CONFIG,
+      ...(readBusinessSettings().theme_config || {}),
+    };
+    const currentConfigs = latestTheme.section_configs || {};
     updateTheme({
       section_configs: {
         ...currentConfigs,
@@ -303,9 +326,20 @@ export default function HomePage() {
   };
 
   const applyCanvasToStorefront = () => {
-    updateTheme({
-      section_order: [...activeSections],
-      hidden_sections: [],
+    const latest = readBusinessSettings();
+    const latestTheme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
+    const allowedIds = new Set(
+      getAllowedStorefrontSections(pathname, ALL_CANVAS_SECTIONS).map(
+        (section) => section.id
+      )
+    );
+    saveBusinessSettings({
+      ...latest,
+      theme_config: publishCanvasSectionOrder(
+        latestTheme,
+        allowedIds,
+        DEFAULT_CANVAS_ORDER
+      ),
     });
     setIsCanvasMode(false);
   };
@@ -441,7 +475,7 @@ export default function HomePage() {
               </button>
               <button
                 type="button"
-                onClick={() => openCataloveWhatsApp(settings.seller_whatsapp)}
+                onClick={() => openCataloveWhatsApp()}
                 className="rounded-full bg-[var(--storefront-accent)] px-3.5 py-1 text-[11px] font-bold text-white hover:opacity-95"
               >
                 Pilih Paket &amp; Pesan

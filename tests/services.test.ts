@@ -61,6 +61,7 @@ async function runTests() {
     category_id: "cat-lifestyle-apparel",
     description: "Tas kanvas untuk aktivitas sehari-hari.",
     base_price: 185000,
+    external_checkout_url: "https://checkout.example.test/tote",
     minimum_lead_time_days: 1,
     is_active: true,
     is_featured: false,
@@ -83,6 +84,7 @@ async function runTests() {
   assert.ok(createdProduct.id, "Product should have an id");
   assert.strictEqual(createdProduct.name, "Studio Tote Bag");
   assert.strictEqual(createdProduct.variants.length, 2);
+  assert.strictEqual(createdProduct.external_checkout_url, "https://checkout.example.test/tote");
 
   // Update Product
   const updatedProduct = await cakeService.updateProduct(createdProduct.id, {
@@ -91,6 +93,10 @@ async function runTests() {
   });
   assert.strictEqual(updatedProduct?.name, "Studio Tote Bag Premium");
   assert.strictEqual(updatedProduct?.base_price, 195000);
+  assert.strictEqual(updatedProduct?.external_checkout_url, "https://checkout.example.test/tote");
+
+  const clearedCheckout = await cakeService.updateProduct(createdProduct.id, { external_checkout_url: null });
+  assert.strictEqual(clearedCheckout?.external_checkout_url, undefined, "seller can remove an external checkout destination");
 
   // Delete Product
   const deleteRes = await cakeService.deleteProduct(createdProduct.id);

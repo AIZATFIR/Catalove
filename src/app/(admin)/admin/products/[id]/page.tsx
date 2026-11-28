@@ -24,6 +24,9 @@ import { cakeService } from "@/lib/services/cake-service";
 import type { Category, Product, ProductImage, ProductVariant } from "@/types/bakery";
 import { formatIDR } from "@/lib/utils/formatters";
 import { prepareCatalogImage } from "@/lib/prepare-catalog-image";
+import { withStoreSlug } from "@/lib/store-routing";
+import { discardUnattachedStoreImage } from "@/lib/services/store-media-client";
+import { ExternalCheckoutUrlField } from "@/components/admin/ExternalCheckoutUrlField";
 
 interface EditImageItem {
   id: string;
@@ -58,6 +61,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState<number>(0);
+  const [externalCheckoutUrl, setExternalCheckoutUrl] = useState("");
   const [leadTime, setLeadTime] = useState<number>(2);
   const [flavorNotesStr, setFlavorNotesStr] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -86,6 +90,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         setCategoryId(prod.category_id || (cats[0]?.id ?? ""));
         setDescription(prod.description);
         setBasePrice(prod.base_price);
+        setExternalCheckoutUrl(prod.external_checkout_url || "");
         setLeadTime(prod.minimum_lead_time_days);
         setFlavorNotesStr((prod.flavor_notes || []).join(", "));
         setIsActive(prod.is_active);
@@ -125,7 +130,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     if (!newCatName.trim()) return;
     setCreatingCat(true);
     try {
-      const res = await fetch("/api/categories", {
+      const res = await fetch(withStoreSlug("/api/categories"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newCatName.trim() }),
@@ -170,7 +175,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       try {
         const formData = new FormData();
         formData.append("file", await prepareCatalogImage(file));
-        const res = await fetch("/api/upload", {
+        const res = await fetch(withStoreSlug("/api/upload"), {
           method: "POST",
           body: formData,
         });
@@ -210,6 +215,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   };
 
   const removeImage = (id: string) => {
+    const removed = images.find((image) => image.id === id);
+    if (removed?.file && removed.status === "saved") {
+      void discardUnattachedStoreImage(removed.storage_path).catch((error: unknown) => {
+        setFeedback({ text: error instanceof Error ? error.message : "Foto belum berhasil dihapus dari penyimpanan.", type: "error" });
+      });
+    }
     setImages((prev) => {
       const remaining = prev.filter((img) => img.id !== id);
       if (remaining.length > 0 && !remaining.some((img) => img.is_primary)) {
@@ -296,6 +307,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         description: description.trim() || `${name.trim()} dari katalog kami.`,
         flavor_notes: flavorNotes.length > 0 ? flavorNotes : ["Freshly Baked"],
         base_price: Number(basePrice),
+        external_checkout_url: externalCheckoutUrl.trim() || null,
         minimum_lead_time_days: Number(leadTime),
         is_active: isActive,
         is_featured: isFeatured,
@@ -485,6 +497,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </select>
               )}
             </div>
+
+            <ExternalCheckoutUrlField value={externalCheckoutUrl} onChange={setExternalCheckoutUrl} />
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-[#8D624C] dark:text-[#D1A686] mb-1">
