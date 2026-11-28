@@ -5,6 +5,8 @@ import {
   moveCanvasSection,
   normalizeCanvasSections,
   removeCanvasSection,
+  publishCanvasSectionOrder,
+  updateCanvasSectionOrder,
 } from "../src/lib/canvas-sections";
 import type { CanvasSectionId } from "../src/types/catalove";
 import { DEFAULT_THEME_CONFIG } from "../src/lib/data/universal-presets";
@@ -52,5 +54,46 @@ assert.deepEqual(removeCanvasSection(["hero", "feed"], "hero"), ["feed"]);
 assert.deepEqual(removeCanvasSection(["hero"], "hero"), ["hero"]);
 assert.deepEqual(moveCanvasSection(["hero", "feed", "pricing"], "pricing", -1), ["hero", "pricing", "feed"]);
 assert.deepEqual(moveCanvasSection(["hero", "feed"], "hero", -1), ["hero", "feed"]);
+
+const afterAddingFeed = updateCanvasSectionOrder(
+  { ...DEFAULT_THEME_CONFIG, canvas_draft_order: ["hero"] },
+  "add",
+  "feed",
+  valid,
+  ["hero"]
+);
+const afterAddingPricing = updateCanvasSectionOrder(
+  afterAddingFeed,
+  "add",
+  "pricing",
+  valid,
+  ["hero"]
+);
+assert.deepEqual(
+  afterAddingPricing.canvas_draft_order,
+  ["hero", "feed", "pricing"],
+  "consecutive edits use the latest saved draft instead of replacing an earlier section"
+);
+assert.deepEqual(
+  updateCanvasSectionOrder(afterAddingPricing, "remove", "feed", valid, ["hero"])
+    .canvas_draft_order,
+  ["hero", "pricing"],
+  "removing a section preserves the latest remaining draft sections"
+);
+assert.deepEqual(
+  updateCanvasSectionOrder(afterAddingPricing, "move-up", "pricing", valid, ["hero"])
+    .canvas_draft_order,
+  ["hero", "pricing", "feed"],
+  "reordering operates on the latest draft section list"
+);
+assert.deepEqual(
+  publishCanvasSectionOrder(afterAddingPricing, valid, ["hero"]),
+  {
+    ...afterAddingPricing,
+    section_order: ["hero", "feed", "pricing"],
+    hidden_sections: [],
+  },
+  "publishing applies the newest saved draft sections to the storefront order"
+);
 
 console.log("✅ All canvas section tests passed!");

@@ -23,10 +23,8 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
 import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
 import {
-  addCanvasSectionToTheme,
-  moveCanvasSection,
   normalizeCanvasSections,
-  removeCanvasSection,
+  updateCanvasSectionOrder,
 } from "@/lib/canvas-sections";
 import {
   DEFAULT_THEME_CONFIG,
@@ -246,26 +244,28 @@ export function LiveCustomizerDock() {
   };
 
   const updateTheme = (patch: Partial<typeof activeTheme>) => {
+    const latest = readBusinessSettings();
+    const latestTheme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
     saveBusinessSettings({
-      ...settings,
+      ...latest,
       theme_config: {
-        ...activeTheme,
+        ...latestTheme,
         ...patch,
       },
     });
   };
 
-  const handleMoveSection = (id: CanvasSectionId, direction: -1 | 1) => {
-    updateTheme({ [orderField]: moveCanvasSection(sectionOrder, id, direction) });
-  };
-
-  const handleAddSection = (id: CanvasSectionId) => {
-    // Read the latest draft at click time so rapid section edits never build
-    // from an older React render and silently replace a more recent change.
+  const handleSectionOrderChange = (
+    action: "add" | "remove" | "move-up" | "move-down",
+    id: CanvasSectionId
+  ) => {
+    // Read the latest saved state on every click. React can batch rapid clicks,
+    // so deriving edits from the last rendered order could discard a previous edit.
     const latest = readBusinessSettings();
     const theme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
-    const updatedTheme = addCanvasSectionToTheme(
+    const updatedTheme = updateCanvasSectionOrder(
       theme,
+      action,
       id,
       allowedSectionIds,
       DEFAULT_CANVAS_ORDER
@@ -276,6 +276,10 @@ export function LiveCustomizerDock() {
         ...updatedTheme,
       },
     });
+  };
+
+  const handleAddSection = (id: CanvasSectionId) => {
+    handleSectionOrderChange("add", id);
     // The storefront owns Canvas mode state. Notify it so the new draft is
     // rendered immediately, including when the dock was opened while OFF.
     window.dispatchEvent(
@@ -285,7 +289,7 @@ export function LiveCustomizerDock() {
 
   const handleRemoveSection = (id: CanvasSectionId) => {
     if (sectionOrder.length <= 1) return;
-    updateTheme({ [orderField]: removeCanvasSection(sectionOrder, id) });
+    handleSectionOrderChange("remove", id);
   };
 
   const handleLoadShowcaseSections = () => {
@@ -526,7 +530,7 @@ export function LiveCustomizerDock() {
                         <button
                           type="button"
                           disabled={idx === 0}
-                          onClick={() => handleMoveSection(secId, -1)}
+                          onClick={() => handleSectionOrderChange("move-up", secId)}
                           aria-label={`Geser atas ${SECTION_LABELS[secId]}`}
                           className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
                         >
@@ -535,7 +539,7 @@ export function LiveCustomizerDock() {
                         <button
                           type="button"
                           disabled={idx === sectionOrder.length - 1}
-                          onClick={() => handleMoveSection(secId, 1)}
+                          onClick={() => handleSectionOrderChange("move-down", secId)}
                           aria-label={`Geser bawah ${SECTION_LABELS[secId]}`}
                           className="rounded-lg p-1 border border-stone-200 dark:border-white/15 disabled:opacity-30 hover:border-[var(--storefront-accent)]"
                         >

@@ -45,11 +45,14 @@ import type {
   SectionToneOption,
 } from "@/types/catalove";
 import { DEFAULT_THEME_CONFIG } from "@/lib/data/universal-presets";
-import { saveBusinessSettings } from "@/lib/business-settings";
+import { readBusinessSettings, saveBusinessSettings } from "@/lib/business-settings";
 import { cakeService } from "@/lib/services/cake-service";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useStorefrontEditorAccess } from "@/hooks/useStorefrontEditorAccess";
-import { normalizeCanvasSections } from "@/lib/canvas-sections";
+import {
+  normalizeCanvasSections,
+  publishCanvasSectionOrder,
+} from "@/lib/canvas-sections";
 import { getAllowedStorefrontSections, getStorefrontSectionOrder } from "@/lib/storefront-sections";
 
 const SECTION_TITLE_MAP: Record<CanvasSectionId, string> = ALL_CANVAS_SECTIONS.reduce(
@@ -291,10 +294,12 @@ export default function HomePage() {
   ]);
 
   const updateTheme = (patch: Partial<typeof activeTheme>) => {
+    const latest = readBusinessSettings();
+    const latestTheme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
     saveBusinessSettings({
-      ...settings,
+      ...latest,
       theme_config: {
-        ...activeTheme,
+        ...latestTheme,
         ...patch,
       },
     });
@@ -304,7 +309,11 @@ export default function HomePage() {
     id: CanvasSectionId,
     patch: Partial<SectionCustomConfig>
   ) => {
-    const currentConfigs = activeTheme.section_configs || {};
+    const latestTheme = {
+      ...DEFAULT_THEME_CONFIG,
+      ...(readBusinessSettings().theme_config || {}),
+    };
+    const currentConfigs = latestTheme.section_configs || {};
     updateTheme({
       section_configs: {
         ...currentConfigs,
@@ -317,9 +326,20 @@ export default function HomePage() {
   };
 
   const applyCanvasToStorefront = () => {
-    updateTheme({
-      section_order: [...activeSections],
-      hidden_sections: [],
+    const latest = readBusinessSettings();
+    const latestTheme = { ...DEFAULT_THEME_CONFIG, ...(latest.theme_config || {}) };
+    const allowedIds = new Set(
+      getAllowedStorefrontSections(pathname, ALL_CANVAS_SECTIONS).map(
+        (section) => section.id
+      )
+    );
+    saveBusinessSettings({
+      ...latest,
+      theme_config: publishCanvasSectionOrder(
+        latestTheme,
+        allowedIds,
+        DEFAULT_CANVAS_ORDER
+      ),
     });
     setIsCanvasMode(false);
   };
