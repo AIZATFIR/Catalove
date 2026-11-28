@@ -71,7 +71,7 @@ const PLAN_DETAILS: Record<
       "Warna, susunan halaman, dan identitas brand disiapkan bersama",
       "Akses admin untuk mengubah produk, foto, harga, dan stok sendiri",
       "Katalog siap dibagikan dengan alur order ke WhatsApp",
-      "Hosting bersama Catalove belum termasuk harga mulai; biaya bulanan dan domain khusus (jika dipilih) dirinci sebelum persetujuan",
+      "Server bersama dikelola Catalove; biaya layanan bulanan di luar harga mulai. Domain khusus (opsional) dihitung terpisah",
     ],
   },
   enterprise: {
@@ -84,7 +84,7 @@ const PLAN_DETAILS: Record<
       "Kurasi katalog awal berdasarkan materi yang kamu sediakan",
       "Penyesuaian branding dan konten dirinci sebelum pengerjaan",
       "Timeline, jumlah revisi, dan serah-terima disepakati tertulis",
-      "Hosting bersama Catalove belum termasuk harga mulai; biaya bulanan dan domain khusus (jika dipilih) dirinci sebelum persetujuan",
+      "Server bersama dikelola Catalove; biaya layanan bulanan di luar harga mulai. Domain khusus (opsional) dihitung terpisah",
     ],
   },
 };
@@ -242,7 +242,7 @@ export function PricingSection({
             <ol className="grid gap-3 text-sm text-[var(--storefront-ink)] sm:grid-cols-2">
               <li><span className="mr-2 font-semibold text-[var(--storefront-accent)]">01</span>Pilih Business atau Enterprise, lalu kirim pertanyaan lewat WhatsApp.</li>
               <li><span className="mr-2 font-semibold text-[var(--storefront-accent)]">02</span>Kami kirim penawaran tertulis: pekerjaan, harga, periode tagihan, dan waktu pengerjaan.</li>
-              <li><span className="mr-2 font-semibold text-[var(--storefront-accent)]">03</span>Hosting dikelola Catalove; biaya bulanan server ditulis terpisah. Domain khusus (opsional) juga dirinci sebelum kamu setuju.</li>
+              <li><span className="mr-2 font-semibold text-[var(--storefront-accent)]">03</span>Catalove mengelola dan membayar server. Biaya layanan bulanan kami tulis terpisah; domain khusus (opsional) juga dirinci sebelum kamu setuju.</li>
               <li><span className="mr-2 font-semibold text-[var(--storefront-accent)]">04</span>Setuju dulu, baru pengerjaan dimulai. Katalog dipublikasikan setelah biaya server dan kebutuhanmu jelas.</li>
             </ol>
           </div>

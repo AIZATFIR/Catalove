@@ -18,9 +18,9 @@ assert.match(source, /Maksimal 25 produk dan 50 foto \(2 MiB per foto, total 100
 assert.match(source, /Business/);
 assert.match(source, /Enterprise/);
 assert.match(source, /Harga mulai\. Periode tagihan dan scope final ditulis di penawaran/);
-assert.match(source, /Hosting bersama Catalove belum termasuk harga mulai/);
+assert.match(source, /Server bersama dikelola Catalove; biaya layanan bulanan di luar harga mulai/);
 assert.match(source, /Pilih Business atau Enterprise[\s\S]*?penawaran tertulis/);
-assert.match(source, /Hosting dikelola Catalove; biaya bulanan server ditulis terpisah/);
+assert.match(source, /Catalove mengelola dan membayar server/);
 assert.match(source, /Belum ada pembayaran atau tagihan otomatis di website/);
 assert.match(source, /openCataloveWhatsApp\(selectedPlan\)/);
 assert.doesNotMatch(source, /Paket gratis didukung iklan platform/i);
